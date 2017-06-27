@@ -1,5 +1,9 @@
 grammar TinyScript;
 
+@header {
+package tinyscript.compiler.core.parser;
+}
+
 // start
 file: NL* (declaration ((',' | NL+) declaration)* NL*)? EOF;
 
