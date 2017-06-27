@@ -1,3 +1,21 @@
-myObject = [ foo = "bar", abc = 123 ]
+myConstant = "initial value"
+# myVariable = "initial value"
+# myStringOrNull: String? = null
 
 multiplyByTwo = [n: Int] -> n * 2
+
+sayHello = -> println[m = "Hello"]
+
+Animal = class [
+	name: String
+
+	sayName = -> println[m = "my name is $name"]
+]
+
+Dog = Animal class[
+	bark = -> println[m ="woof"]
+]
+
+myDog = Dog[name = "Foo"]
+
+myObject = [ foo = "bar", abc = 123 ]
