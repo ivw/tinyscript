@@ -1,0 +1,3 @@
+myObject = [ foo = "bar", abc = 123 ]
+
+multiplyByTwo = [n: Int] -> n * 2
