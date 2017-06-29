@@ -34,3 +34,15 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+tasks.compileKotlin.dependsOn(generateGrammarSource)
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'tinyscript.compiler.core.MainKt'
+    }
+
+    from {
+        configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
