@@ -19,9 +19,13 @@ fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	val inputCharStream = CharStreams.fromPath(readPath)
 
 	println("Starting parsing")
-	val parser = TinyScriptParser(CommonTokenStream(TinyScriptLexer(inputCharStream)))
+	val lexer = TinyScriptLexer(inputCharStream)
+	val parser = TinyScriptParser(CommonTokenStream(lexer))
 	val fileCtx = parser.file()
 	println("Parsing done\n")
+
+	if (parser.numberOfSyntaxErrors > 0)
+		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
 	val analysisVisitor = AnalysisVisitor()
