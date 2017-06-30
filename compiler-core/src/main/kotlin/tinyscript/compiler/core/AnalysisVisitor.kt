@@ -82,6 +82,7 @@ class AnalysisVisitor {
 						else ObjectType(false, objectType)
 				FunctionType(params, visitType(ctx.type(), scope))
 			}
+			is TinyScriptParser.NullTypeContext -> NullableType(AnyType)
 			is TinyScriptParser.NullableTypeContext -> NullableType(visitType(ctx.type(), scope))
 			is TinyScriptParser.ObjectTypeTypeContext -> visitObjectType(ctx.objectType(), scope)
 			is TinyScriptParser.TypeReferenceContext -> {

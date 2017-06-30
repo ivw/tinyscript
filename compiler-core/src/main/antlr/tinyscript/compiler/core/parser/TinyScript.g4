@@ -44,6 +44,7 @@ object: '[' NL* (declaration ((',' | NL+) declaration)* NL*)? ']';
 type
 	:	'(' type ')'											# ParenType
 	|	objectType? '->' type									# FunctionType
+	|	'?'														# NullType
 	|	type '?'												# NullableType
 	|	objectType												# ObjectTypeType
 	|	Name													# TypeReference
