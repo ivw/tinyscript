@@ -17,11 +17,15 @@ class AnalysisVisitor {
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
 		val scope = GlobalScope()
 		for (declaration in ctx.declaration()) {
-			scope.defineSymbol(visitDeclaration(declaration, scope))
+			val symbol = visitDeclaration(declaration, scope, null)
+
+			if (symbol.isAbstract) throw RuntimeException("concrete declaration expected")
+
+			scope.defineSymbol(symbol)
 		}
 	}
 
-	fun visitDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope): Symbol {
+	fun visitDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope, superSymbol: Symbol?): Symbol {
 		return when (ctx) {
 			is TinyScriptParser.AbstractDeclarationContext -> {
 				visitSymbol(ctx.symbol(), visitType(ctx.type(), scope), true)
@@ -49,7 +53,11 @@ class AnalysisVisitor {
 				println("Type of symbol '${symbol.name}' is $type")
 				symbol
 			}
-			is TinyScriptParser.ImplicitDeclarationContext -> TODO()
+			is TinyScriptParser.ImplicitDeclarationContext -> {
+				val expressionType = visitExpression(ctx.expression(), scope)
+				if (superSymbol == null) throw RuntimeException("invalid implicit declaration")
+				Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
+			}
 			else -> throw RuntimeException("unknown declaration type")
 		}
 	}
@@ -114,7 +122,7 @@ class AnalysisVisitor {
 		val objectType = ObjectType(isNominal, superObjectType, symbols)
 		val objectScope = ObjectScope(scope, objectType)
 		for (declaration in ctx.declaration()) {
-			val symbol = visitDeclaration(declaration, objectScope)
+			val symbol = visitDeclaration(declaration, objectScope, null /* TODO */)
 
 //			if (symbols.containsKey(symbol.name))
 //				throw RuntimeException("name already exists in this object")
@@ -133,9 +141,13 @@ class AnalysisVisitor {
 	fun visitBlock(ctx: TinyScriptParser.BlockContext, scope: Scope): Type {
 		val blockScope = Scope(scope)
 		for (declaration in ctx.declaration()) {
-			val symbol = visitDeclaration(declaration, blockScope)
-			// TODO if symbol is implicit, don't define
-			blockScope.defineSymbol(symbol)
+			if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
+				// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
+				visitExpression(declaration.expression(), blockScope)
+			} else {
+				val symbol = visitDeclaration(declaration, blockScope, null)
+				blockScope.defineSymbol(symbol)
+			}
 		}
 		return visitExpression(ctx.expression(), blockScope)
 	}
