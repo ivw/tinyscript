@@ -23,3 +23,12 @@ Dog = Animal class[
 myDog = Dog[name = "Foo"]
 
 myObject = [ foo = "bar", abc = 123 ]
+
+Scanner = class [ scan: -> ? ]
+Printer = class [ print: -> ? ]
+Copier = Scanner & Printer class [
+    copy = -> (
+        scan[]
+        print[]
+    )
+]

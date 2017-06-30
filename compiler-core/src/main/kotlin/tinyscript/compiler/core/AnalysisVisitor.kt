@@ -8,10 +8,15 @@ import kotlin.collections.LinkedHashMap
 class AnalysisVisitor {
 	val typeMap: MutableMap<ParserRuleContext, Type> = HashMap()
 
-	val deferredAnalyses: MutableList<DeferredType> = LinkedList()
+	val deferredAnalyses: LinkedList<DeferredType> = LinkedList()
 
 	fun finishDeferredAnalyses() {
-		deferredAnalyses.forEach { it.final() }
+		while (!deferredAnalyses.isEmpty()) {
+			val deferredAnalysis = deferredAnalyses.first
+			deferredAnalysis.final()
+			if (deferredAnalyses.contains(deferredAnalysis))
+				throw RuntimeException("deferredAnalysis did not remove itself")
+		}
 	}
 
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
@@ -174,6 +179,8 @@ class AnalysisVisitor {
 	fun visitFunctionExpression(ctx: TinyScriptParser.FunctionExpressionContext, scope: Scope): DeferredType {
 		val deferredType = object : DeferredType() {
 			override fun createFinalType(): FinalType {
+				deferredAnalyses.remove(this)
+
 				val paramsObject: TinyScriptParser.ObjectContext? = ctx.`object`()
 				val params =
 						if (paramsObject != null) visitObject(paramsObject, scope, false, null)
@@ -189,6 +196,8 @@ class AnalysisVisitor {
 	fun visitClassExpression(lhsExpressionCtx: TinyScriptParser.ExpressionContext?, objectCtx: TinyScriptParser.ObjectContext, scope: Scope): DeferredType {
 		val deferredType = object : DeferredType() {
 			override fun createFinalType(): FinalType {
+				deferredAnalyses.remove(this)
+
 				val superClassType = if (lhsExpressionCtx != null)
 					visitExpression(lhsExpressionCtx, scope).final() as ClassType
 				else objectClass

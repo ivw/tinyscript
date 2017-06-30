@@ -20,3 +20,19 @@ var myObject = new (function () {
 this.foo = "bar";
 this.abc = 123;
 })();
+var Scanner = function () {
+// this.scan;
+};
+var Printer = function () {
+// this.print;
+};
+var Copier = function () {
+(function () {
+(Scanner).call(this);
+(Printer).call(this);
+}).call(this);
+this.copy = () => ((function () {
+scan();
+return print();
+})());
+};
