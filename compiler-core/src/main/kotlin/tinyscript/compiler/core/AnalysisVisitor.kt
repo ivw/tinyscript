@@ -17,7 +17,7 @@ class AnalysisVisitor {
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
 		val scope = GlobalScope()
 		for (declaration in ctx.declaration()) {
-			val symbol = visitDeclaration(declaration, scope, null)
+			val symbol = visitDeclaration(declaration, scope)
 
 			if (symbol.isAbstract) throw RuntimeException("concrete declaration expected")
 
@@ -25,7 +25,7 @@ class AnalysisVisitor {
 		}
 	}
 
-	fun visitDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope, superSymbol: Symbol?): Symbol {
+	fun visitDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope): Symbol {
 		return when (ctx) {
 			is TinyScriptParser.AbstractDeclarationContext -> {
 				visitSymbol(ctx.symbol(), visitType(ctx.type(), scope), true)
@@ -50,11 +50,7 @@ class AnalysisVisitor {
 				println("Type of symbol '${symbol.name}' is $type")
 				symbol
 			}
-			is TinyScriptParser.ImplicitDeclarationContext -> {
-				val expressionType = visitExpression(ctx.expression(), scope)
-				if (superSymbol == null) throw RuntimeException("invalid implicit declaration")
-				Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
-			}
+			is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
 			else -> throw RuntimeException("unknown declaration type")
 		}
 	}
@@ -119,8 +115,21 @@ class AnalysisVisitor {
 				if (superObjectType != null) LinkedHashMap(superObjectType.symbols) else LinkedHashMap()
 		val objectType = ObjectType(isNominal, superObjectType, symbols)
 		val objectScope = ObjectScope(scope, objectType)
+
+		var superSymbolsIterator = superObjectType?.let { it.symbols.values.iterator() }
+
 		for (declaration in ctx.declaration()) {
-			val symbol = visitDeclaration(declaration, objectScope, null /* TODO */)
+			val symbol: Symbol = if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
+				if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
+					throw RuntimeException("invalid implicit declaration")
+
+				val superSymbol: Symbol = superSymbolsIterator.next()
+				val expressionType = visitExpression(declaration.expression(), scope)
+				Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
+			} else {
+				superSymbolsIterator = null
+				visitDeclaration(declaration, objectScope)
+			}
 
 //			if (symbols.containsKey(symbol.name))
 //				throw RuntimeException("name already exists in this object")
@@ -143,7 +152,7 @@ class AnalysisVisitor {
 				// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
 				visitExpression(declaration.expression(), blockScope)
 			} else {
-				val symbol = visitDeclaration(declaration, blockScope, null)
+				val symbol = visitDeclaration(declaration, blockScope)
 				blockScope.defineSymbol(symbol)
 			}
 		}

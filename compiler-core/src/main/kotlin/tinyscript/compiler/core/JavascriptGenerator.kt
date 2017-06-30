@@ -25,6 +25,7 @@ class JavascriptGenerator(val out: BufferedWriter, val typeMap: MutableMap<Parse
 			}
 			is TinyScriptParser.ImplicitDeclarationContext -> {
 				writeExpression(ctx.expression())
+				out.write(";\n")
 			}
 			else -> throw RuntimeException("unknown declaration type")
 		}
@@ -180,7 +181,7 @@ class JavascriptGenerator(val out: BufferedWriter, val typeMap: MutableMap<Parse
 			writeExpression(ctx.expression())
 			out.write(")")
 		} else {
-			out.write("(function () {")
+			out.write("(function () {\n")
 			ctx.declaration().forEach { writeLocalDeclaration(it) }
 			out.write("return ")
 			writeExpression(ctx.expression())

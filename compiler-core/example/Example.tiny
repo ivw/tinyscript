@@ -8,12 +8,12 @@ main = -> (
 
 multiplyByTwo = [n: Int] -> n * 2
 
-sayHello = -> println[m = "Hello"]
+sayHello = -> println["Hello"]
 
 Animal = class [
 	name: String
 
-	sayName = -> println[m = "my name is $name"]
+	sayName = -> println["my name is $name"]
 ]
 
 Dog = Animal class[
