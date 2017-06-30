@@ -210,7 +210,7 @@ class AnalysisVisitor {
 		if (!finalSymbolType.accepts(finalNewValueType))
 			throw RuntimeException("invalid reassignment: $finalSymbolType does not accept $finalNewValueType")
 
-		return voidType
+		return NullableType(AnyType)
 	}
 
 	fun visitExpression(ctx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
@@ -228,7 +228,7 @@ class AnalysisVisitor {
 				ClassType(MergeObjectType(lhsClassType.objectType, rhsClassType.objectType))
 			}
 			is TinyScriptParser.NullExpressionContext -> NullableType(
-					if (ctx.type() != null) visitType(ctx.type(), scope) else objectType
+					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
 			)
 			is TinyScriptParser.ThisExpressionContext -> {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)

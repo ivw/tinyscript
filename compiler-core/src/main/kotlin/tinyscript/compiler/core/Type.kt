@@ -34,6 +34,17 @@ abstract class DeferredType : Type {
 }
 
 
+// AnyType accepts anything; objects, functions, etc.
+// Nothing can be done with values of Any type, not even casting.
+object AnyType : FinalType {
+	override fun accepts(type: FinalType): Boolean = true
+
+	override fun toString(): String {
+		return "AnyType"
+	}
+}
+
+
 // see the "objectType" rule in the grammar
 open class ObjectType(
 		val isNominal: Boolean,
