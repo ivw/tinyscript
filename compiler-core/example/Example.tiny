@@ -1,6 +1,10 @@
 myConstant = "initial value"
 # myVariable = "initial value"
-# myStringOrNull: String? = null
+# myStringOrNull = <String>?
+
+main = -> (
+	myStringOrNull <- "foo"
+)
 
 multiplyByTwo = [n: Int] -> n * 2
 

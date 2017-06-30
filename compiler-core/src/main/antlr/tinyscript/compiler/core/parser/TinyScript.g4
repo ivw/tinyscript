@@ -19,7 +19,7 @@ expression
 	|	FloatLiteral											# FloatLiteralExpression
 	|	StringLiteral											# StringLiteralExpression
 	|	BooleanLiteral											# BooleanLiteralExpression
-	|	'null'													# NullExpression
+	|	('<' type '>')? '?'										# NullExpression
 	|	'this'													# ThisExpression
 	|	'super'													# SuperExpression
 	|	Name													# ReferenceExpression

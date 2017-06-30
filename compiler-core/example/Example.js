@@ -1,6 +1,7 @@
 var myConstant = "initial value";
 var myVariable = "initial value";
 var myStringOrNull = null;
+var main = () => ((myStringOrNull = "foo"));
 var multiplyByTwo = (n,) => (n * 2);
 var sayHello = () => (println());
 var Animal = function () {

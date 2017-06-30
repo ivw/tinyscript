@@ -45,9 +45,6 @@ class AnalysisVisitor {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
 						throw RuntimeException("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType")
-				} else {
-					if (expressionType === nullType)
-						throw RuntimeException("implicit any type not allowed")
 				}
 
 				println("Type of symbol '${symbol.name}' is $type")
@@ -230,7 +227,9 @@ class AnalysisVisitor {
 				val rhsClassType = visitExpression(ctx.expression(1), scope).final() as ClassType
 				ClassType(MergeObjectType(lhsClassType.objectType, rhsClassType.objectType))
 			}
-			is TinyScriptParser.NullExpressionContext -> nullType
+			is TinyScriptParser.NullExpressionContext -> NullableType(
+					if (ctx.type() != null) visitType(ctx.type(), scope) else objectType
+			)
 			is TinyScriptParser.ThisExpressionContext -> {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
 						?: throw RuntimeException("not inside object scope")

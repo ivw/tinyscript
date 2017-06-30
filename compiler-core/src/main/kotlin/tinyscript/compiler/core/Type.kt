@@ -108,8 +108,6 @@ class ClassType(val objectType: ObjectType) : ObjectType(true, objectType)
 // see the "NullableType" rule in the grammar
 class NullableType(val nonNullType: FinalType) : FinalType {
 	override fun accepts(type: FinalType): Boolean {
-		if (type === nullType) return true
-
 		if (type is NullableType) {
 			return nonNullType.accepts(type.nonNullType)
 		}

@@ -27,7 +27,6 @@ class SymbolMapBuilder {
 }
 
 val objectType = ObjectType(true, null)
-val nullType = NullableType(objectType) // maybe it should be `NullableType(Any)`
 val objectClass = ClassType(objectType)
 val voidType = ObjectType(true, objectType)
 val voidClass = ClassType(voidType)
