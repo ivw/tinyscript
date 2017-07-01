@@ -1,6 +1,7 @@
 package tinyscript.compiler.core
 
 import org.antlr.v4.runtime.ParserRuleContext
+import org.antlr.v4.runtime.tree.TerminalNode
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.util.*
 import kotlin.collections.LinkedHashMap
@@ -24,7 +25,7 @@ class AnalysisVisitor {
 		for (declaration in ctx.declaration()) {
 			val symbol = visitDeclaration(declaration, scope)
 
-			if (symbol.isAbstract) throw RuntimeException("concrete declaration expected")
+			if (symbol.isAbstract) throw AnalysisError("concrete declaration expected", declaration.start)
 
 			scope.defineSymbol(symbol)
 		}
@@ -49,7 +50,7 @@ class AnalysisVisitor {
 				if (typeAnnotationType != null) {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw RuntimeException("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType")
+						throw AnalysisError("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType", ctx.start)
 				}
 
 				println("Type of symbol '${symbol.name}' is $type")
@@ -108,14 +109,14 @@ class AnalysisVisitor {
 			val symbol = visitSymbol(field.symbol(), visitType(field.type(), objectScope), true)
 
 			if (symbols.containsKey(symbol.name))
-				throw RuntimeException("name already exists in this object")
+				throw AnalysisError("name already exists in this object", field.start)
 
 			symbols[symbol.name] = symbol
 		}
 		return objectType
 	}
 
-	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?): ObjectType {
+	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?, mustBeConcrete: Boolean): ObjectType {
 		val symbols: LinkedHashMap<String, Symbol> =
 				if (superObjectType != null) LinkedHashMap(superObjectType.symbols) else LinkedHashMap()
 		val objectType = ObjectType(isNominal, superObjectType, symbols)
@@ -126,7 +127,7 @@ class AnalysisVisitor {
 		for (declaration in ctx.declaration()) {
 			val symbol: Symbol = if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
 				if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
-					throw RuntimeException("invalid implicit declaration")
+					throw AnalysisError("invalid implicit declaration", declaration.start)
 
 				val superSymbol: Symbol = superSymbolsIterator.next()
 				val expressionType = visitExpression(declaration.expression(), scope)
@@ -137,16 +138,23 @@ class AnalysisVisitor {
 			}
 
 //			if (symbols.containsKey(symbol.name))
-//				throw RuntimeException("name already exists in this object")
+//				throw AnalysisError("name already exists in this object", declaration.start)
 			// TODO find something for this. it's not critical, though
 
 			symbols[symbol.name]?.let { superSymbol ->
 				if (!superSymbol.type.final().accepts(symbol.type.final()))
-					throw RuntimeException("incompatible override on field '${symbol.name}': ${superSymbol.type} does not accept ${symbol.type}")
+					throw AnalysisError("incompatible override on field '${symbol.name}': ${superSymbol.type} does not accept ${symbol.type}", declaration.start)
 			}
 
 			symbols[symbol.name] = symbol
 		}
+
+		if (mustBeConcrete) {
+			symbols.values.forEach { symbol ->
+				if (symbol.isAbstract) throw AnalysisError("field '${symbol.name}' not initialized", ctx.start)
+			}
+		}
+
 		return objectType
 	}
 
@@ -165,14 +173,12 @@ class AnalysisVisitor {
 	}
 
 	fun visitObjectInstanceExpression(classType: ClassType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		val instanceObjectType = visitObject(argsObjectCtx, scope, false, classType.objectType)
-		instanceObjectType.checkConcrete()
+		val instanceObjectType = visitObject(argsObjectCtx, scope, false, classType.objectType, true)
 		return instanceObjectType
 	}
 
 	fun visitFunctionCallExpression(functionType: FunctionType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		val argumentsObjectType = visitObject(argsObjectCtx, scope, false, functionType.params)
-		argumentsObjectType.checkConcrete()
+		val argumentsObjectType = visitObject(argsObjectCtx, scope, false, functionType.params, true)
 		return functionType.returnType
 	}
 
@@ -183,7 +189,7 @@ class AnalysisVisitor {
 
 				val paramsObject: TinyScriptParser.ObjectContext? = ctx.`object`()
 				val params =
-						if (paramsObject != null) visitObject(paramsObject, scope, false, null)
+						if (paramsObject != null) visitObject(paramsObject, scope, false, null, false)
 						else ObjectType(false, objectType)
 
 				return FunctionType(params, visitExpression(ctx.expression(), FunctionScope(scope, params)))
@@ -202,32 +208,36 @@ class AnalysisVisitor {
 					visitExpression(lhsExpressionCtx, scope).final() as ClassType
 				else objectClass
 
-				return ClassType(visitObject(objectCtx, scope, true, superClassType.objectType))
+				return ClassType(visitObject(objectCtx, scope, true, superClassType.objectType, false))
 			}
 		}
 		deferredAnalyses.add(deferredType)
 		return deferredType
 	}
 
-	fun visitReference(name: String, lhsExpressionCtx: TinyScriptParser.ExpressionContext?, scope: Scope): Symbol {
+	fun visitReference(nameToken: TerminalNode, lhsExpressionCtx: TinyScriptParser.ExpressionContext?, scope: Scope): Symbol {
+		val name = nameToken.text
+
 		if (lhsExpressionCtx == null) {
 			return scope.resolveSymbolOrFail(name)
 		}
 
 		val lhsExpressionType = visitExpression(lhsExpressionCtx, scope)
 		if (lhsExpressionType !is ObjectType)
-			throw RuntimeException("invalid field reference: $lhsExpressionType is not an object")
+			throw AnalysisError("invalid field reference: $lhsExpressionType is not an object", lhsExpressionCtx.start)
 
-		return lhsExpressionType.symbols[name] ?: throw RuntimeException("unresolved field '$name'")
+		return lhsExpressionType.symbols[name] ?: throw AnalysisError("unresolved field '$name'", nameToken.symbol)
 	}
 
-	fun visitReassignmentExpression(symbol: Symbol, expressionCtx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
-		if (!symbol.isMutable) throw RuntimeException("symbol not reassignable")
+	fun visitReassignmentExpression(nameToken: TerminalNode, lhsExpressionCtx: TinyScriptParser.ExpressionContext?, rhsExpressionCtx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
+		val symbol = visitReference(nameToken, lhsExpressionCtx, scope)
+
+		if (!symbol.isMutable) throw AnalysisError("symbol not reassignable", nameToken.symbol)
 
 		val finalSymbolType = symbol.type.final()
-		val finalNewValueType = visitExpression(expressionCtx, scope).final()
+		val finalNewValueType = visitExpression(rhsExpressionCtx, scope).final()
 		if (!finalSymbolType.accepts(finalNewValueType))
-			throw RuntimeException("invalid reassignment: $finalSymbolType does not accept $finalNewValueType")
+			throw AnalysisError("invalid reassignment: $finalSymbolType does not accept $finalNewValueType", nameToken.symbol)
 
 		return NullableType(AnyType)
 	}
@@ -251,19 +261,19 @@ class AnalysisVisitor {
 			)
 			is TinyScriptParser.ThisExpressionContext -> {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
-						?: throw RuntimeException("not inside object scope")
+						?: throw AnalysisError("not inside object scope", ctx.start)
 
 				objectScope.objectType
 			}
 			is TinyScriptParser.SuperExpressionContext -> {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
-						?: throw RuntimeException("not inside object scope")
+						?: throw AnalysisError("not inside object scope", ctx.start)
 
 				objectScope.objectType.superObjectType
-						?: throw RuntimeException("no super object type")
+						?: throw AnalysisError("no super object type", ctx.start)
 			}
-			is TinyScriptParser.ReferenceExpressionContext -> visitReference(ctx.Name().text, null, scope).type
-			is TinyScriptParser.DotReferenceExpressionContext -> visitReference(ctx.Name().text, ctx.expression(), scope).type
+			is TinyScriptParser.ReferenceExpressionContext -> visitReference(ctx.Name(), null, scope).type
+			is TinyScriptParser.DotReferenceExpressionContext -> visitReference(ctx.Name(), ctx.expression(), scope).type
 			is TinyScriptParser.FunctionExpressionContext -> visitFunctionExpression(ctx, scope)
 			is TinyScriptParser.ObjectExpressionContext ->
 				visitObjectInstanceExpression(objectClass, ctx.`object`(), scope)
@@ -272,19 +282,13 @@ class AnalysisVisitor {
 				return when (finalClassOrFunctionType) {
 					is FunctionType -> visitFunctionCallExpression(finalClassOrFunctionType, ctx.`object`(), scope)
 					is ClassType -> visitObjectInstanceExpression(finalClassOrFunctionType, ctx.`object`(), scope)
-					else -> throw RuntimeException("can only call a function or a class")
+					else -> throw AnalysisError("can only call a function or a class", ctx.start)
 				}
 			}
-			is TinyScriptParser.ReassignmentExpressionContext -> visitReassignmentExpression(
-					visitReference(ctx.Name().text, null, scope),
-					ctx.expression(),
-					scope
-			)
-			is TinyScriptParser.DotReassignmentExpressionContext -> visitReassignmentExpression(
-					visitReference(ctx.Name().text, ctx.expression(0), scope),
-					ctx.expression(1),
-					scope
-			)
+			is TinyScriptParser.ReassignmentExpressionContext ->
+				visitReassignmentExpression(ctx.Name(), null, ctx.expression(), scope)
+			is TinyScriptParser.DotReassignmentExpressionContext ->
+				visitReassignmentExpression(ctx.Name(), ctx.expression(0), ctx.expression(1), scope)
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> objectType // TODO
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> objectType // TODO
 			is TinyScriptParser.ConditionalExpressionContext -> objectType // TODO

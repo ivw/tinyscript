@@ -5,7 +5,7 @@ open class Scope(val parentScope: Scope?) {
 
 	fun defineSymbol(symbol: Symbol) {
 		if (symbols.containsKey(symbol.name))
-			throw RuntimeException("Name '${symbol.name}' already exists in this scope")
+			throw RuntimeException("name '${symbol.name}' already exists in this scope")
 
 		symbols[symbol.name] = symbol
 	}

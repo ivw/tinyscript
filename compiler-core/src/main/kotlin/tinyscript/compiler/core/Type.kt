@@ -55,12 +55,6 @@ open class ObjectType(
 		return this === type || (superObjectType != null && superObjectType.hasIdentity(type))
 	}
 
-	open fun checkConcrete() {
-		symbols.values.forEach { symbol ->
-			if (symbol.isAbstract) throw RuntimeException("field '${symbol.name}' not initialized")
-		}
-	}
-
 	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
 
@@ -70,7 +64,7 @@ open class ObjectType(
 
 		for ((name, symbol) in symbols) {
 			val subSymbol: Symbol = type.symbols[name]
-					?: throw RuntimeException("missing symbol '$name'")
+					?: return false
 
 			if (!symbol.type.final().accepts(subSymbol.type.final()))
 				return false

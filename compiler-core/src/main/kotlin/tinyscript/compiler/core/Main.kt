@@ -10,9 +10,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-fun printError(token: Token, message: String) {
-	System.err.printf("line %d:%d: %s\n", token.line, token.charPositionInLine, message)
-}
+class AnalysisError(message: String, token: Token) : RuntimeException(
+		"line ${token.line}:${token.charPositionInLine}: $message"
+)
 
 fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Reading file '${readPath.fileName}'\n")
