@@ -25,7 +25,7 @@ open class LocalScope(parentScope: Scope?) : Scope(parentScope) {
 
 class GlobalScope : LocalScope(null) {
 	override fun resolveSymbol(name: String): Symbol? {
-		return super.resolveSymbol(name) ?: builtInSymbols[name]
+		return symbols[name] ?: builtInSymbols[name]
 	}
 }
 
