@@ -1,19 +1,20 @@
 package tinyscript.compiler.core
 
-import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.TerminalNode
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.nio.file.Path
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
+class AnalysisResult(val scope: Scope, val type: Type)
+
 class AnalysisVisitor(val filePath: Path) {
-	val typeMap: MutableMap<ParserRuleContext, Type> = HashMap()
+	val resultMap: MutableMap<TinyScriptParser.ExpressionContext, AnalysisResult> = HashMap()
 
 	val deferredAnalyses: LinkedList<DeferredType> = LinkedList()
 
 	fun finishDeferredAnalyses() {
-		while (!deferredAnalyses.isEmpty()) {
+		while (deferredAnalyses.isNotEmpty()) {
 			val deferredAnalysis = deferredAnalyses.first
 			deferredAnalysis.final()
 			if (deferredAnalyses.contains(deferredAnalysis))
@@ -290,12 +291,19 @@ class AnalysisVisitor(val filePath: Path) {
 				visitReassignmentExpression(ctx.Name(), null, ctx.expression(), scope)
 			is TinyScriptParser.DotReassignmentExpressionContext ->
 				visitReassignmentExpression(ctx.Name(), ctx.expression(0), ctx.expression(1), scope)
-			is TinyScriptParser.PrefixOperatorCallExpressionContext -> objectType // TODO
-			is TinyScriptParser.InfixOperatorCallExpressionContext -> objectType // TODO
+			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
+				visitExpression(ctx.expression(), scope)
+				objectType // TODO
+			}
+			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
+				visitExpression(ctx.expression(0), scope)
+				visitExpression(ctx.expression(1), scope)
+				objectType // TODO
+			}
 			is TinyScriptParser.ConditionalExpressionContext -> objectType // TODO
 			else -> throw RuntimeException("unknown expression type")
 		}
-		typeMap.put(ctx, type)
+		resultMap[ctx] = AnalysisResult(scope, type)
 		return type
 	}
 }

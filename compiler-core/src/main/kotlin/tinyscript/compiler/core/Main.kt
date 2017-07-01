@@ -34,7 +34,7 @@ fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
-		val javascriptGenerator = JavascriptGenerator(writer, analysisVisitor.typeMap)
+		val javascriptGenerator = JavascriptGenerator(writer, analysisVisitor.resultMap)
 		javascriptGenerator.writeFile(fileCtx)
 		println("Written to file '${writePath.fileName}'\n")
 	}

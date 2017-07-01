@@ -1,10 +1,9 @@
 package tinyscript.compiler.core
 
-import org.antlr.v4.runtime.ParserRuleContext
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.io.BufferedWriter
 
-class JavascriptGenerator(val out: BufferedWriter, val typeMap: MutableMap<ParserRuleContext, Type>) {
+class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<TinyScriptParser.ExpressionContext, AnalysisResult>) {
 	fun writeFile(ctx: TinyScriptParser.FileContext) {
 		ctx.declaration().forEach { writeLocalDeclaration(it) }
 	}
@@ -40,8 +39,10 @@ class JavascriptGenerator(val out: BufferedWriter, val typeMap: MutableMap<Parse
 			is TinyScriptParser.BooleanLiteralExpressionContext -> out.write(ctx.text)
 			is TinyScriptParser.NullExpressionContext -> out.write("null")
 			is TinyScriptParser.ThisExpressionContext -> out.write("this")
-			is TinyScriptParser.SuperExpressionContext -> out.write("super")
-			is TinyScriptParser.ReferenceExpressionContext -> out.write(ctx.Name().text)
+			is TinyScriptParser.SuperExpressionContext -> out.write("super") // TODO
+			is TinyScriptParser.ReferenceExpressionContext -> {
+				out.write(ctx.Name().text)
+			}
 			is TinyScriptParser.DotReferenceExpressionContext -> {
 				writeExpression(ctx.expression())
 				out.write(".")
@@ -49,7 +50,7 @@ class JavascriptGenerator(val out: BufferedWriter, val typeMap: MutableMap<Parse
 			}
 			is TinyScriptParser.ObjectExpressionContext -> writeObjectInstance(ctx.`object`(), null)
 			is TinyScriptParser.ObjectOrCallExpressionContext -> {
-				val expressionType: FinalType = typeMap[ctx.expression()]!!.final()
+				val expressionType: FinalType = resultMap[ctx.expression()]!!.type.final()
 				when (expressionType) {
 					is ClassType -> {
 						writeObjectInstance(ctx.`object`(), ctx.expression())
