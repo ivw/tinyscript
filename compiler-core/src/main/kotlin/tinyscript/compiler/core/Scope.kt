@@ -1,6 +1,14 @@
 package tinyscript.compiler.core
 
-open class Scope(val parentScope: Scope?) {
+abstract class Scope(val parentScope: Scope?) {
+	abstract fun resolveSymbol(name: String): Symbol?
+
+	fun resolveSymbolOrFail(name: String): Symbol {
+		return resolveSymbol(name) ?: throw RuntimeException("unresolved symbol '$name'")
+	}
+}
+
+open class LocalScope(parentScope: Scope?) : Scope(parentScope) {
 	val symbols: MutableMap<String, Symbol> = LinkedHashMap()
 
 	fun defineSymbol(symbol: Symbol) {
@@ -10,16 +18,12 @@ open class Scope(val parentScope: Scope?) {
 		symbols[symbol.name] = symbol
 	}
 
-	open fun resolveSymbol(name: String): Symbol? {
+	override fun resolveSymbol(name: String): Symbol? {
 		return symbols[name] ?: parentScope?.resolveSymbol(name)
-	}
-
-	fun resolveSymbolOrFail(name: String): Symbol {
-		return resolveSymbol(name) ?: throw RuntimeException("unresolved symbol '$name'")
 	}
 }
 
-class GlobalScope : Scope(null) {
+class GlobalScope : LocalScope(null) {
 	override fun resolveSymbol(name: String): Symbol? {
 		return super.resolveSymbol(name) ?: builtInSymbols[name]
 	}
@@ -35,12 +39,12 @@ class ObjectScope(parentScope: Scope?, val objectType: ObjectType) : Scope(paren
 	}
 
 	override fun resolveSymbol(name: String): Symbol? {
-		return super.resolveSymbol(name) ?: objectType.symbols[name]
+		return objectType.symbols[name] ?: parentScope?.resolveSymbol(name)
 	}
 }
 
-class FunctionScope(parentScope: Scope?, val params: ObjectType) : Scope(parentScope) {
+class FunctionScope(parentScope: Scope?, val params: ObjectType) : LocalScope(parentScope) {
 	override fun resolveSymbol(name: String): Symbol? {
-		return super.resolveSymbol(name) ?: params.symbols[name]
+		return symbols[name] ?: params.symbols[name] ?: parentScope?.resolveSymbol(name)
 	}
 }

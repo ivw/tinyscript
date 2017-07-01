@@ -161,7 +161,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitBlock(ctx: TinyScriptParser.BlockContext, scope: Scope): Type {
-		val blockScope = Scope(scope)
+		val blockScope = LocalScope(scope)
 		for (declaration in ctx.declaration()) {
 			if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
 				// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
