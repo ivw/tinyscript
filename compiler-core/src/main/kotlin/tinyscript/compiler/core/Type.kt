@@ -55,12 +55,18 @@ open class ObjectType(
 		return this === type || (superObjectType != null && superObjectType.hasIdentity(type))
 	}
 
-	override fun accepts(type: FinalType): Boolean {
+	open fun acceptsNominal(type: ObjectType): Boolean {
+		if (isNominal) return type.hasIdentity(this)
+
+		if (superObjectType != null) superObjectType.acceptsNominal(type)
+
+		return true
+	}
+
+	final override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
 
-		// TODO superObjectType has to accept type too? (in case super is nominal and this isn't)
-
-		if (isNominal) return type.hasIdentity(this)
+		if (!acceptsNominal(type)) return false
 
 		for ((name, symbol) in symbols) {
 			val subSymbol: Symbol = type.symbols[name]
@@ -78,10 +84,10 @@ open class ObjectType(
 }
 
 
-class MergeObjectType(
-		val supertype: ObjectType,
-		val subtype: ObjectType
-) : ObjectType(false, null, mergeSymbols(supertype, subtype)) {
+class UnionObjectType(
+		val a: ObjectType,
+		val b: ObjectType
+) : ObjectType(false, null, mergeSymbols(a, b)) {
 	companion object {
 		fun mergeSymbols(supertype: ObjectType, subtype: ObjectType): LinkedHashMap<String, Symbol> {
 			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(supertype.symbols)
@@ -97,12 +103,25 @@ class MergeObjectType(
 		}
 	}
 
-	override fun accepts(type: FinalType): Boolean {
-		return supertype.accepts(type) && subtype.accepts(type)
+	override fun acceptsNominal(type: ObjectType): Boolean {
+		return a.acceptsNominal(type) && b.acceptsNominal(type)
 	}
 
 	override fun hasIdentity(type: Type): Boolean {
-		return supertype.hasIdentity(type) || subtype.hasIdentity(type)
+		return a.hasIdentity(type) || b.hasIdentity(type)
+	}
+}
+
+class IntersectObjectType(
+		val a: ObjectType,
+		val b: ObjectType
+) : ObjectType(false, null, TODO()) {
+	override fun acceptsNominal(type: ObjectType): Boolean {
+		return a.acceptsNominal(type) || b.acceptsNominal(type)
+	}
+
+	override fun hasIdentity(type: Type): Boolean {
+		return a.hasIdentity(type) && b.hasIdentity(type)
 	}
 }
 

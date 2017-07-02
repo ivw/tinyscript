@@ -97,7 +97,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.MergedObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
 				val rightType = visitType(ctx.type(1), scope) as ObjectType
-				MergeObjectType(leftType, rightType)
+				UnionObjectType(leftType, rightType)
 			}
 			else -> throw RuntimeException("unknown TypeContext type")
 		}
@@ -256,7 +256,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.ClassMergeExpressionContext -> {
 				val lhsClassType = visitExpression(ctx.expression(0), scope).final() as ClassType
 				val rhsClassType = visitExpression(ctx.expression(1), scope).final() as ClassType
-				ClassType(MergeObjectType(lhsClassType.objectType, rhsClassType.objectType))
+				ClassType(UnionObjectType(lhsClassType.objectType, rhsClassType.objectType))
 			}
 			is TinyScriptParser.NullExpressionContext -> NullableType(
 					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
@@ -300,7 +300,13 @@ class AnalysisVisitor(val filePath: Path) {
 				visitExpression(ctx.expression(1), scope)
 				objectType // TODO
 			}
-			is TinyScriptParser.ConditionalExpressionContext -> objectType // TODO
+			is TinyScriptParser.ConditionalExpressionContext -> {
+				ctx.block().forEach { visitBlock(it, scope) }
+
+				ctx.expression().map { visitExpression(it, scope).final() }.reduce { acc, expressionContext ->
+					TODO()
+				}
+			}
 			else -> throw RuntimeException("unknown expression type")
 		}
 		resultMap[ctx] = AnalysisResult(scope, type)
