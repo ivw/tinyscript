@@ -43,6 +43,6 @@ val builtInSymbols: Map<String, Symbol> = SymbolMapBuilder()
 				ObjectType(false, objectType, SymbolMapBuilder()
 						.add(Symbol("m", stringClass.objectType))
 						.build()),
-				NullableType(AnyType)
+				AnyType
 		)))
 		.build()
