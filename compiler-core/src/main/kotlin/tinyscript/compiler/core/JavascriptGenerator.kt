@@ -41,7 +41,15 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 			is TinyScriptParser.ThisExpressionContext -> out.write("this")
 			is TinyScriptParser.SuperExpressionContext -> out.write("super") // TODO
 			is TinyScriptParser.ReferenceExpressionContext -> {
-				out.write(ctx.Name().text)
+				val analysisResult = resultMap[ctx]!!
+				val name = ctx.Name().text
+				val symbol = analysisResult.scope.resolveSymbol(name)!!
+				val objectScope = ObjectScope.resolveObjectScope(analysisResult.scope)
+				// if the symbol is resolved from objectScope, then we have to generate "this."
+				if (objectScope != null && objectScope.objectType.symbols[name] === symbol) {
+					out.write("this.")
+				}
+				out.write(name)
 			}
 			is TinyScriptParser.DotReferenceExpressionContext -> {
 				writeExpression(ctx.expression())

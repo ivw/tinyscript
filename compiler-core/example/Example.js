@@ -32,7 +32,7 @@ var Copier = function () {
 (Printer).call(this);
 }).call(this);
 this.copy = () => ((function () {
-scan();
-return print();
+this.scan();
+return this.print();
 })());
 };
