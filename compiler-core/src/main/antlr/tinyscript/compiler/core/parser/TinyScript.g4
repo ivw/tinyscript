@@ -48,7 +48,8 @@ type
 	|	type '?'												# NullableType
 	|	objectType												# ObjectTypeType
 	|	Name													# TypeReference
-	|	type '&' type											# MergedObjectType
+	|	type '&' type											# UnionObjectType
+	|	type '|' type											# IntersectObjectType
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';

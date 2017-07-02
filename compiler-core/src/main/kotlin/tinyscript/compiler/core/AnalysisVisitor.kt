@@ -94,10 +94,15 @@ class AnalysisVisitor(val filePath: Path) {
 				val classType = referenceSymbol.type.final() as ClassType
 				classType.objectType
 			}
-			is TinyScriptParser.MergedObjectTypeContext -> {
+			is TinyScriptParser.UnionObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
 				val rightType = visitType(ctx.type(1), scope) as ObjectType
 				UnionObjectType(leftType, rightType)
+			}
+			is TinyScriptParser.IntersectObjectTypeContext -> {
+				val leftType = visitType(ctx.type(0), scope) as ObjectType
+				val rightType = visitType(ctx.type(1), scope) as ObjectType
+				IntersectObjectType(leftType, rightType)
 			}
 			else -> throw RuntimeException("unknown TypeContext type")
 		}
