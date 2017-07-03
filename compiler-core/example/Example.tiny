@@ -32,3 +32,5 @@ Copier = Scanner & Printer class [
         print[]
     )
 ]
+
+message: String = if (true) "Hello" else "Hi"

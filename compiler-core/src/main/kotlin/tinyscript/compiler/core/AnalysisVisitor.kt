@@ -83,7 +83,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val paramsObjectType: TinyScriptParser.ObjectTypeContext? = ctx.objectType()
 				val params =
 						if (paramsObjectType != null) visitObjectType(paramsObjectType, scope)
-						else ObjectType(false, objectType)
+						else ObjectType(false)
 				FunctionType(params, visitType(ctx.type(), scope))
 			}
 			is TinyScriptParser.NullTypeContext -> AnyType
@@ -97,12 +97,12 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.UnionObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
 				val rightType = visitType(ctx.type(1), scope) as ObjectType
-				UnionObjectType(leftType, rightType)
+				unionObjectType(leftType, rightType)
 			}
 			is TinyScriptParser.IntersectObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
 				val rightType = visitType(ctx.type(1), scope) as ObjectType
-				IntersectObjectType(leftType, rightType)
+				intersectObjectType(leftType, rightType)
 			}
 			else -> throw RuntimeException("unknown TypeContext type")
 		}
@@ -110,7 +110,7 @@ class AnalysisVisitor(val filePath: Path) {
 
 	fun visitObjectType(ctx: TinyScriptParser.ObjectTypeContext, scope: Scope): ObjectType {
 		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
-		val objectType = ObjectType(false, null, symbols)
+		val objectType = ObjectType(false, emptySet(), symbols)
 		val objectScope = ObjectScope(scope, objectType)
 		for (field in ctx.objectTypeField()) {
 			val symbol = visitSymbol(field.symbol(), visitType(field.type(), objectScope), true)
@@ -126,7 +126,7 @@ class AnalysisVisitor(val filePath: Path) {
 	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?, mustBeConcrete: Boolean): ObjectType {
 		val symbols: LinkedHashMap<String, Symbol> =
 				if (superObjectType != null) LinkedHashMap(superObjectType.symbols) else LinkedHashMap()
-		val objectType = ObjectType(isNominal, superObjectType, symbols)
+		val objectType = ObjectType(isNominal, superObjectType?.identities ?: emptySet(), symbols)
 		val objectScope = ObjectScope(scope, objectType)
 
 		var superSymbolsIterator = superObjectType?.let { it.symbols.values.iterator() }
@@ -197,7 +197,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val paramsObject: TinyScriptParser.ObjectContext? = ctx.`object`()
 				val params =
 						if (paramsObject != null) visitObject(paramsObject, scope, false, null, false)
-						else ObjectType(false, objectType)
+						else ObjectType(false)
 
 				return FunctionType(params, visitExpression(ctx.expression(), FunctionScope(scope, params)))
 			}
@@ -261,7 +261,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.ClassMergeExpressionContext -> {
 				val lhsClassType = visitExpression(ctx.expression(0), scope).final() as ClassType
 				val rhsClassType = visitExpression(ctx.expression(1), scope).final() as ClassType
-				ClassType(UnionObjectType(lhsClassType.objectType, rhsClassType.objectType))
+				ClassType(unionObjectType(lhsClassType.objectType, rhsClassType.objectType))
 			}
 			is TinyScriptParser.NullExpressionContext -> NullableType(
 					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
@@ -276,8 +276,9 @@ class AnalysisVisitor(val filePath: Path) {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
 						?: throw AnalysisError("not inside object scope", filePath, ctx.start)
 
-				objectScope.objectType.superObjectType
-						?: throw AnalysisError("no super object type", filePath, ctx.start)
+//				objectScope.objectType.superObjectType
+//						?: throw AnalysisError("no super object type", filePath, ctx.start)
+				TODO()
 			}
 			is TinyScriptParser.ReferenceExpressionContext -> visitReference(ctx.Name(), null, scope).type
 			is TinyScriptParser.DotReferenceExpressionContext -> visitReference(ctx.Name(), ctx.expression(), scope).type

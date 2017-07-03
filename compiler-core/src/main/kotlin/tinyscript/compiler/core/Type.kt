@@ -47,26 +47,16 @@ object AnyType : FinalType {
 
 // see the "objectType" rule in the grammar
 open class ObjectType(
-		val isNominal: Boolean,
-		val superObjectType: ObjectType?,
+		isNominal: Boolean,
+		extraIdentities: Set<ObjectType> = emptySet(),
 		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
 ) : FinalType {
-	open fun hasIdentity(type: Type): Boolean {
-		return this === type || (superObjectType != null && superObjectType.hasIdentity(type))
-	}
+	val identities: Set<ObjectType> = if (isNominal) extraIdentities.plus(this) else extraIdentities
 
-	open fun acceptsNominal(type: ObjectType): Boolean {
-		if (isNominal) return type.hasIdentity(this)
-
-		if (superObjectType != null) superObjectType.acceptsNominal(type)
-
-		return true
-	}
-
-	final override fun accepts(type: FinalType): Boolean {
+	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
 
-		if (!acceptsNominal(type)) return false
+		if (!type.identities.containsAll(identities)) return false
 
 		for ((name, symbol) in symbols) {
 			val subSymbol: Symbol = type.symbols[name]
@@ -79,66 +69,41 @@ open class ObjectType(
 	}
 
 	override fun toString(): String {
-		return "ObjectType<isNominal = $isNominal, symbols = [${symbols.values.joinToString()}]>"
+		return "ObjectType<identities = ${identities.size}, symbols = [${symbols.values.joinToString()}]>"
 	}
 }
 
+fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
+	val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(a.symbols)
+	for (bSymbol in b.symbols.values) {
+		symbols[bSymbol.name]?.let { aSymbol ->
+			if (!aSymbol.type.final().accepts(bSymbol.type.final()))
+				throw RuntimeException("incompatible override on field '${bSymbol.name}'")
+		}
 
-class UnionObjectType(
-		val a: ObjectType,
-		val b: ObjectType
-) : ObjectType(false, null, mergeSymbols(a, b)) {
-	companion object {
-		fun mergeSymbols(a: ObjectType, b: ObjectType): LinkedHashMap<String, Symbol> {
-			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(a.symbols)
-			for (bSymbol in b.symbols.values) {
-				symbols[bSymbol.name]?.let { aSymbol ->
-					if (!aSymbol.type.final().accepts(bSymbol.type.final()))
-						throw RuntimeException("incompatible override on field '${bSymbol.name}'")
-				}
+		symbols[bSymbol.name] = bSymbol
+	}
 
-				symbols[bSymbol.name] = bSymbol
-			}
-			return symbols
+	val identities = a.identities.union(b.identities)
+
+	return ObjectType(false, identities, symbols)
+}
+
+fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
+	val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
+	for (aSymbol in a.symbols.values) {
+		if (b.symbols[aSymbol.name] === aSymbol) {
+			symbols[aSymbol.name] = aSymbol
 		}
 	}
 
-	override fun acceptsNominal(type: ObjectType): Boolean {
-		return a.acceptsNominal(type) && b.acceptsNominal(type)
-	}
+	val identities = a.identities.intersect(b.identities)
 
-	override fun hasIdentity(type: Type): Boolean {
-		return a.hasIdentity(type) || b.hasIdentity(type)
-	}
-}
-
-class IntersectObjectType(
-		val a: ObjectType,
-		val b: ObjectType
-) : ObjectType(false, null, intersectSymbols(a, b)) {
-	companion object {
-		fun intersectSymbols(a: ObjectType, b: ObjectType): LinkedHashMap<String, Symbol> {
-			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
-			for (aSymbol in a.symbols.values) {
-				if (b.symbols[aSymbol.name] === aSymbol) {
-					symbols[aSymbol.name] = aSymbol
-				}
-			}
-			return symbols
-		}
-	}
-
-	override fun acceptsNominal(type: ObjectType): Boolean {
-		return a.acceptsNominal(type) || b.acceptsNominal(type)
-	}
-
-	override fun hasIdentity(type: Type): Boolean {
-		return a.hasIdentity(type) && b.hasIdentity(type)
-	}
+	return ObjectType(false, identities, symbols)
 }
 
 
-class ClassType(val objectType: ObjectType) : ObjectType(true, objectType)
+class ClassType(val objectType: ObjectType) : ObjectType(true, objectType.identities)
 
 
 // see the "NullableType" rule in the grammar
@@ -178,10 +143,10 @@ fun intersectTypes(a: FinalType, b: FinalType): FinalType {
 	val nonNullB: FinalType = if (b is NullableType) b.nonNullType else b
 
 	val nonNullIntersectType: FinalType = if (nonNullA is ObjectType && nonNullB is ObjectType) {
-		IntersectObjectType(nonNullA, nonNullB)
+		intersectObjectType(nonNullA, nonNullB)
 	} else if (nonNullA is FunctionType && nonNullB is FunctionType) {
 		FunctionType(
-				UnionObjectType(nonNullA.params, nonNullB.params),
+				unionObjectType(nonNullA.params, nonNullB.params),
 				intersectTypes(nonNullA.returnType.final(), nonNullB.returnType.final())
 		)
 	} else {
