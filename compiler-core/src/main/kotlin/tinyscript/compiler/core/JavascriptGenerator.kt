@@ -94,7 +94,7 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 			}
 			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`(), null)
 			is TinyScriptParser.ExtendClassExpressionContext -> writeClass(ctx.`object`(), ctx.expression())
-			is TinyScriptParser.ConditionalExpressionContext -> TODO()
+			is TinyScriptParser.ConditionalExpressionContext -> out.write("TODO")
 			is TinyScriptParser.ReassignmentExpressionContext -> {
 				out.write(ctx.Name().text)
 				out.write(" = ")

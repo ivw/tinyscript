@@ -89,15 +89,15 @@ class UnionObjectType(
 		val b: ObjectType
 ) : ObjectType(false, null, mergeSymbols(a, b)) {
 	companion object {
-		fun mergeSymbols(supertype: ObjectType, subtype: ObjectType): LinkedHashMap<String, Symbol> {
-			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(supertype.symbols)
-			for (subSymbol in subtype.symbols.values) {
-				symbols[subSymbol.name]?.let { superSymbol ->
-					if (!superSymbol.type.final().accepts(subSymbol.type.final()))
-						throw RuntimeException("incompatible override on field '${subSymbol.name}'")
+		fun mergeSymbols(a: ObjectType, b: ObjectType): LinkedHashMap<String, Symbol> {
+			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(a.symbols)
+			for (bSymbol in b.symbols.values) {
+				symbols[bSymbol.name]?.let { aSymbol ->
+					if (!aSymbol.type.final().accepts(bSymbol.type.final()))
+						throw RuntimeException("incompatible override on field '${bSymbol.name}'")
 				}
 
-				symbols[subSymbol.name] = subSymbol
+				symbols[bSymbol.name] = bSymbol
 			}
 			return symbols
 		}
@@ -115,7 +115,19 @@ class UnionObjectType(
 class IntersectObjectType(
 		val a: ObjectType,
 		val b: ObjectType
-) : ObjectType(false, null, TODO()) {
+) : ObjectType(false, null, intersectSymbols(a, b)) {
+	companion object {
+		fun intersectSymbols(a: ObjectType, b: ObjectType): LinkedHashMap<String, Symbol> {
+			val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
+			for (aSymbol in a.symbols.values) {
+				if (b.symbols[aSymbol.name] === aSymbol) {
+					symbols[aSymbol.name] = aSymbol
+				}
+			}
+			return symbols
+		}
+	}
+
 	override fun acceptsNominal(type: ObjectType): Boolean {
 		return a.acceptsNominal(type) || b.acceptsNominal(type)
 	}
@@ -157,4 +169,24 @@ class FunctionType(val params: ObjectType, val returnType: Type) : FinalType {
 	override fun toString(): String {
 		return "FunctionType<$params -> $returnType>"
 	}
+}
+
+fun intersectTypes(a: FinalType, b: FinalType): FinalType {
+	if (a === b) return a
+
+	val nonNullA: FinalType = if (a is NullableType) a.nonNullType else a
+	val nonNullB: FinalType = if (b is NullableType) b.nonNullType else b
+
+	val nonNullIntersectType: FinalType = if (nonNullA is ObjectType && nonNullB is ObjectType) {
+		IntersectObjectType(nonNullA, nonNullB)
+	} else if (nonNullA is FunctionType && nonNullB is FunctionType) {
+		FunctionType(
+				UnionObjectType(nonNullA.params, nonNullB.params),
+				intersectTypes(nonNullA.returnType.final(), nonNullB.returnType.final())
+		)
+	} else {
+		AnyType
+	}
+
+	return if (a is NullableType || b is NullableType) NullableType(nonNullIntersectType) else nonNullIntersectType
 }

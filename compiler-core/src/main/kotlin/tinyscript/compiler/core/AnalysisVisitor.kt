@@ -306,10 +306,13 @@ class AnalysisVisitor(val filePath: Path) {
 				objectType // TODO
 			}
 			is TinyScriptParser.ConditionalExpressionContext -> {
-				ctx.block().forEach { visitBlock(it, scope) }
+				ctx.block().forEach {
+					if (visitBlock(it, scope).final() !== booleanClass.objectType)
+						throw AnalysisError("condition must be of boolean type", filePath, it.start)
+				}
 
 				ctx.expression().map { visitExpression(it, scope).final() }.reduce { acc, expressionContext ->
-					TODO()
+					intersectTypes(acc, expressionContext)
 				}
 			}
 			else -> throw RuntimeException("unknown expression type")
