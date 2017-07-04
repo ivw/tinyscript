@@ -86,7 +86,7 @@ class AnalysisVisitor(val filePath: Path) {
 						else ObjectType(false)
 				FunctionType(params, visitType(ctx.type(), scope))
 			}
-			is TinyScriptParser.NullTypeContext -> AnyType
+			is TinyScriptParser.NullTypeContext -> NullableType(AnyType)
 			is TinyScriptParser.NullableTypeContext -> NullableType(visitType(ctx.type(), scope))
 			is TinyScriptParser.ObjectTypeTypeContext -> visitObjectType(ctx.objectType(), scope)
 			is TinyScriptParser.TypeReferenceContext -> {
@@ -246,7 +246,7 @@ class AnalysisVisitor(val filePath: Path) {
 		if (!finalSymbolType.accepts(finalNewValueType))
 			throw AnalysisError("invalid reassignment: $finalSymbolType does not accept $finalNewValueType", filePath, nameToken.symbol)
 
-		return AnyType
+		return NullableType(AnyType)
 	}
 
 	fun visitExpression(ctx: TinyScriptParser.ExpressionContext, scope: Scope): Type {

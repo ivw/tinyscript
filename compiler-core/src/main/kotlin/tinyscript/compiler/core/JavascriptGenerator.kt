@@ -94,7 +94,29 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 			}
 			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`(), null)
 			is TinyScriptParser.ExtendClassExpressionContext -> writeClass(ctx.`object`(), ctx.expression())
-			is TinyScriptParser.ConditionalExpressionContext -> out.write("TODO")
+			is TinyScriptParser.ConditionalExpressionContext -> {
+				/* example output:
+				var message = (
+					(hour < 12) ? ("Good morning") :
+					(hour > 18) ? ("Good evening") :
+					"Good day"
+				);
+				 */
+
+				out.write("(\n")
+
+				val nrConditions = ctx.block().size
+				for (i in 0 until nrConditions) {
+					writeBlock(ctx.block(i))
+					out.write(" ? (")
+					writeExpression(ctx.expression(i))
+					out.write(") :\n")
+				}
+
+				writeExpression(ctx.expression(nrConditions))
+
+				out.write("\n)")
+			}
 			is TinyScriptParser.ReassignmentExpressionContext -> {
 				out.write(ctx.Name().text)
 				out.write(" = ")

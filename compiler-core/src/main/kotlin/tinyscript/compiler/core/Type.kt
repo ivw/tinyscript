@@ -69,7 +69,7 @@ open class ObjectType(
 	}
 
 	override fun toString(): String {
-		return "ObjectType<identities = ${identities.size}, symbols = [${symbols.values.joinToString()}]>"
+		return "ObjectType<identities.size = ${identities.size}, symbols = [${symbols.values.joinToString()}]>"
 	}
 }
 
