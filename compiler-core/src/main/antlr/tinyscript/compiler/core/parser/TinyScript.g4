@@ -11,7 +11,7 @@ declaration
 	|	expression												# ImplicitDeclaration
 	;
 
-symbol: Private? Override? Hash? (type '.')? Name;
+symbol: Private? Override? Mut? (type '.')? Name;
 
 expression
 	:	block													# BlockExpression
@@ -24,17 +24,17 @@ expression
 	|	'super'													# SuperExpression
 	|	Name													# ReferenceExpression
 	|	expression NL* '.' Name									# DotReferenceExpression
-	|	object													# ObjectExpression // this is basically a shorthand for `Object[foo = 123]`
+	|	Mut? object												# ObjectExpression // this is basically a shorthand for `Object[foo = 123]`
 	|	expression object										# ObjectOrCallExpression // this is for both calling functions and for instantiating objects.
 	|	expression '&' expression								# ClassMergeExpression
 	|	Operator expression										# PrefixOperatorCallExpression
 	|	expression NL* Operator NL* expression					# InfixOperatorCallExpression
-	|	'class' object											# ClassExpression
+	|	Mut? 'class' object										# ClassExpression
 	|	expression 'class' object								# ExtendClassExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
 	|	Name '<-' expression									# ReassignmentExpression
 	|	expression NL* '.' Name '<-' expression					# DotReassignmentExpression
-	|	object? '->' NL* expression								# FunctionExpression // this rule is at the bottom precedence, because everything inside the rhs expression goes first
+	|	object? Mut? '->' NL* expression						# FunctionExpression // this rule is at the bottom precedence, because everything inside the rhs expression goes first
 	;
 
 block: '(' NL* (declaration (';' | NL+))* expression NL* ')';
@@ -43,10 +43,10 @@ object: '[' NL* (declaration ((',' | NL+) declaration)* NL*)? ']';
 
 type
 	:	'(' type ')'											# ParenType
-	|	objectType? '->' type									# FunctionType
+	|	objectType? Mut? '->' type								# FunctionType
 	|	'?'														# NullType
 	|	type '?'												# NullableType
-	|	objectType												# ObjectTypeType
+	|	Mut? objectType											# ObjectTypeType
 	|	Name													# TypeReference
 	|	type '&' type											# UnionObjectType
 	|	type '|' type											# IntersectObjectType
@@ -60,7 +60,7 @@ objectTypeField: symbol ':' type;
 
 Private: 'private';
 Override: 'override';
-Hash: '#';
+Mut: '#';
 
 IntegerLiteral: [0-9]+;
 

@@ -72,7 +72,7 @@ class AnalysisVisitor(val filePath: Path) {
 				isAbstract,
 				ctx.getToken(TinyScriptParser.Private, 0) != null,
 				ctx.getToken(TinyScriptParser.Override, 0) != null,
-				ctx.getToken(TinyScriptParser.Hash, 0) != null
+				ctx.getToken(TinyScriptParser.Mut, 0) != null
 		)
 	}
 
