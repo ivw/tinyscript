@@ -26,15 +26,12 @@ class SymbolMapBuilder {
 	}
 }
 
-val objectType = ObjectType(true)
-val objectClass = ClassType(objectType)
-val stringClass = ClassType(ObjectType(true, objectType.identities))
-val intClass = ClassType(ObjectType(true, objectType.identities))
-val floatClass = ClassType(ObjectType(true, objectType.identities))
-val booleanClass = ClassType(ObjectType(true, objectType.identities))
+val stringClass = ClassType(ObjectType(true))
+val intClass = ClassType(ObjectType(true))
+val floatClass = ClassType(ObjectType(true))
+val booleanClass = ClassType(ObjectType(true))
 
 val builtInSymbols: Map<String, Symbol> = SymbolMapBuilder()
-		.add(Symbol("Object", objectClass))
 		.add(Symbol("String", stringClass))
 		.add(Symbol("Int", intClass))
 		.add(Symbol("Float", floatClass))

@@ -179,8 +179,8 @@ class AnalysisVisitor(val filePath: Path) {
 		return visitExpression(ctx.expression(), blockScope)
 	}
 
-	fun visitObjectInstanceExpression(classType: ClassType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		val instanceObjectType = visitObject(argsObjectCtx, scope, false, classType.objectType, true)
+	fun visitObjectInstanceExpression(superObjectType: ObjectType?, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
+		val instanceObjectType = visitObject(argsObjectCtx, scope, false, superObjectType, true)
 		return instanceObjectType
 	}
 
@@ -211,11 +211,11 @@ class AnalysisVisitor(val filePath: Path) {
 			override fun createFinalType(): FinalType {
 				deferredAnalyses.remove(this)
 
-				val superClassType = if (lhsExpressionCtx != null)
-					visitExpression(lhsExpressionCtx, scope).final() as ClassType
-				else objectClass
+				val superType = lhsExpressionCtx?.let {
+					(visitExpression(it, scope).final() as ClassType).objectType
+				}
 
-				return ClassType(visitObject(objectCtx, scope, true, superClassType.objectType, false))
+				return ClassType(visitObject(objectCtx, scope, true, superType, false))
 			}
 		}
 		deferredAnalyses.add(deferredType)
@@ -284,7 +284,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.DotReferenceExpressionContext -> visitReference(ctx.Name(), ctx.expression(), scope).type
 			is TinyScriptParser.FunctionExpressionContext -> visitFunctionExpression(ctx, scope)
 			is TinyScriptParser.ObjectExpressionContext ->
-				visitObjectInstanceExpression(objectClass, ctx.`object`(), scope)
+				visitObjectInstanceExpression(null, ctx.`object`(), scope)
 			is TinyScriptParser.ObjectOrCallExpressionContext -> {
 				val finalClassOrFunctionType: FinalType = visitExpression(ctx.expression(), scope).final()
 				return when (finalClassOrFunctionType) {
@@ -299,12 +299,12 @@ class AnalysisVisitor(val filePath: Path) {
 				visitReassignmentExpression(ctx.Name(), ctx.expression(0), ctx.expression(1), scope)
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
 				visitExpression(ctx.expression(), scope)
-				objectType // TODO
+				AnyType
 			}
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 				visitExpression(ctx.expression(0), scope)
 				visitExpression(ctx.expression(1), scope)
-				objectType // TODO
+				AnyType
 			}
 			is TinyScriptParser.ConditionalExpressionContext -> {
 				ctx.block().forEach {
