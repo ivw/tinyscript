@@ -2,15 +2,15 @@ var myConstant = "initial value";
 var myVariable = "initial value";
 var myStringOrNull = null;
 var main = () => ((myStringOrNull = "foo"));
-var multiplyByTwo = (n,) => (n * 2);
-var sayHello = () => (println());
+var multiplyByTwo = (n, ) => (n * 2);
+var sayHello = () => (println("Hello", ));
 var Animal = function () {
 // this.name;
-this.sayName = () => (println());
+this.sayName = () => (println("my name is $name", ));
 };
 var Dog = function () {
 (Animal).call(this);
-this.bark = () => (println());
+this.bark = () => (println("woof", ));
 };
 var myDog = new (function () {
 (Dog).call(this);

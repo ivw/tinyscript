@@ -60,15 +60,8 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 			is TinyScriptParser.ObjectOrCallExpressionContext -> {
 				val expressionType: FinalType = resultMap[ctx.expression()]!!.type.final()
 				when (expressionType) {
-					is ClassType -> {
-						writeObjectInstance(ctx.`object`(), ctx.expression())
-					}
-					is FunctionType -> {
-						writeExpression(ctx.expression())
-						out.write("(")
-						// TODO
-						out.write(")")
-					}
+					is ClassType -> writeObjectInstance(ctx.`object`(), ctx.expression())
+					is FunctionType -> writeFunctionCall(ctx, expressionType)
 					else -> throw RuntimeException("unsupported expression type")
 				}
 			}
@@ -134,6 +127,43 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 		}
 	}
 
+	fun writeFunctionCall(ctx: TinyScriptParser.ObjectOrCallExpressionContext, functionType: FunctionType) {
+		writeExpression(ctx.expression())
+		out.write("(")
+
+		val paramIterator = functionType.params.symbols.values.iterator()
+
+		for (declaration in ctx.`object`().declaration()) {
+			if (!paramIterator.hasNext())
+				throw RuntimeException("too many arguments")
+			var param = paramIterator.next()
+
+			when (declaration) {
+				is TinyScriptParser.AbstractDeclarationContext -> {
+					throw RuntimeException("abstract declaration not allowed here")
+				}
+				is TinyScriptParser.ConcreteDeclarationContext -> {
+					// iterate all skipped params
+					val argName = declaration.symbol().Name().text
+					while (param.name != argName) {
+						if (!paramIterator.hasNext())
+							throw RuntimeException("invalid argument '$argName'")
+						param = paramIterator.next()
+						out.write("undefined,")
+					}
+
+					writeExpression(declaration.expression())
+				}
+				is TinyScriptParser.ImplicitDeclarationContext ->
+					writeExpression(declaration.expression())
+				else -> throw RuntimeException("unknown declaration type")
+			}
+			out.write(", ")
+		}
+
+		out.write(")")
+	}
+
 	fun writeOperator(operator: String) {
 		out.write(" ")
 		out.write(when (operator) {
@@ -161,7 +191,7 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<Tin
 						throw RuntimeException("implicit declaration not allowed here")
 					else -> throw RuntimeException("unknown declaration type")
 				}
-				out.write(",")
+				out.write(", ")
 			}
 		}
 		out.write(") => (")
