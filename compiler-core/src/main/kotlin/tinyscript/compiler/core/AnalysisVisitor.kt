@@ -25,7 +25,15 @@ class AnalysisVisitor(val filePath: Path) {
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
 		val scope = GlobalScope()
 		for (declaration in ctx.declaration()) {
-			val symbol = visitDeclaration(declaration, scope)
+			val symbol = when (declaration) {
+				is TinyScriptParser.AbstractDeclarationContext -> {
+					visitSymbol(declaration.symbol(), visitType(declaration.type(), scope), true)
+					// TODO check if `native`?
+				}
+				is TinyScriptParser.ConcreteDeclarationContext -> visitConcreteDeclaration(declaration, scope)
+				is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
+				else -> throw RuntimeException("unknown declaration type")
+			}
 
 			if (symbol.isAbstract) throw AnalysisError("concrete declaration expected", filePath, declaration.start)
 
@@ -33,34 +41,25 @@ class AnalysisVisitor(val filePath: Path) {
 		}
 	}
 
-	fun visitDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope): Symbol {
-		return when (ctx) {
-			is TinyScriptParser.AbstractDeclarationContext -> {
-				visitSymbol(ctx.symbol(), visitType(ctx.type(), scope), true)
-			}
-			is TinyScriptParser.ConcreteDeclarationContext -> {
-				// if it has a rhs expression, it must be visited
-				val expressionType = visitExpression(ctx.expression(), scope)
+	fun visitConcreteDeclaration(ctx: TinyScriptParser.ConcreteDeclarationContext, scope: Scope): Symbol {
+		// if it has a rhs expression, it must be visited
+		val expressionType = visitExpression(ctx.expression(), scope)
 
-				val typeAnnotationType: FinalType? = ctx.type()?.let { visitType(it, scope) }
+		val typeAnnotationType: FinalType? = ctx.type()?.let { visitType(it, scope) }
 
-				val type: Type = typeAnnotationType ?: expressionType
-				val symbol = visitSymbol(ctx.symbol(), type, false)
+		val type: Type = typeAnnotationType ?: expressionType
+		val symbol = visitSymbol(ctx.symbol(), type, false)
 
-				// when assigning a DeferredFunctionType to a declaration with type annotation, the function must be analysed.
-				// TODO this should somehow be done after defining the symbol, so that recursive functions with type annotations are possible?
-				if (typeAnnotationType != null) {
-					val finalExpressionType = expressionType.final()
-					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw AnalysisError("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType", filePath, ctx.start)
-				}
-
-				println("Type of symbol '${symbol.name}' is $type")
-				symbol
-			}
-			is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
-			else -> throw RuntimeException("unknown declaration type")
+		// when assigning a DeferredFunctionType to a declaration with type annotation, the function must be analysed.
+		// TODO this should somehow be done after defining the symbol, so that recursive functions with type annotations are possible?
+		if (typeAnnotationType != null) {
+			val finalExpressionType = expressionType.final()
+			if (!typeAnnotationType.accepts(finalExpressionType))
+				throw AnalysisError("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType", filePath, ctx.start)
 		}
+
+		println("Type of symbol '${symbol.name}' is $type")
+		return symbol
 	}
 
 	fun visitSymbol(ctx: TinyScriptParser.SymbolContext, type: Type, isAbstract: Boolean): Symbol {
@@ -132,16 +131,24 @@ class AnalysisVisitor(val filePath: Path) {
 		var superSymbolsIterator = superObjectType?.let { it.symbols.values.iterator() }
 
 		for (declaration in ctx.declaration()) {
-			val symbol: Symbol = if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
-				if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
-					throw AnalysisError("invalid implicit declaration", filePath, declaration.start)
+			val symbol: Symbol = when (declaration) {
+				is TinyScriptParser.AbstractDeclarationContext -> {
+					superSymbolsIterator = null
+					visitSymbol(declaration.symbol(), visitType(declaration.type(), objectScope), true)
+				}
+				is TinyScriptParser.ConcreteDeclarationContext -> {
+					superSymbolsIterator = null
+					visitConcreteDeclaration(declaration, objectScope)
+				}
+				is TinyScriptParser.ImplicitDeclarationContext -> {
+					if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
+						throw AnalysisError("invalid implicit declaration", filePath, declaration.start)
 
-				val superSymbol: Symbol = superSymbolsIterator.next()
-				val expressionType = visitExpression(declaration.expression(), scope)
-				Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
-			} else {
-				superSymbolsIterator = null
-				visitDeclaration(declaration, objectScope)
+					val superSymbol: Symbol = superSymbolsIterator.next()
+					val expressionType = visitExpression(declaration.expression(), objectScope)
+					Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
+				}
+				else -> throw RuntimeException("unknown declaration type")
 			}
 
 //			if (symbols.containsKey(symbol.name))
@@ -168,12 +175,14 @@ class AnalysisVisitor(val filePath: Path) {
 	fun visitBlock(ctx: TinyScriptParser.BlockContext, scope: Scope): Type {
 		val blockScope = LocalScope(scope)
 		for (declaration in ctx.declaration()) {
-			if (declaration is TinyScriptParser.ImplicitDeclarationContext) {
-				// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
-				visitExpression(declaration.expression(), blockScope)
-			} else {
-				val symbol = visitDeclaration(declaration, blockScope)
-				blockScope.defineSymbol(symbol)
+			when (declaration) {
+				is TinyScriptParser.AbstractDeclarationContext -> throw RuntimeException("invalid abstract declaration")
+				is TinyScriptParser.ConcreteDeclarationContext -> blockScope.defineSymbol(visitConcreteDeclaration(declaration, blockScope))
+				is TinyScriptParser.ImplicitDeclarationContext -> {
+					// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
+					visitExpression(declaration.expression(), blockScope)
+				}
+				else -> throw RuntimeException("unknown declaration type")
 			}
 		}
 		return visitExpression(ctx.expression(), blockScope)

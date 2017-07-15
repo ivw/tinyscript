@@ -3,7 +3,7 @@ package tinyscript.compiler.core
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.io.BufferedWriter
 
-class JavascriptGenerator(val out: BufferedWriter, val resultMap: MutableMap<TinyScriptParser.ExpressionContext, AnalysisResult>) {
+class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScriptParser.ExpressionContext, AnalysisResult>) {
 	fun writeFile(ctx: TinyScriptParser.FileContext) {
 		ctx.declaration().forEach { writeLocalDeclaration(it) }
 	}
