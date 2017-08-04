@@ -4,7 +4,6 @@ import org.antlr.v4.runtime.tree.TerminalNode
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.nio.file.Path
 import java.util.*
-import kotlin.collections.LinkedHashMap
 
 class AnalysisResult(val scope: Scope, val type: Type)
 
@@ -27,7 +26,7 @@ class AnalysisVisitor(val filePath: Path) {
 		for (declaration in ctx.declaration()) {
 			val symbol = when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
-					visitSymbol(declaration.symbol(), visitType(declaration.type(), scope), true)
+					visitSymbol(declaration.symbol(), scope, visitType(declaration.type(), scope), true)
 					// TODO check if `native`?
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> visitConcreteDeclaration(declaration, scope)
@@ -36,8 +35,6 @@ class AnalysisVisitor(val filePath: Path) {
 			}
 
 			if (symbol.isAbstract) throw AnalysisError("concrete declaration expected", filePath, declaration.start)
-
-			scope.defineSymbol(symbol)
 		}
 	}
 
@@ -48,10 +45,8 @@ class AnalysisVisitor(val filePath: Path) {
 		val typeAnnotationType: FinalType? = ctx.type()?.let { visitType(it, scope) }
 
 		val type: Type = typeAnnotationType ?: expressionType
-		val symbol = visitSymbol(ctx.symbol(), type, false)
+		val symbol = visitSymbol(ctx.symbol(), scope, type, false)
 
-		// when assigning a DeferredFunctionType to a declaration with type annotation, the function must be analysed.
-		// TODO this should somehow be done after defining the symbol, so that recursive functions with type annotations are possible?
 		if (typeAnnotationType != null) {
 			val finalExpressionType = expressionType.final()
 			if (!typeAnnotationType.accepts(finalExpressionType))
@@ -62,10 +57,10 @@ class AnalysisVisitor(val filePath: Path) {
 		return symbol
 	}
 
-	fun visitSymbol(ctx: TinyScriptParser.SymbolContext, type: Type, isAbstract: Boolean): Symbol {
+	fun visitSymbol(ctx: TinyScriptParser.SymbolContext, scope: Scope, type: Type, isAbstract: Boolean): Symbol {
 		val name = ctx.Name().text
 
-		return Symbol(
+		val symbol = Symbol(
 				name,
 				type,
 				isAbstract,
@@ -73,6 +68,10 @@ class AnalysisVisitor(val filePath: Path) {
 				ctx.getToken(TinyScriptParser.Override, 0) != null,
 				ctx.getToken(TinyScriptParser.Mut, 0) != null
 		)
+
+		scope.defineSymbol(symbol)
+
+		return symbol
 	}
 
 	fun visitType(ctx: TinyScriptParser.TypeContext, scope: Scope): FinalType {
@@ -108,33 +107,25 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitObjectType(ctx: TinyScriptParser.ObjectTypeContext, scope: Scope): ObjectType {
-		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
-		val objectType = ObjectType(false, emptySet(), symbols)
+		val objectType = ObjectType(false)
 		val objectScope = ObjectScope(scope, objectType)
 		for (field in ctx.objectTypeField()) {
-			val symbol = visitSymbol(field.symbol(), visitType(field.type(), objectScope), true)
-
-			if (symbols.containsKey(symbol.name))
-				throw AnalysisError("name already exists in this object", filePath, field.start)
-
-			symbols[symbol.name] = symbol
+			visitSymbol(field.symbol(), objectScope, visitType(field.type(), objectScope), true)
 		}
 		return objectType
 	}
 
 	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?, mustBeConcrete: Boolean): ObjectType {
-		val symbols: LinkedHashMap<String, Symbol> =
-				if (superObjectType != null) LinkedHashMap(superObjectType.symbols) else LinkedHashMap()
-		val objectType = ObjectType(isNominal, superObjectType?.identities ?: emptySet(), symbols)
+		val objectType = ObjectType(isNominal, superObjectType)
 		val objectScope = ObjectScope(scope, objectType)
 
 		var superSymbolsIterator = superObjectType?.let { it.symbols.values.iterator() }
 
 		for (declaration in ctx.declaration()) {
-			val symbol: Symbol = when (declaration) {
+			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
 					superSymbolsIterator = null
-					visitSymbol(declaration.symbol(), visitType(declaration.type(), objectScope), true)
+					visitSymbol(declaration.symbol(), objectScope, visitType(declaration.type(), objectScope), true)
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					superSymbolsIterator = null
@@ -146,25 +137,14 @@ class AnalysisVisitor(val filePath: Path) {
 
 					val superSymbol: Symbol = superSymbolsIterator.next()
 					val expressionType = visitExpression(declaration.expression(), objectScope)
-					Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable)
+					objectScope.defineSymbol(Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable))
 				}
 				else -> throw RuntimeException("unknown declaration type")
 			}
-
-//			if (symbols.containsKey(symbol.name))
-//				throw AnalysisError("name already exists in this object", declaration.start)
-			// TODO find something for this. it's not critical, though
-
-			symbols[symbol.name]?.let { superSymbol ->
-				if (!superSymbol.type.final().accepts(symbol.type.final()))
-					throw AnalysisError("incompatible override on field '${symbol.name}': ${superSymbol.type} does not accept ${symbol.type}", filePath, declaration.start)
-			}
-
-			symbols[symbol.name] = symbol
 		}
 
 		if (mustBeConcrete) {
-			symbols.values.forEach { symbol ->
+			objectType.symbols.values.forEach { symbol ->
 				if (symbol.isAbstract) throw AnalysisError("field '${symbol.name}' not initialized", filePath, ctx.start)
 			}
 		}
@@ -177,7 +157,7 @@ class AnalysisVisitor(val filePath: Path) {
 		for (declaration in ctx.declaration()) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> throw RuntimeException("invalid abstract declaration")
-				is TinyScriptParser.ConcreteDeclarationContext -> blockScope.defineSymbol(visitConcreteDeclaration(declaration, blockScope))
+				is TinyScriptParser.ConcreteDeclarationContext -> visitConcreteDeclaration(declaration, blockScope)
 				is TinyScriptParser.ImplicitDeclarationContext -> {
 					// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
 					visitExpression(declaration.expression(), blockScope)
@@ -194,7 +174,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitFunctionCallExpression(functionType: FunctionType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		val argumentsObjectType = visitObject(argsObjectCtx, scope, false, functionType.params, true)
+		visitObject(argsObjectCtx, scope, false, functionType.params, true)
 		return functionType.returnType
 	}
 
@@ -285,9 +265,8 @@ class AnalysisVisitor(val filePath: Path) {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
 						?: throw AnalysisError("not inside object scope", filePath, ctx.start)
 
-//				objectScope.objectType.superObjectType
-//						?: throw AnalysisError("no super object type", filePath, ctx.start)
-				TODO()
+				objectScope.objectType.superObjectType
+						?: throw AnalysisError("no super object type", filePath, ctx.start)
 			}
 			is TinyScriptParser.ReferenceExpressionContext -> visitReference(ctx.Name(), null, scope).type
 			is TinyScriptParser.DotReferenceExpressionContext -> visitReference(ctx.Name(), ctx.expression(), scope).type
@@ -298,7 +277,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val finalClassOrFunctionType: FinalType = visitExpression(ctx.expression(), scope).final()
 				return when (finalClassOrFunctionType) {
 					is FunctionType -> visitFunctionCallExpression(finalClassOrFunctionType, ctx.`object`(), scope)
-					is ClassType -> visitObjectInstanceExpression(finalClassOrFunctionType, ctx.`object`(), scope)
+					is ClassType -> visitObjectInstanceExpression(finalClassOrFunctionType.objectType, ctx.`object`(), scope)
 					else -> throw AnalysisError("can only call a function or a class", filePath, ctx.start)
 				}
 			}

@@ -48,10 +48,31 @@ object AnyType : FinalType {
 // see the "objectType" rule in the grammar
 open class ObjectType(
 		isNominal: Boolean,
-		extraIdentities: Set<ObjectType> = emptySet(),
-		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
+		val superObjectType: ObjectType? = null,
+		extraIdentities: Set<ObjectType>? = null,
+		extraSymbols: LinkedHashMap<String, Symbol>? = null
 ) : FinalType {
-	val identities: Set<ObjectType> = if (isNominal) extraIdentities.plus(this) else extraIdentities
+	val identities: Set<ObjectType> = run {
+		val set = HashSet<ObjectType>()
+
+		superObjectType?.let { set.addAll(it.identities) }
+
+		if (isNominal) set.add(this)
+
+		extraIdentities?.let { set.addAll(it) }
+
+		set
+	}
+
+	val symbols: LinkedHashMap<String, Symbol> = run {
+		val map = LinkedHashMap<String, Symbol>()
+
+		superObjectType?.let { map.putAll(superObjectType.symbols) }
+
+		extraSymbols?.let { map.putAll(it) }
+
+		map
+	}
 
 	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
@@ -86,7 +107,7 @@ fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
 
 	val identities = a.identities.union(b.identities)
 
-	return ObjectType(false, identities, symbols)
+	return ObjectType(false, null, identities, symbols)
 }
 
 fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
@@ -99,11 +120,17 @@ fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
 
 	val identities = a.identities.intersect(b.identities)
 
-	return ObjectType(false, identities, symbols)
+	return ObjectType(false, null, identities, symbols)
 }
 
 
-class ClassType(val objectType: ObjectType) : ObjectType(true, objectType.identities)
+class ClassType(val objectType: ObjectType) : FinalType {
+	override fun accepts(type: FinalType): Boolean = false
+
+	override fun toString(): String {
+		return "ClassType<$objectType>"
+	}
+}
 
 
 // see the "NullableType" rule in the grammar

@@ -37,7 +37,7 @@ val builtInSymbols: Map<String, Symbol> = SymbolMapBuilder()
 		.add(Symbol("Float", floatClass))
 		.add(Symbol("Boolean", booleanClass))
 		.add(Symbol("println", FunctionType(
-				ObjectType(false, emptySet(), SymbolMapBuilder()
+				ObjectType(false, extraSymbols = SymbolMapBuilder()
 						.add(Symbol("m", stringClass.objectType))
 						.build()),
 				AnyType
