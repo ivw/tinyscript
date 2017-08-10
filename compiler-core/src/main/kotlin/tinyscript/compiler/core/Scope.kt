@@ -8,11 +8,17 @@ abstract class Scope(val parentScope: Scope?) {
 	}
 
 	abstract fun defineSymbol(symbol: Symbol)
+
+	abstract fun resolveOperator(name: String, lhsType: FinalType?, rhsType: FinalType): Operator?
+
+	abstract fun defineOperator(operator: Operator)
 }
 
-open class LocalScope(parentScope: Scope?) : Scope(parentScope) {
-	val symbols: MutableMap<String, Symbol> = LinkedHashMap()
-
+open class LocalScope(
+		parentScope: Scope?,
+		val symbols: MutableMap<String, Symbol> = LinkedHashMap(),
+		val operators: OperatorList = OperatorList()
+) : Scope(parentScope) {
 	override fun resolveSymbol(name: String): Symbol? {
 		return symbols[name] ?: parentScope?.resolveSymbol(name)
 	}
@@ -23,11 +29,14 @@ open class LocalScope(parentScope: Scope?) : Scope(parentScope) {
 
 		symbols[symbol.name] = symbol
 	}
-}
 
-class GlobalScope : LocalScope(null) {
-	override fun resolveSymbol(name: String): Symbol? {
-		return symbols[name] ?: builtInSymbols[name]
+	override fun resolveOperator(name: String, lhsType: FinalType?, rhsType: FinalType): Operator? {
+		return operators.resolve(name, lhsType, rhsType)
+				?: parentScope?.resolveOperator(name, lhsType, rhsType)
+	}
+
+	override fun defineOperator(operator: Operator) {
+		operators.add(operator)
 	}
 }
 
@@ -55,6 +64,14 @@ class ObjectScope(parentScope: Scope?, val objectType: ObjectType) : Scope(paren
 		}
 
 		objectType.symbols[symbol.name] = symbol
+	}
+
+	override fun resolveOperator(name: String, lhsType: FinalType?, rhsType: FinalType): Operator? {
+		return parentScope?.resolveOperator(name, lhsType, rhsType) // TODO
+	}
+
+	override fun defineOperator(operator: Operator) {
+		TODO()
 	}
 }
 

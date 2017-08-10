@@ -22,7 +22,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
-		val scope = GlobalScope()
+		val scope = LocalScope(globalScope)
 		for (declaration in ctx.declaration()) {
 			val symbol = when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
@@ -286,13 +286,21 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.DotReassignmentExpressionContext ->
 				visitReassignmentExpression(ctx.Name(), ctx.expression(0), ctx.expression(1), scope)
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
-				visitExpression(ctx.expression(), scope)
-				AnyType
+				val name = ctx.Operator().text
+				val rhsType = visitExpression(ctx.expression(), scope).final()
+				val operator = scope.resolveOperator(name, null, rhsType)
+						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
+
+				operator.returnType
 			}
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
-				visitExpression(ctx.expression(0), scope)
-				visitExpression(ctx.expression(1), scope)
-				AnyType
+				val name = ctx.Operator().text
+				val lhsType = visitExpression(ctx.expression(0), scope).final()
+				val rhsType = visitExpression(ctx.expression(1), scope).final()
+				val operator = scope.resolveOperator(name, lhsType, rhsType)
+						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
+
+				operator.returnType
 			}
 			is TinyScriptParser.ConditionalExpressionContext -> {
 				ctx.block().forEach {
