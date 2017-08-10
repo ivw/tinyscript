@@ -1,5 +1,6 @@
 package tinyscript.compiler.core
 
+import org.antlr.runtime.tree.TreeParser
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.io.BufferedWriter
 
@@ -12,12 +13,12 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 		when (ctx) {
 			is TinyScriptParser.AbstractDeclarationContext -> {
 				out.write("// var ")
-				out.write(ctx.symbol().Name().text)
+				writeSignature(ctx.signature())
 				out.write(";\n")
 			}
 			is TinyScriptParser.ConcreteDeclarationContext -> {
 				out.write("var ")
-				out.write(ctx.symbol().Name().text)
+				writeSignature(ctx.signature())
 				out.write(" = ")
 				writeExpression(ctx.expression())
 				out.write(";\n")
@@ -27,6 +28,21 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 				out.write(";\n")
 			}
 			else -> throw RuntimeException("unknown declaration type")
+		}
+	}
+
+	fun writeSignature(ctx: TinyScriptParser.SignatureContext) {
+		when (ctx) {
+			is TinyScriptParser.SymbolContext -> {
+				out.write(ctx.Name().text)
+			}
+			is TinyScriptParser.PrefixOperatorContext -> {
+				out.write("TODO")
+			}
+			is TinyScriptParser.InfixOperatorContext -> {
+				out.write("TODO")
+			}
+			else -> throw RuntimeException("unknown signature type")
 		}
 	}
 
@@ -146,7 +162,7 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					// iterate all skipped params
-					val argName = declaration.symbol().Name().text
+					val argName = (declaration.signature() as TinyScriptParser.SymbolContext).Name().text
 					while (param.name != argName) {
 						if (!paramIterator.hasNext())
 							throw RuntimeException("invalid argument '$argName'")
@@ -182,10 +198,10 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 			for (declaration in paramsObjectCtx.declaration()) {
 				when (declaration) {
 					is TinyScriptParser.AbstractDeclarationContext -> {
-						out.write(declaration.symbol().Name().text)
+						out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
 					}
 					is TinyScriptParser.ConcreteDeclarationContext -> {
-						out.write(declaration.symbol().Name().text)
+						out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
 						out.write(" = ")
 						writeExpression(declaration.expression())
 					}
@@ -220,12 +236,12 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
 					out.write("// this.")
-					out.write(declaration.symbol().Name().text)
+					out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
 					out.write(";\n")
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					out.write("this.")
-					out.write(declaration.symbol().Name().text)
+					out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
 					out.write(" = ")
 					writeExpression(declaration.expression())
 					out.write(";\n")

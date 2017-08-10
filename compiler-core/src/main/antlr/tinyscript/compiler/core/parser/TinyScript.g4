@@ -6,12 +6,16 @@ grammar TinyScript;
 file: NL* (declaration ((',' | NL+) declaration)* NL*)? EOF;
 
 declaration
-	:	symbol ':' type											# AbstractDeclaration
-	|	symbol (':' type)? '=' NL* expression					# ConcreteDeclaration
+	:	signature ':' type											# AbstractDeclaration
+	|	signature (':' type)? '=' NL* expression					# ConcreteDeclaration
 	|	expression												# ImplicitDeclaration
 	;
 
-symbol: Private? Override? Mut? (type '.')? Name;
+signature
+	:	Mut? Name													# Symbol
+	|	Operator type												# PrefixOperator
+	|	type Operator type											# InfixOperator
+	;
 
 expression
 	:	block													# BlockExpression
@@ -54,7 +58,7 @@ type
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
-objectTypeField: symbol ':' type;
+objectTypeField: signature ':' type;
 
 // LEXER TOKENS
 

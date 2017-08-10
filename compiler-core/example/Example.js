@@ -40,3 +40,12 @@ var message = (
 (true) ? ("Hello") :
 "Hi"
 );
+var Point = function () {
+// this.x;
+// this.y;
+};
+var TODO = new (function () {
+(Point).call(this);
+this.x = 1;
+this.y = 2;
+})();

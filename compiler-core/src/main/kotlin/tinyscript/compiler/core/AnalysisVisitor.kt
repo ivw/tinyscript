@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.tree.TerminalNode
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.nio.file.Path
 import java.util.*
+import java.util.concurrent.ThreadPoolExecutor
 
 class AnalysisResult(val scope: Scope, val type: Type)
 
@@ -24,54 +25,73 @@ class AnalysisVisitor(val filePath: Path) {
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
 		val scope = LocalScope(globalScope)
 		for (declaration in ctx.declaration()) {
-			val symbol = when (declaration) {
+			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
-					visitSymbol(declaration.symbol(), scope, visitType(declaration.type(), scope), true)
+					visitSignature(declaration.signature(), scope, visitType(declaration.type(), scope), true)
 					// TODO check if `native`?
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> visitConcreteDeclaration(declaration, scope)
 				is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
 				else -> throw RuntimeException("unknown declaration type")
 			}
-
-			if (symbol.isAbstract) throw AnalysisError("concrete declaration expected", filePath, declaration.start)
 		}
 	}
 
-	fun visitConcreteDeclaration(ctx: TinyScriptParser.ConcreteDeclarationContext, scope: Scope): Symbol {
+	fun visitConcreteDeclaration(ctx: TinyScriptParser.ConcreteDeclarationContext, scope: Scope): Signature {
 		// if it has a rhs expression, it must be visited
 		val expressionType = visitExpression(ctx.expression(), scope)
 
 		val typeAnnotationType: FinalType? = ctx.type()?.let { visitType(it, scope) }
 
 		val type: Type = typeAnnotationType ?: expressionType
-		val symbol = visitSymbol(ctx.symbol(), scope, type, false)
+		val signature = visitSignature(ctx.signature(), scope, type, false)
 
 		if (typeAnnotationType != null) {
 			val finalExpressionType = expressionType.final()
 			if (!typeAnnotationType.accepts(finalExpressionType))
-				throw AnalysisError("invalid value for symbol '${symbol.name}': $typeAnnotationType does not accept $finalExpressionType", filePath, ctx.start)
+				throw AnalysisError("invalid value for signature '$signature': $typeAnnotationType does not accept $finalExpressionType", filePath, ctx.start)
 		}
 
-		println("Type of symbol '${symbol.name}' is $type")
-		return symbol
+		println("Type of signature '$signature' is $type")
+		return signature
 	}
 
-	fun visitSymbol(ctx: TinyScriptParser.SymbolContext, scope: Scope, type: Type, isAbstract: Boolean): Symbol {
-		val name = ctx.Name().text
-
-		val symbol = Symbol(
-				name,
-				type,
-				isAbstract,
-				ctx.getToken(TinyScriptParser.Private, 0) != null,
-				ctx.getToken(TinyScriptParser.Override, 0) != null,
-				ctx.getToken(TinyScriptParser.Mut, 0) != null
-		)
-
-		scope.defineSymbol(symbol)
-
-		return symbol
+	fun visitSignature(ctx: TinyScriptParser.SignatureContext, scope: Scope, type: Type, isAbstract: Boolean): Signature {
+		return when (ctx) {
+			is TinyScriptParser.SymbolContext -> {
+				val symbol = Symbol(
+						ctx.Name().text,
+						type,
+						isAbstract,
+						ctx.getToken(TinyScriptParser.Mut, 0) != null
+				)
+				scope.defineSymbol(symbol)
+				symbol
+			}
+			is TinyScriptParser.PrefixOperatorContext -> {
+				val operator = Operator(
+						ctx.Operator().text,
+						null,
+						visitType(ctx.type(), scope),
+						type,
+						isAbstract
+				)
+				scope.defineOperator(operator)
+				operator
+			}
+			is TinyScriptParser.InfixOperatorContext -> {
+				val operator = Operator(
+						ctx.Operator().text,
+						visitType(ctx.type(0), scope),
+						visitType(ctx.type(1), scope),
+						type,
+						isAbstract
+				)
+				scope.defineOperator(operator)
+				operator
+			}
+			else -> throw RuntimeException("unknown signature type")
+		}
 	}
 
 	fun visitType(ctx: TinyScriptParser.TypeContext, scope: Scope): FinalType {
@@ -110,7 +130,7 @@ class AnalysisVisitor(val filePath: Path) {
 		val objectType = ObjectType(false)
 		val objectScope = ObjectScope(scope, objectType)
 		for (field in ctx.objectTypeField()) {
-			visitSymbol(field.symbol(), objectScope, visitType(field.type(), objectScope), true)
+			visitSignature(field.signature(), objectScope, visitType(field.type(), objectScope), true)
 		}
 		return objectType
 	}
@@ -125,7 +145,7 @@ class AnalysisVisitor(val filePath: Path) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
 					superSymbolsIterator = null
-					visitSymbol(declaration.symbol(), objectScope, visitType(declaration.type(), objectScope), true)
+					visitSignature(declaration.signature(), objectScope, visitType(declaration.type(), objectScope), true)
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					superSymbolsIterator = null
@@ -137,7 +157,7 @@ class AnalysisVisitor(val filePath: Path) {
 
 					val superSymbol: Symbol = superSymbolsIterator.next()
 					val expressionType = visitExpression(declaration.expression(), objectScope)
-					objectScope.defineSymbol(Symbol(superSymbol.name, expressionType, false, superSymbol.isPrivate, true, superSymbol.isMutable))
+					objectScope.defineSymbol(Symbol(superSymbol.name, expressionType, false, superSymbol.isMutable))
 				}
 				else -> throw RuntimeException("unknown declaration type")
 			}
@@ -291,7 +311,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val operator = scope.resolveOperator(name, null, rhsType)
 						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
 
-				operator.returnType
+				operator.type
 			}
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 				val name = ctx.Operator().text
@@ -300,7 +320,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val operator = scope.resolveOperator(name, lhsType, rhsType)
 						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
 
-				operator.returnType
+				operator.type
 			}
 			is TinyScriptParser.ConditionalExpressionContext -> {
 				ctx.block().forEach {

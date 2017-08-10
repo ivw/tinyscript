@@ -34,3 +34,7 @@ Copier = Scanner & Printer class [
 ]
 
 message: String = if (true) "Hello" else "Hi"
+
+Point = class [ x: Int, y: Int ]
+
+Point + Point = Point[ x = 1, y = 2 ]

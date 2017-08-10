@@ -1,11 +1,46 @@
 package tinyscript.compiler.core
 
+open class Signature(
+		val type: Type,
+		val isAbstract: Boolean = false
+)
+
+class Symbol(
+		val name: String,
+		type: Type,
+		isAbstract: Boolean = false,
+		val isMutable: Boolean = false
+) : Signature(type, isAbstract) {
+
+	override fun toString(): String {
+		return "$name: $type"
+	}
+}
+
+class SymbolMapBuilder {
+	private val symbolMap = LinkedHashMap<String, Symbol>()
+
+	fun add(symbol: Symbol): SymbolMapBuilder {
+		symbolMap[symbol.name] = symbol
+		return this
+	}
+
+	fun build(): LinkedHashMap<String, Symbol> {
+		return symbolMap
+	}
+}
+
 class Operator(
 		val name: String,
 		val lhsType: FinalType?,
 		val rhsType: FinalType,
-		val returnType: Type
-)
+		type: Type,
+		isAbstract: Boolean = false
+) : Signature(type, isAbstract) {
+	override fun toString(): String {
+		return "$name: $type"
+	}
+}
 
 class OperatorList {
 	private val operators: MutableList<Operator> = ArrayList()
