@@ -37,6 +37,8 @@ class Operator(
 		type: Type,
 		isAbstract: Boolean = false
 ) : Signature(type, isAbstract) {
+	lateinit var identifier: String // scope-unique identifier, with the shape "$depth_$index", used for generated code
+
 	override fun toString(): String {
 		return "$name: $type"
 	}
@@ -44,6 +46,8 @@ class Operator(
 
 class OperatorList {
 	private val operators: MutableList<Operator> = ArrayList()
+
+	val size: Int get() = operators.size
 
 	fun add(operator: Operator) {
 		// here, checks could be done to disallow overlapping, for example.

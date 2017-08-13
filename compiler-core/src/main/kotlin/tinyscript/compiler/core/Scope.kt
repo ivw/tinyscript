@@ -1,6 +1,8 @@
 package tinyscript.compiler.core
 
 abstract class Scope(val parentScope: Scope?) {
+	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
+
 	abstract fun resolveSymbol(name: String): Symbol?
 
 	fun resolveSymbolOrFail(name: String): Symbol {
@@ -36,6 +38,7 @@ open class LocalScope(
 	}
 
 	override fun defineOperator(operator: Operator) {
+		operator.identifier = "${depth}_${operators.size}"
 		operators.add(operator)
 	}
 }

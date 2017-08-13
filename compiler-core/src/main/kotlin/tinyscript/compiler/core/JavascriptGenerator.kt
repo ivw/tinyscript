@@ -1,10 +1,10 @@
 package tinyscript.compiler.core
 
-import org.antlr.runtime.tree.TreeParser
+import org.antlr.v4.runtime.ParserRuleContext
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.io.BufferedWriter
 
-class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScriptParser.ExpressionContext, AnalysisResult>) {
+class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleContext, AnalysisInfo>) {
 	fun writeFile(ctx: TinyScriptParser.FileContext) {
 		ctx.declaration().forEach { writeLocalDeclaration(it) }
 	}
@@ -12,37 +12,43 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 	fun writeLocalDeclaration(ctx: TinyScriptParser.DeclarationContext) {
 		when (ctx) {
 			is TinyScriptParser.AbstractDeclarationContext -> {
-				out.write("// var ")
-				writeSignature(ctx.signature())
-				out.write(";\n")
 			}
 			is TinyScriptParser.ConcreteDeclarationContext -> {
-				out.write("var ")
-				writeSignature(ctx.signature())
-				out.write(" = ")
-				writeExpression(ctx.expression())
-				out.write(";\n")
+				val signature = ctx.signature()
+				when (signature) {
+					is TinyScriptParser.SymbolContext -> {
+						out.write("var ")
+						out.write(signature.Name().text)
+						out.write(" = ")
+						writeExpression(ctx.expression())
+						out.write(";\n")
+					}
+					is TinyScriptParser.PrefixOperatorContext -> {
+						val operatorInfo = infoMap[signature] as OperatorInfo
+
+						out.write("var \$op")
+						out.write(operatorInfo.operator.identifier)
+						out.write(" = (right) => (")
+						writeExpression(ctx.expression())
+						out.write(");\n")
+					}
+					is TinyScriptParser.InfixOperatorContext -> {
+						val operatorInfo = infoMap[signature] as OperatorInfo
+
+						out.write("var \$op")
+						out.write(operatorInfo.operator.identifier)
+						out.write(" = (left, right) => (")
+						writeExpression(ctx.expression())
+						out.write(");\n")
+					}
+					else -> throw RuntimeException("unknown signature type")
+				}
 			}
 			is TinyScriptParser.ImplicitDeclarationContext -> {
 				writeExpression(ctx.expression())
 				out.write(";\n")
 			}
 			else -> throw RuntimeException("unknown declaration type")
-		}
-	}
-
-	fun writeSignature(ctx: TinyScriptParser.SignatureContext) {
-		when (ctx) {
-			is TinyScriptParser.SymbolContext -> {
-				out.write(ctx.Name().text)
-			}
-			is TinyScriptParser.PrefixOperatorContext -> {
-				out.write("TODO")
-			}
-			is TinyScriptParser.InfixOperatorContext -> {
-				out.write("TODO")
-			}
-			else -> throw RuntimeException("unknown signature type")
 		}
 	}
 
@@ -57,12 +63,11 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 			is TinyScriptParser.ThisExpressionContext -> out.write("this")
 			is TinyScriptParser.SuperExpressionContext -> out.write("super") // TODO
 			is TinyScriptParser.ReferenceExpressionContext -> {
-				val analysisResult = resultMap[ctx]!!
+				val referenceExpressionInfo = infoMap[ctx] as ReferenceExpressionInfo
 				val name = ctx.Name().text
-				val symbol = analysisResult.scope.resolveSymbol(name)!!
-				val objectScope = ObjectScope.resolveObjectScope(analysisResult.scope)
+				val objectScope = ObjectScope.resolveObjectScope(referenceExpressionInfo.scope)
 				// if the symbol is resolved from objectScope, then we have to generate "this."
-				if (objectScope != null && objectScope.objectType.symbols[name] === symbol) {
+				if (objectScope != null && objectScope.objectType.symbols[name] === referenceExpressionInfo.symbol) {
 					out.write("this.")
 				}
 				out.write(name)
@@ -74,7 +79,7 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 			}
 			is TinyScriptParser.ObjectExpressionContext -> writeObjectInstance(ctx.`object`(), null)
 			is TinyScriptParser.ObjectOrCallExpressionContext -> {
-				val expressionType: FinalType = resultMap[ctx.expression()]!!.type.final()
+				val expressionType: FinalType = (infoMap[ctx.expression()] as ExpressionInfo).type.final()
 				when (expressionType) {
 					is ClassType -> writeObjectInstance(ctx.`object`(), ctx.expression())
 					is FunctionType -> writeFunctionCall(ctx, expressionType)
@@ -93,13 +98,22 @@ class JavascriptGenerator(val out: BufferedWriter, val resultMap: Map<TinyScript
 				out.write("}")
 			}
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
-				writeOperator(ctx.Operator().text)
+				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
+				out.write("\$op")
+				out.write(analysisInfo.operator.identifier)
+				out.write("(")
 				writeExpression(ctx.expression())
+				out.write(")")
 			}
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
+				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
+				out.write("\$op")
+				out.write(analysisInfo.operator.identifier)
+				out.write("(")
 				writeExpression(ctx.expression(0))
-				writeOperator(ctx.Operator().text)
+				out.write(", ")
 				writeExpression(ctx.expression(1))
+				out.write(")")
 			}
 			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`(), null)
 			is TinyScriptParser.ExtendClassExpressionContext -> writeClass(ctx.`object`(), ctx.expression())
