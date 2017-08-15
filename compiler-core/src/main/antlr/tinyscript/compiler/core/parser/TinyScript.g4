@@ -79,7 +79,7 @@ StringCharacter: ~["\\];
 
 Operator: '+' | '-' | '*' | '/' | '^' | '%' | '!' | '==' | '!=';
 
-Name: [a-zA-Z] [a-zA-Z0-9]*;
+Name: [a-zA-Z$_] [a-zA-Z$_0-9]*;
 
 NL: [\r\n]+;
 

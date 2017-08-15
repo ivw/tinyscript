@@ -196,16 +196,6 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 		out.write(")")
 	}
 
-	fun writeOperator(operator: String) {
-		out.write(" ")
-		out.write(when (operator) {
-			"==" -> "==="
-			"!=" -> "!=="
-			else -> operator
-		})
-		out.write(" ")
-	}
-
 	fun writeFunction(ctx: TinyScriptParser.FunctionExpressionContext) {
 		out.write("(")
 		ctx.`object`()?.let { paramsObjectCtx ->
