@@ -28,7 +28,7 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 
 						out.write("var \$op")
 						out.write(operatorInfo.operator.identifier)
-						out.write(" = (right) => (")
+						out.write(" = (\$0) => (")
 						writeExpression(ctx.expression())
 						out.write(");\n")
 					}
@@ -37,7 +37,7 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 
 						out.write("var \$op")
 						out.write(operatorInfo.operator.identifier)
-						out.write(" = (left, right) => (")
+						out.write(" = (\$0, \$1) => (")
 						writeExpression(ctx.expression())
 						out.write(");\n")
 					}

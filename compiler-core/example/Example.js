@@ -44,7 +44,7 @@ var Point = function () {
 // this.x;
 // this.y;
 };
-var $op1_0 = (left, right) => (new (function () {
+var $op1_0 = ($0, $1) => (new (function () {
 (Point).call(this);
 this.x = $op0_0($0.x, $1.x);
 this.y = $op0_0($0.y, $1.y);
