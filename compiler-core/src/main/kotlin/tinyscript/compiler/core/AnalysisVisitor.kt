@@ -213,8 +213,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitObjectInstanceExpression(superObjectType: ObjectType?, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		val instanceObjectType = visitObject(argsObjectCtx, scope, false, superObjectType, true)
-		return instanceObjectType
+		return visitObject(argsObjectCtx, scope, false, superObjectType, true)
 	}
 
 	fun visitFunctionCallExpression(functionType: FunctionType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
@@ -283,7 +282,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitExpression(ctx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
-		val type: Type = when (ctx) {
+		return when (ctx) {
 			is TinyScriptParser.BlockExpressionContext -> visitBlock(ctx.block(), scope)
 			is TinyScriptParser.IntegerLiteralExpressionContext -> intClass.objectType
 			is TinyScriptParser.FloatLiteralExpressionContext -> floatClass.objectType
@@ -370,6 +369,5 @@ class AnalysisVisitor(val filePath: Path) {
 			}
 			else -> throw RuntimeException("unknown expression type")
 		}
-		return type
 	}
 }
