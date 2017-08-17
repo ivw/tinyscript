@@ -6,15 +6,16 @@ grammar TinyScript;
 file: NL* (declaration ((',' | NL+) declaration)* NL*)? EOF;
 
 declaration
-	:	signature ':' type											# AbstractDeclaration
-	|	signature (':' type)? '=' NL* expression					# ConcreteDeclaration
+	:	signature ':' type										# AbstractDeclaration
+	|	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
 	|	expression												# ImplicitDeclaration
 	;
 
 signature
-	:	Mut? Name													# Symbol
-	|	Operator type												# PrefixOperator
-	|	type Operator type											# InfixOperator
+	:	Mut? Name												# Symbol
+	|	Operator type											# PrefixOperator
+	|	type Operator type										# InfixOperator
+	|	(type '.')? Name object									# Method
 	;
 
 expression

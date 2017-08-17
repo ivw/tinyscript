@@ -6,6 +6,8 @@ open class ExpressionInfo(scope: Scope, val type: Type) : AnalysisInfo(scope)
 
 open class OperatorInfo(scope: Scope, val operator: Operator) : AnalysisInfo(scope)
 
+open class MethodInfo(scope: Scope, val method: Method) : AnalysisInfo(scope)
+
 open class ReferenceExpressionInfo(
 		scope: Scope,
 		type: Type,

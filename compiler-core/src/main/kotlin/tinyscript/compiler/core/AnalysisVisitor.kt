@@ -113,6 +113,29 @@ class AnalysisVisitor(val filePath: Path) {
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
 				operator
 			}
+			is TinyScriptParser.MethodContext -> {
+				val params = visitObject(signatureCtx.`object`(), scope, false, null, false)
+
+				val expressionScope = FunctionScope(scope, params)
+				val expressionType = expressionCtx?.let { visitExpression(it, expressionScope) }
+				val typeAnnotationType: FinalType? = typeCtx?.let { visitType(it, scope) }
+				val type: Type = typeAnnotationType ?: expressionType ?: throw IllegalStateException()
+
+				val method = Method(
+						signatureCtx.Name().text, params, type,
+						expressionType == null
+				)
+				scope.defineMethod(method)
+
+				if (typeAnnotationType != null && expressionType != null) {
+					val finalExpressionType = expressionType.final()
+					if (!typeAnnotationType.accepts(finalExpressionType))
+						throw AnalysisError("invalid value for method '$method': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
+				}
+
+				infoMap[signatureCtx] = MethodInfo(scope, method)
+				method
+			}
 			else -> throw RuntimeException("unknown Signature type")
 		}
 	}

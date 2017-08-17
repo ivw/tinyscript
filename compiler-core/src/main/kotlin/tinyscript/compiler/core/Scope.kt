@@ -5,10 +5,16 @@ abstract class Scope(val parentScope: Scope?) {
 
 	abstract val operators: MutableList<Operator>
 
+	abstract val methods: MutableList<Method>
+
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
 	open fun resolveSymbol(name: String): Symbol? {
 		return symbols[name] ?: parentScope?.resolveSymbol(name)
+	}
+
+	fun resolveSymbolOrFail(name: String): Symbol {
+		return resolveSymbol(name) ?: throw RuntimeException("unresolved symbol '$name'")
 	}
 
 	open fun defineSymbol(symbol: Symbol) {
@@ -37,15 +43,24 @@ abstract class Scope(val parentScope: Scope?) {
 		operators.add(operator)
 	}
 
-	fun resolveSymbolOrFail(name: String): Symbol {
-		return resolveSymbol(name) ?: throw RuntimeException("unresolved symbol '$name'")
+	open fun resolveMethod(name: String, arguments: ObjectType): Method? {
+		val method = methods.findLast { method ->
+			method.name == name && method.params.accepts(arguments)
+		}
+		return method ?: parentScope?.resolveMethod(name, arguments)
+	}
+
+	open fun defineMethod(method: Method) {
+		method.identifier = "${depth}_${methods.size}"
+		methods.add(method)
 	}
 }
 
 open class LocalScope(
 		parentScope: Scope?,
 		override val symbols: MutableMap<String, Symbol> = LinkedHashMap(),
-		override val operators: MutableList<Operator> = ArrayList()
+		override val operators: MutableList<Operator> = ArrayList(),
+		override val methods: MutableList<Method> = ArrayList()
 ) : Scope(parentScope) {
 	override fun defineSymbol(symbol: Symbol) {
 		if (symbols.containsKey(symbol.name))
@@ -67,6 +82,8 @@ class ObjectScope(parentScope: Scope?, val objectType: ObjectType) : Scope(paren
 	override val symbols: MutableMap<String, Symbol> get() = objectType.symbols
 
 	override val operators: MutableList<Operator> get() = ArrayList() // TODO
+
+	override val methods: MutableList<Method> get() = ArrayList() // TODO
 
 	override fun defineSymbol(symbol: Symbol) {
 //		if (objectType.symbols.containsKey(symbol.name))

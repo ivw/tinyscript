@@ -41,6 +41,15 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 						writeExpression(ctx.expression())
 						out.write(");\n")
 					}
+					is TinyScriptParser.MethodContext -> {
+						val methodInfo = infoMap[signature] as MethodInfo
+
+						out.write("var \$method")
+						out.write(methodInfo.method.identifier)
+						out.write(" = ")
+						writeFunction(signature.`object`(), ctx.expression())
+						out.write(";\n")
+					}
 					else -> throw RuntimeException("unknown signature type")
 				}
 			}
@@ -130,7 +139,7 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 				out.write(" = ")
 				writeExpression(ctx.expression(1))
 			}
-			is TinyScriptParser.FunctionExpressionContext -> writeFunction(ctx)
+			is TinyScriptParser.FunctionExpressionContext -> writeFunction(ctx.`object`(), ctx.expression())
 			else -> throw RuntimeException("unknown expression type")
 		}
 	}
@@ -196,9 +205,9 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 		out.write(")")
 	}
 
-	fun writeFunction(ctx: TinyScriptParser.FunctionExpressionContext) {
+	fun writeFunction(objectCtx: TinyScriptParser.ObjectContext?, expressionCtx: TinyScriptParser.ExpressionContext) {
 		out.write("(")
-		ctx.`object`()?.let { paramsObjectCtx ->
+		objectCtx?.let { paramsObjectCtx ->
 			for (declaration in paramsObjectCtx.declaration()) {
 				when (declaration) {
 					is TinyScriptParser.AbstractDeclarationContext -> {
@@ -217,7 +226,7 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 			}
 		}
 		out.write(") => (")
-		writeExpression(ctx.expression())
+		writeExpression(expressionCtx)
 		out.write(")")
 	}
 
