@@ -5,56 +5,56 @@ var main = () => ((myStringOrNull = "foo"));
 var multiplyByTwo = (n, ) => ($op0_1(n, 2));
 var sayHello = () => (println("Hello", ));
 var Animal = function () {
-// this.name;
-this.sayName = () => (println("my name is $name", ));
+  // this.name;
+  this.sayName = () => (println("my name is $name", ));
 };
 var Dog = function () {
-(Animal).call(this);
-this.bark = () => (println("woof", ));
+  (Animal).call(this);
+  this.bark = () => (println("woof", ));
 };
 var myDog = new (function () {
-(Dog).call(this);
-this.name = "Foo";
+  (Dog).call(this);
+  this.name = "Foo";
 })();
 var myObject = new (function () {
-this.foo = "bar";
-this.abc = 123;
+  this.foo = "bar";
+  this.abc = 123;
 })();
 var Scanner = function () {
-// this.scan;
+  // this.scan;
 };
 var Printer = function () {
-// this.print;
+  // this.print;
 };
 var Copier = function () {
-(function () {
-(Scanner).call(this);
-(Printer).call(this);
-}).call(this);
-this.copy = () => ((function () {
-this.scan();
-return this.print();
-})());
+  (function () {
+    (Scanner).call(this);
+    (Printer).call(this);
+  }).call(this);
+  this.copy = () => ((function () {
+    this.scan();
+    return this.print();
+  })());
 };
 var message = (
-(true) ? ("Hello") :
-"Hi"
+  (true) ? ("Hello") :
+  "Hi"
 );
 var Point = function () {
-// this.x;
-// this.y;
+  // this.x;
+  // this.y;
 };
 var $op1_0 = ($0, $1) => (new (function () {
-(Point).call(this);
-this.x = $op0_0($0.x, $1.x);
-this.y = $op0_0($0.y, $1.y);
+  (Point).call(this);
+  this.x = $op0_0($0.x, $1.x);
+  this.y = $op0_0($0.y, $1.y);
 })());
 var myPoint = $op1_0(new (function () {
-(Point).call(this);
-this.x = 1;
-this.y = 2;
+  (Point).call(this);
+  this.x = 1;
+  this.y = 2;
 })(), new (function () {
-(Point).call(this);
-this.x = 1;
-this.y = 2;
+  (Point).call(this);
+  this.x = 1;
+  this.y = 2;
 })());

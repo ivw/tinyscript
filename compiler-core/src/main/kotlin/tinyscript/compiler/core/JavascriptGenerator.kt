@@ -4,7 +4,9 @@ import org.antlr.v4.runtime.ParserRuleContext
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.io.BufferedWriter
 
-class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleContext, AnalysisInfo>) {
+class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContext, AnalysisInfo>) {
+	val out = IndentedWriter(out)
+
 	fun writeFile(ctx: TinyScriptParser.FileContext) {
 		ctx.declaration().forEach { writeLocalDeclaration(it) }
 	}
@@ -21,7 +23,8 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 						out.write(signature.Name().text)
 						out.write(" = ")
 						writeExpression(ctx.expression())
-						out.write(";\n")
+						out.write(";")
+						out.newLine()
 					}
 					is TinyScriptParser.PrefixOperatorContext -> {
 						val operatorInfo = infoMap[signature] as OperatorInfo
@@ -30,7 +33,8 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 						out.write(operatorInfo.operator.identifier)
 						out.write(" = (\$0) => (")
 						writeExpression(ctx.expression())
-						out.write(");\n")
+						out.write(");")
+						out.newLine()
 					}
 					is TinyScriptParser.InfixOperatorContext -> {
 						val operatorInfo = infoMap[signature] as OperatorInfo
@@ -39,7 +43,8 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 						out.write(operatorInfo.operator.identifier)
 						out.write(" = (\$0, \$1) => (")
 						writeExpression(ctx.expression())
-						out.write(");\n")
+						out.write(");")
+						out.newLine()
 					}
 					is TinyScriptParser.MethodContext -> {
 						val methodInfo = infoMap[signature] as MethodInfo
@@ -48,14 +53,16 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 						out.write(methodInfo.method.identifier)
 						out.write(" = ")
 						writeFunction(signature.`object`(), ctx.expression())
-						out.write(";\n")
+						out.write(";")
+						out.newLine()
 					}
 					else -> throw RuntimeException("unknown signature type")
 				}
 			}
 			is TinyScriptParser.ImplicitDeclarationContext -> {
 				writeExpression(ctx.expression())
-				out.write(";\n")
+				out.write(";")
+				out.newLine()
 			}
 			else -> throw RuntimeException("unknown declaration type")
 		}
@@ -96,14 +103,18 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 				}
 			}
 			is TinyScriptParser.ClassMergeExpressionContext -> {
-				out.write("function () {\n")
+				out.write("function () {")
+				out.indent++
+				out.newLine()
 
 				for (expressionCtx in ctx.expression()) {
 					out.write("(")
 					writeExpression(expressionCtx)
-					out.write(").call(this);\n")
+					out.write(").call(this);")
+					out.newLine()
 				}
 
+				out.indent--
 				out.write("}")
 			}
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
@@ -153,19 +164,24 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 		);
 		 */
 
-		out.write("(\n")
+		out.write("(")
+		out.indent++
+		out.newLine()
 
 		val nrConditions = ctx.block().size
 		for (i in 0 until nrConditions) {
 			writeBlock(ctx.block(i))
 			out.write(" ? (")
 			writeExpression(ctx.expression(i))
-			out.write(") :\n")
+			out.write(") :")
+			out.newLine()
 		}
 
 		writeExpression(ctx.expression(nrConditions))
+		out.newLine()
 
-		out.write("\n)")
+		out.indent--
+		out.write(")")
 	}
 
 	fun writeFunctionCall(ctx: TinyScriptParser.ObjectOrCallExpressionContext, functionType: FunctionType) {
@@ -237,12 +253,15 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 	}
 
 	fun writeClass(objectCtx: TinyScriptParser.ObjectContext, superExpressionCtx: TinyScriptParser.ExpressionContext?) {
-		out.write("function () {\n")
+		out.write("function () {")
+		out.indent++
+		out.newLine()
 
 		if (superExpressionCtx != null) {
 			out.write("(")
 			writeExpression(superExpressionCtx)
-			out.write(").call(this);\n")
+			out.write(").call(this);")
+			out.newLine()
 		}
 
 		for (declaration in objectCtx.declaration()) {
@@ -250,20 +269,23 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 				is TinyScriptParser.AbstractDeclarationContext -> {
 					out.write("// this.")
 					out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
-					out.write(";\n")
+					out.write(";")
+					out.newLine()
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					out.write("this.")
 					out.write((declaration.signature() as TinyScriptParser.SymbolContext).Name().text)
 					out.write(" = ")
 					writeExpression(declaration.expression())
-					out.write(";\n")
+					out.write(";")
+					out.newLine()
 				}
 				is TinyScriptParser.ImplicitDeclarationContext ->
 					throw RuntimeException("implicit declaration not allowed here")
 				else -> throw RuntimeException("unknown declaration type")
 			}
 		}
+		out.indent--
 		out.write("}")
 	}
 
@@ -273,11 +295,15 @@ class JavascriptGenerator(val out: BufferedWriter, val infoMap: Map<ParserRuleCo
 			writeExpression(ctx.expression())
 			out.write(")")
 		} else {
-			out.write("(function () {\n")
+			out.write("(function () {")
+			out.indent++
+			out.newLine()
 			ctx.declaration().forEach { writeLocalDeclaration(it) }
 			out.write("return ")
 			writeExpression(ctx.expression())
-			out.write(";\n")
+			out.write(";")
+			out.newLine()
+			out.indent--
 			out.write("})()")
 		}
 	}
