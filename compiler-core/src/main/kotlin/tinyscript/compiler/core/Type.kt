@@ -80,11 +80,14 @@ open class ObjectType(
 		if (!type.identities.containsAll(identities)) return false
 
 		for ((name, symbol) in symbols) {
-			val subSymbol: Symbol = type.symbols[name]
-					?: return false
-
-			if (!symbol.type.final().accepts(subSymbol.type.final()))
-				return false
+			val subSymbol = type.symbols[name]
+			if (subSymbol == null) {
+				if (symbol.isAbstract)
+					return false
+			} else {
+				if (!symbol.type.final().accepts(subSymbol.type.final()))
+					return false
+			}
 		}
 		return true
 	}
