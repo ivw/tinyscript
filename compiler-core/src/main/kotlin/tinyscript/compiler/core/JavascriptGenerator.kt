@@ -93,7 +93,11 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				out.write(".")
 				out.write(ctx.Name().text)
 			}
-			is TinyScriptParser.ObjectExpressionContext -> writeObjectInstance(ctx.`object`(), null)
+			is TinyScriptParser.ObjectExpressionContext -> {
+				out.write("new (")
+				writeClass(ctx.`object`())
+				out.write(")()")
+			}
 			is TinyScriptParser.FunctionCallExpressionContext -> {
 				val functionType = (infoMap[ctx.expression()] as FunctionCallExpressionInfo).functionType
 				writeFunctionCall(ctx, functionType)
@@ -116,7 +120,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				writeExpression(ctx.expression(1))
 				out.write(")")
 			}
-			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`(), null)
+			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`())
 			is TinyScriptParser.ConditionalExpressionContext -> writeConditionalExpression(ctx)
 			is TinyScriptParser.ReassignmentExpressionContext -> {
 				out.write(ctx.Name().text)
@@ -226,23 +230,10 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 		out.write(")")
 	}
 
-	fun writeObjectInstance(ctx: TinyScriptParser.ObjectContext, superExpressionCtx: TinyScriptParser.ExpressionContext?) {
-		out.write("new (")
-		writeClass(ctx, superExpressionCtx)
-		out.write(")()")
-	}
-
-	fun writeClass(objectCtx: TinyScriptParser.ObjectContext, superExpressionCtx: TinyScriptParser.ExpressionContext?) {
+	fun writeClass(objectCtx: TinyScriptParser.ObjectContext) {
 		out.write("function () {")
 		out.indent++
 		out.newLine()
-
-		if (superExpressionCtx != null) {
-			out.write("(")
-			writeExpression(superExpressionCtx)
-			out.write(").call(this);")
-			out.newLine()
-		}
 
 		for (declaration in objectCtx.declaration()) {
 			when (declaration) {
