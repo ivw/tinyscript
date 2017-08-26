@@ -9,6 +9,7 @@ declaration
 	:	signature ':' type										# AbstractDeclaration
 	|	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
 	|	expression												# ImplicitDeclaration
+	|	'&' expression											# InheritDeclaration
 	;
 
 signature
@@ -29,17 +30,15 @@ expression
 	|	'super'													# SuperExpression
 	|	Name													# ReferenceExpression
 	|	expression NL* '.' Name									# DotReferenceExpression
-	|	Mut? object												# ObjectExpression // this is basically a shorthand for `Object[foo = 123]`
-	|	expression object										# ObjectOrCallExpression // this is for both calling functions and for instantiating objects.
-	|	expression '&' expression								# ClassMergeExpression
+	|	Mut? object												# ObjectExpression
+	|	expression object										# FunctionCallExpression
 	|	Operator expression										# PrefixOperatorCallExpression
 	|	expression NL* Operator NL* expression					# InfixOperatorCallExpression
 	|	Mut? 'class' object										# ClassExpression
-	|	expression 'class' object								# ExtendClassExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
 	|	Name '<-' expression									# ReassignmentExpression
 	|	expression NL* '.' Name '<-' expression					# DotReassignmentExpression
-	|	object? Mut? '->' NL* expression						# FunctionExpression // this rule is at the bottom precedence, because everything inside the rhs expression goes first
+	|	object? Mut? '->' NL* expression						# FunctionExpression
 	;
 
 block: '(' NL* (declaration (';' | NL+))* expression NL* ')';
@@ -53,13 +52,15 @@ type
 	|	type '?'												# NullableType
 	|	Mut? objectType											# ObjectTypeType
 	|	Name													# TypeReference
-	|	type '&' type											# UnionObjectType
 	|	type '|' type											# IntersectObjectType
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
-objectTypeField: signature ':' type;
+objectTypeField
+	:	Mut? Name ':' type										# SymbolObjectTypeField
+	|	'&' Name												# InheritDeclarationObjectTypeField
+	;
 
 // LEXER TOKENS
 

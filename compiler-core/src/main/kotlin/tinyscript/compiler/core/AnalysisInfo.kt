@@ -19,3 +19,9 @@ open class OperatorCallExpressionInfo(
 		type: Type,
 		val operator: Operator
 ) : ExpressionInfo(scope, type)
+
+open class FunctionCallExpressionInfo(
+		scope: Scope,
+		type: Type,
+		val functionType: FunctionType
+) : ExpressionInfo(scope, type)

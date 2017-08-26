@@ -36,8 +36,8 @@ class AnalysisVisitor(val filePath: Path) {
 		}
 	}
 
-	fun visitDeclaration(scope: Scope, signatureCtx: TinyScriptParser.SignatureContext, typeCtx: TinyScriptParser.TypeContext?, expressionCtx: TinyScriptParser.ExpressionContext?): Signature {
-		return when (signatureCtx) {
+	fun visitDeclaration(scope: Scope, signatureCtx: TinyScriptParser.SignatureContext, typeCtx: TinyScriptParser.TypeContext?, expressionCtx: TinyScriptParser.ExpressionContext?) {
+		when (signatureCtx) {
 			is TinyScriptParser.SymbolContext -> {
 				val expressionType = expressionCtx?.let { visitExpression(it, scope) }
 				val typeAnnotationType: FinalType? = typeCtx?.let { visitType(it, scope) }
@@ -56,8 +56,6 @@ class AnalysisVisitor(val filePath: Path) {
 					if (!typeAnnotationType.accepts(finalExpressionType))
 						throw AnalysisError("invalid value for symbol '$symbol': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
 				}
-
-				symbol
 			}
 			is TinyScriptParser.PrefixOperatorContext -> {
 				val rhsType = visitType(signatureCtx.type(), scope)
@@ -83,7 +81,6 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
-				operator
 			}
 			is TinyScriptParser.InfixOperatorContext -> {
 				val lhsType = visitType(signatureCtx.type(0), scope)
@@ -111,7 +108,6 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
-				operator
 			}
 			is TinyScriptParser.MethodContext -> {
 				val params = visitObject(signatureCtx.`object`(), scope, false, null, false)
@@ -134,7 +130,6 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = MethodInfo(scope, method)
-				method
 			}
 			else -> throw RuntimeException("unknown Signature type")
 		}
@@ -158,27 +153,37 @@ class AnalysisVisitor(val filePath: Path) {
 				val classType = referenceSymbol.type.final() as ClassType
 				classType.objectType
 			}
-			is TinyScriptParser.UnionObjectTypeContext -> {
-				val leftType = visitType(ctx.type(0), scope) as ObjectType
-				val rightType = visitType(ctx.type(1), scope) as ObjectType
-				unionObjectType(leftType, rightType)
-			}
 			is TinyScriptParser.IntersectObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
 				val rightType = visitType(ctx.type(1), scope) as ObjectType
 				intersectObjectType(leftType, rightType)
 			}
-			else -> throw RuntimeException("unknown TypeContext type")
+			else -> throw RuntimeException("unknown Type type")
 		}
 	}
 
 	fun visitObjectType(ctx: TinyScriptParser.ObjectTypeContext, scope: Scope): ObjectType {
 		val objectType = ObjectType(false)
 		val objectScope = ObjectScope(scope, objectType)
-		for (field in ctx.objectTypeField()) {
-			visitDeclaration(objectScope, field.signature(), field.type(), null)
-		}
+		ctx.objectTypeField().forEach({ visitObjectTypeField(it, objectScope) })
 		return objectType
+	}
+
+	fun visitObjectTypeField(ctx: TinyScriptParser.ObjectTypeFieldContext, scope: Scope) {
+		when (ctx) {
+			is TinyScriptParser.SymbolObjectTypeFieldContext -> {
+				val type: Type = visitType(ctx.type(), scope)
+
+				val symbol = Symbol(
+						ctx.Name().text,
+						type,
+						true,
+						ctx.getToken(TinyScriptParser.Mut, 0) != null
+				)
+				scope.defineSymbol(symbol)
+			}
+			else -> throw RuntimeException("unknown ObjectTypeField type")
+		}
 	}
 
 	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?, mustBeConcrete: Boolean): ObjectType {
@@ -312,12 +317,6 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.StringLiteralExpressionContext -> stringClass.objectType
 			is TinyScriptParser.BooleanLiteralExpressionContext -> booleanClass.objectType
 			is TinyScriptParser.ClassExpressionContext -> visitClassExpression(null, ctx.`object`(), scope)
-			is TinyScriptParser.ExtendClassExpressionContext -> visitClassExpression(ctx.expression(), ctx.`object`(), scope)
-			is TinyScriptParser.ClassMergeExpressionContext -> {
-				val lhsClassType = visitExpression(ctx.expression(0), scope).final() as ClassType
-				val rhsClassType = visitExpression(ctx.expression(1), scope).final() as ClassType
-				ClassType(unionObjectType(lhsClassType.objectType, rhsClassType.objectType))
-			}
 			is TinyScriptParser.NullExpressionContext -> NullableType(
 					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
 			)
@@ -347,14 +346,11 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.FunctionExpressionContext -> visitFunctionExpression(ctx, scope)
 			is TinyScriptParser.ObjectExpressionContext ->
 				visitObjectInstanceExpression(null, ctx.`object`(), scope)
-			is TinyScriptParser.ObjectOrCallExpressionContext -> {
-				val finalClassOrFunctionType: FinalType = visitExpression(ctx.expression(), scope).final()
-				val type: Type = when (finalClassOrFunctionType) {
-					is FunctionType -> visitFunctionCallExpression(finalClassOrFunctionType, ctx.`object`(), scope)
-					is ClassType -> visitObjectInstanceExpression(finalClassOrFunctionType.objectType, ctx.`object`(), scope)
-					else -> throw AnalysisError("can only call a function or a class", filePath, ctx.start)
-				}
-				infoMap[ctx] = ExpressionInfo(scope, type)
+			is TinyScriptParser.FunctionCallExpressionContext -> {
+				val functionType = (visitExpression(ctx.expression(), scope).final() as? FunctionType)
+						?: throw AnalysisError("must be a function", filePath, ctx.start)
+				val type: Type = visitFunctionCallExpression(functionType, ctx.`object`(), scope)
+				infoMap[ctx] = FunctionCallExpressionInfo(scope, type, functionType)
 				type
 			}
 			is TinyScriptParser.ReassignmentExpressionContext ->

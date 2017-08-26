@@ -94,28 +94,9 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				out.write(ctx.Name().text)
 			}
 			is TinyScriptParser.ObjectExpressionContext -> writeObjectInstance(ctx.`object`(), null)
-			is TinyScriptParser.ObjectOrCallExpressionContext -> {
-				val expressionType: FinalType = (infoMap[ctx.expression()] as ExpressionInfo).type.final()
-				when (expressionType) {
-					is ClassType -> writeObjectInstance(ctx.`object`(), ctx.expression())
-					is FunctionType -> writeFunctionCall(ctx, expressionType)
-					else -> throw RuntimeException("unsupported expression type")
-				}
-			}
-			is TinyScriptParser.ClassMergeExpressionContext -> {
-				out.write("function () {")
-				out.indent++
-				out.newLine()
-
-				for (expressionCtx in ctx.expression()) {
-					out.write("(")
-					writeExpression(expressionCtx)
-					out.write(").call(this);")
-					out.newLine()
-				}
-
-				out.indent--
-				out.write("}")
+			is TinyScriptParser.FunctionCallExpressionContext -> {
+				val functionType = (infoMap[ctx.expression()] as FunctionCallExpressionInfo).functionType
+				writeFunctionCall(ctx, functionType)
 			}
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
 				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
@@ -136,7 +117,6 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				out.write(")")
 			}
 			is TinyScriptParser.ClassExpressionContext -> writeClass(ctx.`object`(), null)
-			is TinyScriptParser.ExtendClassExpressionContext -> writeClass(ctx.`object`(), ctx.expression())
 			is TinyScriptParser.ConditionalExpressionContext -> writeConditionalExpression(ctx)
 			is TinyScriptParser.ReassignmentExpressionContext -> {
 				out.write(ctx.Name().text)
@@ -184,7 +164,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 		out.write(")")
 	}
 
-	fun writeFunctionCall(ctx: TinyScriptParser.ObjectOrCallExpressionContext, functionType: FunctionType) {
+	fun writeFunctionCall(ctx: TinyScriptParser.FunctionCallExpressionContext, functionType: FunctionType) {
 		writeExpression(ctx.expression())
 		out.write("(")
 
