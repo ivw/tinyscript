@@ -25,19 +25,19 @@ class AnalysisVisitor(val filePath: Path) {
 		for (declaration in ctx.declaration()) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
-					visitDeclaration(scope, declaration.signature(), declaration.type(), null)
+					visitSignatureDeclaration(scope, declaration.signature(), declaration.type(), null)
 					// TODO check if `native`?
 				}
 				is TinyScriptParser.ConcreteDeclarationContext ->
-					visitDeclaration(scope, declaration.signature(), declaration.type(), declaration.expression())
+					visitSignatureDeclaration(scope, declaration.signature(), declaration.type(), declaration.expression())
 				is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
 				else -> throw RuntimeException("unknown declaration type")
 			}
 		}
 	}
 
-	fun visitDeclaration(scope: Scope, signatureCtx: TinyScriptParser.SignatureContext, typeCtx: TinyScriptParser.TypeContext?, expressionCtx: TinyScriptParser.ExpressionContext?) {
-		when (signatureCtx) {
+	fun visitSignatureDeclaration(scope: Scope, signatureCtx: TinyScriptParser.SignatureContext, typeCtx: TinyScriptParser.TypeContext?, expressionCtx: TinyScriptParser.ExpressionContext?): Signature {
+		return when (signatureCtx) {
 			is TinyScriptParser.SymbolContext -> {
 				val expressionType = expressionCtx?.let { visitExpression(it, scope) }
 				val typeAnnotationType: FinalType? = typeCtx?.let { visitType(it, scope) }
@@ -56,6 +56,7 @@ class AnalysisVisitor(val filePath: Path) {
 					if (!typeAnnotationType.accepts(finalExpressionType))
 						throw AnalysisError("invalid value for symbol '$symbol': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
 				}
+				symbol
 			}
 			is TinyScriptParser.PrefixOperatorContext -> {
 				val rhsType = visitType(signatureCtx.type(), scope)
@@ -81,6 +82,7 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
+				operator
 			}
 			is TinyScriptParser.InfixOperatorContext -> {
 				val lhsType = visitType(signatureCtx.type(0), scope)
@@ -108,6 +110,7 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
+				operator
 			}
 			is TinyScriptParser.MethodContext -> {
 				val params = visitObject(signatureCtx.`object`(), scope, false, null, false)
@@ -130,6 +133,7 @@ class AnalysisVisitor(val filePath: Path) {
 				}
 
 				infoMap[signatureCtx] = MethodInfo(scope, method)
+				method
 			}
 			else -> throw RuntimeException("unknown Signature type")
 		}
@@ -196,11 +200,11 @@ class AnalysisVisitor(val filePath: Path) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
 					superSymbolsIterator = null
-					visitDeclaration(objectScope, declaration.signature(), declaration.type(), null)
+					visitSignatureDeclaration(objectScope, declaration.signature(), declaration.type(), null)
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
 					superSymbolsIterator = null
-					visitDeclaration(objectScope, declaration.signature(), declaration.type(), declaration.expression())
+					visitSignatureDeclaration(objectScope, declaration.signature(), declaration.type(), declaration.expression())
 				}
 				is TinyScriptParser.ImplicitDeclarationContext -> {
 					if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
@@ -229,7 +233,7 @@ class AnalysisVisitor(val filePath: Path) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> throw RuntimeException("invalid abstract declaration")
 				is TinyScriptParser.ConcreteDeclarationContext ->
-					visitDeclaration(blockScope, declaration.signature(), declaration.type(), declaration.expression())
+					visitSignatureDeclaration(blockScope, declaration.signature(), declaration.type(), declaration.expression())
 				is TinyScriptParser.ImplicitDeclarationContext -> {
 					// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
 					visitExpression(declaration.expression(), blockScope)
