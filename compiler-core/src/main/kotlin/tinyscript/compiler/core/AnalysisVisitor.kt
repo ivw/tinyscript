@@ -113,7 +113,7 @@ class AnalysisVisitor(val filePath: Path) {
 				operator
 			}
 			is TinyScriptParser.MethodContext -> {
-				val params = visitObject(signatureCtx.`object`(), scope, false, null, false)
+				val params = visitObject(signatureCtx.`object`(), scope, false, false)
 
 				val expressionScope = FunctionScope(scope, params)
 				val expressionType = expressionCtx?.let { visitExpression(it, expressionScope) }
@@ -190,30 +190,19 @@ class AnalysisVisitor(val filePath: Path) {
 		}
 	}
 
-	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, superObjectType: ObjectType?, mustBeConcrete: Boolean): ObjectType {
-		val objectType = ObjectType(isNominal, superObjectType)
+	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, mustBeConcrete: Boolean): ObjectType {
+		val objectType = ObjectType(isNominal)
 		val objectScope = ObjectScope(scope, objectType)
-
-		var superSymbolsIterator = superObjectType?.let { it.symbols.values.iterator() }
 
 		for (declaration in ctx.declaration()) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
-					superSymbolsIterator = null
 					visitSignatureDeclaration(objectScope, declaration.signature(), declaration.type(), null)
 				}
 				is TinyScriptParser.ConcreteDeclarationContext -> {
-					superSymbolsIterator = null
 					visitSignatureDeclaration(objectScope, declaration.signature(), declaration.type(), declaration.expression())
 				}
-				is TinyScriptParser.ImplicitDeclarationContext -> {
-					if (superSymbolsIterator == null || !superSymbolsIterator.hasNext())
-						throw AnalysisError("invalid implicit declaration", filePath, declaration.start)
-
-					val superSymbol: Symbol = superSymbolsIterator.next()
-					val expressionType = visitExpression(declaration.expression(), objectScope)
-					objectScope.defineSymbol(Symbol(superSymbol.name, expressionType, false, superSymbol.isMutable))
-				}
+				is TinyScriptParser.ImplicitDeclarationContext -> TODO()
 				else -> throw RuntimeException("unknown declaration type")
 			}
 		}
@@ -244,15 +233,6 @@ class AnalysisVisitor(val filePath: Path) {
 		return visitExpression(ctx.expression(), blockScope)
 	}
 
-	fun visitObjectInstanceExpression(superObjectType: ObjectType?, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		return visitObject(argsObjectCtx, scope, false, superObjectType, true)
-	}
-
-	fun visitFunctionCallExpression(functionType: FunctionType, argsObjectCtx: TinyScriptParser.ObjectContext, scope: Scope): Type {
-		visitObject(argsObjectCtx, scope, false, functionType.params, true)
-		return functionType.returnType
-	}
-
 	fun visitFunctionExpression(ctx: TinyScriptParser.FunctionExpressionContext, scope: Scope): DeferredType {
 		val deferredType = object : DeferredType() {
 			override fun createFinalType(): FinalType {
@@ -260,7 +240,7 @@ class AnalysisVisitor(val filePath: Path) {
 
 				val paramsObject: TinyScriptParser.ObjectContext? = ctx.`object`()
 				val params =
-						if (paramsObject != null) visitObject(paramsObject, scope, false, null, false)
+						if (paramsObject != null) visitObject(paramsObject, scope, false, false)
 						else ObjectType(false)
 
 				return FunctionType(params, visitExpression(ctx.expression(), FunctionScope(scope, params)))
@@ -270,16 +250,12 @@ class AnalysisVisitor(val filePath: Path) {
 		return deferredType
 	}
 
-	fun visitClassExpression(lhsExpressionCtx: TinyScriptParser.ExpressionContext?, objectCtx: TinyScriptParser.ObjectContext, scope: Scope): DeferredType {
+	fun visitClassExpression(ctx: TinyScriptParser.ClassExpressionContext, scope: Scope): DeferredType {
 		val deferredType = object : DeferredType() {
 			override fun createFinalType(): FinalType {
 				deferredAnalyses.remove(this)
 
-				val superType = lhsExpressionCtx?.let {
-					(visitExpression(it, scope).final() as ClassType).objectType
-				}
-
-				return ClassType(visitObject(objectCtx, scope, true, superType, false))
+				return ClassType(visitObject(ctx.`object`(), scope, true, false))
 			}
 		}
 		deferredAnalyses.add(deferredType)
@@ -320,7 +296,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.FloatLiteralExpressionContext -> floatClass.objectType
 			is TinyScriptParser.StringLiteralExpressionContext -> stringClass.objectType
 			is TinyScriptParser.BooleanLiteralExpressionContext -> booleanClass.objectType
-			is TinyScriptParser.ClassExpressionContext -> visitClassExpression(null, ctx.`object`(), scope)
+			is TinyScriptParser.ClassExpressionContext -> visitClassExpression(ctx, scope)
 			is TinyScriptParser.NullExpressionContext -> NullableType(
 					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
 			)
@@ -334,8 +310,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
 						?: throw AnalysisError("not inside object scope", filePath, ctx.start)
 
-				objectScope.objectType.superObjectType
-						?: throw AnalysisError("no super object type", filePath, ctx.start)
+				TODO()
 			}
 			is TinyScriptParser.ReferenceExpressionContext -> {
 				val symbol = visitReference(ctx.Name(), null, scope)
@@ -349,13 +324,17 @@ class AnalysisVisitor(val filePath: Path) {
 			}
 			is TinyScriptParser.FunctionExpressionContext -> visitFunctionExpression(ctx, scope)
 			is TinyScriptParser.ObjectExpressionContext ->
-				visitObjectInstanceExpression(null, ctx.`object`(), scope)
+				visitObject(ctx.`object`(), scope, false, true)
 			is TinyScriptParser.FunctionCallExpressionContext -> {
 				val functionType = (visitExpression(ctx.expression(), scope).final() as? FunctionType)
 						?: throw AnalysisError("must be a function", filePath, ctx.start)
-				val type: Type = visitFunctionCallExpression(functionType, ctx.`object`(), scope)
-				infoMap[ctx] = FunctionCallExpressionInfo(scope, type, functionType)
-				type
+
+				val arguments = visitObject(ctx.`object`(), scope, false, true)
+				if (!functionType.params.accepts(arguments))
+					throw AnalysisError("invalid arguments", filePath, ctx.`object`().start)
+
+				infoMap[ctx] = FunctionCallExpressionInfo(scope, functionType.returnType, functionType)
+				functionType.returnType
 			}
 			is TinyScriptParser.ReassignmentExpressionContext ->
 				visitReassignmentExpression(ctx.Name(), null, ctx.expression(), scope)

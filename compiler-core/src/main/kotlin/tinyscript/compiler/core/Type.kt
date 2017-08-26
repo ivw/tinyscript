@@ -48,14 +48,11 @@ object AnyType : FinalType {
 // see the "objectType" rule in the grammar
 open class ObjectType(
 		isNominal: Boolean,
-		val superObjectType: ObjectType? = null,
 		extraIdentities: Set<ObjectType>? = null,
 		extraSymbols: LinkedHashMap<String, Symbol>? = null
 ) : FinalType {
 	val identities: Set<ObjectType> = run {
 		val set = HashSet<ObjectType>()
-
-		superObjectType?.let { set.addAll(it.identities) }
 
 		if (isNominal) set.add(this)
 
@@ -66,11 +63,7 @@ open class ObjectType(
 
 	val symbols: LinkedHashMap<String, Symbol> = run {
 		val map = LinkedHashMap<String, Symbol>()
-
-		superObjectType?.let { map.putAll(superObjectType.symbols) }
-
 		extraSymbols?.let { map.putAll(it) }
-
 		map
 	}
 
@@ -110,7 +103,7 @@ fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
 
 	val identities = a.identities.union(b.identities)
 
-	return ObjectType(false, null, identities, symbols)
+	return ObjectType(false, identities, symbols)
 }
 
 fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
@@ -123,7 +116,7 @@ fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
 
 	val identities = a.identities.intersect(b.identities)
 
-	return ObjectType(false, null, identities, symbols)
+	return ObjectType(false, identities, symbols)
 }
 
 
