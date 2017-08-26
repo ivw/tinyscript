@@ -61,7 +61,7 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.PrefixOperatorContext -> {
 				val rhsType = visitType(signatureCtx.type(), scope)
 
-				val expressionScope = FunctionScope(scope, ObjectType(false, extraSymbols = SymbolMapBuilder()
+				val expressionScope = FunctionScope(scope, ObjectType(SymbolMapBuilder()
 						.add(Symbol("$0", rhsType))
 						.build()
 				))
@@ -88,7 +88,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val lhsType = visitType(signatureCtx.type(0), scope)
 				val rhsType = visitType(signatureCtx.type(1), scope)
 
-				val expressionScope = FunctionScope(scope, ObjectType(false, extraSymbols = SymbolMapBuilder()
+				val expressionScope = FunctionScope(scope, ObjectType(SymbolMapBuilder()
 						.add(Symbol("$0", lhsType))
 						.add(Symbol("$1", rhsType))
 						.build()
@@ -113,7 +113,7 @@ class AnalysisVisitor(val filePath: Path) {
 				operator
 			}
 			is TinyScriptParser.MethodContext -> {
-				val params = visitObject(signatureCtx.`object`(), scope, false, false)
+				val params = visitObject(signatureCtx.`object`(), scope, false)
 
 				val expressionScope = FunctionScope(scope, params)
 				val expressionType = expressionCtx?.let { visitExpression(it, expressionScope) }
@@ -146,7 +146,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val paramsObjectType: TinyScriptParser.ObjectTypeContext? = ctx.objectType()
 				val params =
 						if (paramsObjectType != null) visitObjectType(paramsObjectType, scope)
-						else ObjectType(false)
+						else ObjectType()
 				FunctionType(params, visitType(ctx.type(), scope))
 			}
 			is TinyScriptParser.NullTypeContext -> NullableType(AnyType)
@@ -167,7 +167,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitObjectType(ctx: TinyScriptParser.ObjectTypeContext, scope: Scope): ObjectType {
-		val objectType = ObjectType(false)
+		val objectType = ObjectType()
 		val objectScope = ObjectScope(scope, objectType)
 		ctx.objectTypeField().forEach({ visitObjectTypeField(it, objectScope) })
 		return objectType
@@ -190,8 +190,8 @@ class AnalysisVisitor(val filePath: Path) {
 		}
 	}
 
-	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, isNominal: Boolean, mustBeConcrete: Boolean): ObjectType {
-		val objectType = ObjectType(isNominal)
+	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, mustBeConcrete: Boolean): ObjectType {
+		val objectType = ObjectType()
 		val objectScope = ObjectScope(scope, objectType)
 
 		for (declaration in ctx.declaration()) {
@@ -240,8 +240,8 @@ class AnalysisVisitor(val filePath: Path) {
 
 				val paramsObject: TinyScriptParser.ObjectContext? = ctx.`object`()
 				val params =
-						if (paramsObject != null) visitObject(paramsObject, scope, false, false)
-						else ObjectType(false)
+						if (paramsObject != null) visitObject(paramsObject, scope, false)
+						else ObjectType()
 
 				return FunctionType(params, visitExpression(ctx.expression(), FunctionScope(scope, params)))
 			}
@@ -255,7 +255,7 @@ class AnalysisVisitor(val filePath: Path) {
 			override fun createFinalType(): FinalType {
 				deferredAnalyses.remove(this)
 
-				return ClassType(visitObject(ctx.`object`(), scope, true, false))
+				return ClassType(visitObject(ctx.`object`(), scope, false))
 			}
 		}
 		deferredAnalyses.add(deferredType)
@@ -324,12 +324,12 @@ class AnalysisVisitor(val filePath: Path) {
 			}
 			is TinyScriptParser.FunctionExpressionContext -> visitFunctionExpression(ctx, scope)
 			is TinyScriptParser.ObjectExpressionContext ->
-				visitObject(ctx.`object`(), scope, false, true)
+				visitObject(ctx.`object`(), scope, true)
 			is TinyScriptParser.FunctionCallExpressionContext -> {
 				val functionType = (visitExpression(ctx.expression(), scope).final() as? FunctionType)
 						?: throw AnalysisError("must be a function", filePath, ctx.start)
 
-				val arguments = visitObject(ctx.`object`(), scope, false, true)
+				val arguments = visitObject(ctx.`object`(), scope, true)
 				if (!functionType.params.accepts(arguments))
 					throw AnalysisError("invalid arguments", filePath, ctx.`object`().start)
 

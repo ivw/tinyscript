@@ -47,26 +47,9 @@ object AnyType : FinalType {
 
 // see the "objectType" rule in the grammar
 open class ObjectType(
-		isNominal: Boolean,
-		extraIdentities: Set<ObjectType>? = null,
-		extraSymbols: LinkedHashMap<String, Symbol>? = null
+		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(),
+		val identities: MutableSet<ObjectType> = HashSet()
 ) : FinalType {
-	val identities: Set<ObjectType> = run {
-		val set = HashSet<ObjectType>()
-
-		if (isNominal) set.add(this)
-
-		extraIdentities?.let { set.addAll(it) }
-
-		set
-	}
-
-	val symbols: LinkedHashMap<String, Symbol> = run {
-		val map = LinkedHashMap<String, Symbol>()
-		extraSymbols?.let { map.putAll(it) }
-		map
-	}
-
 	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
 
@@ -91,32 +74,14 @@ open class ObjectType(
 }
 
 fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
-	val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(a.symbols)
-	for (bSymbol in b.symbols.values) {
-		symbols[bSymbol.name]?.let { aSymbol ->
-			if (!aSymbol.type.final().accepts(bSymbol.type.final()))
-				throw RuntimeException("incompatible override on field '${bSymbol.name}'")
-		}
-
-		symbols[bSymbol.name] = bSymbol
-	}
-
-	val identities = a.identities.union(b.identities)
-
-	return ObjectType(false, identities, symbols)
+	val objectType = ObjectType()
+	// TODO inherit from a
+	// TODO inherit from b
+	return objectType
 }
 
 fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
-	val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap()
-	for (aSymbol in a.symbols.values) {
-		if (b.symbols[aSymbol.name] === aSymbol) {
-			symbols[aSymbol.name] = aSymbol
-		}
-	}
-
-	val identities = a.identities.intersect(b.identities)
-
-	return ObjectType(false, identities, symbols)
+	TODO()
 }
 
 

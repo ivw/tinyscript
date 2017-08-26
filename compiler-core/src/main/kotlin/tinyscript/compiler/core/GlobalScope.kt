@@ -1,9 +1,9 @@
 package tinyscript.compiler.core
 
-val stringClass = ClassType(ObjectType(true))
-val intClass = ClassType(ObjectType(true))
-val floatClass = ClassType(ObjectType(true))
-val booleanClass = ClassType(ObjectType(true))
+val stringClass = ClassType(ObjectType())
+val intClass = ClassType(ObjectType())
+val floatClass = ClassType(ObjectType())
+val booleanClass = ClassType(ObjectType())
 
 val globalScope: Scope = run {
 	val scope = LocalScope(null)
@@ -13,7 +13,7 @@ val globalScope: Scope = run {
 	scope.defineSymbol(Symbol("Float", floatClass))
 	scope.defineSymbol(Symbol("Boolean", booleanClass))
 	scope.defineSymbol(Symbol("println", FunctionType(
-			ObjectType(false, extraSymbols = SymbolMapBuilder()
+			ObjectType(SymbolMapBuilder()
 					.add(Symbol("m", stringClass.objectType))
 					.build()),
 			AnyType
