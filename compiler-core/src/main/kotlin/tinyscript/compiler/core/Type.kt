@@ -48,7 +48,7 @@ object AnyType : FinalType {
 // see the "objectType" rule in the grammar
 open class ObjectType(
 		val signatures: SignatureCollection = SignatureCollection(),
-		val identities: MutableSet<ObjectType> = HashSet()
+		val identities: MutableSet<ClassType> = HashSet()
 ) : FinalType {
 	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false

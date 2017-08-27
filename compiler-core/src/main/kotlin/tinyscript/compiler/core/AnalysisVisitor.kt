@@ -206,6 +206,22 @@ class AnalysisVisitor(val filePath: Path) {
 					visitSignatureDeclaration(objectScope, declaration.signature(), declaration.type(), declaration.expression())
 				}
 				is TinyScriptParser.ImplicitDeclarationContext -> TODO()
+				is TinyScriptParser.InheritDeclarationContext -> {
+					val expressionType = visitExpression(declaration.expression(), objectScope).final()
+
+					when (expressionType) {
+						is ClassType -> {
+							objectType.identities.add(expressionType)
+							objectType.identities.addAll(expressionType.objectType.identities)
+							objectType.signatures.addSignatures(expressionType.objectType.signatures)
+						}
+						is ObjectType -> {
+							objectType.identities.addAll(expressionType.identities)
+							objectType.signatures.addSignatures(expressionType.signatures)
+						}
+						else -> throw AnalysisError("unsupported expression type '$expressionType'", filePath, declaration.start)
+					}
+				}
 				else -> throw RuntimeException("unknown declaration type")
 			}
 		}

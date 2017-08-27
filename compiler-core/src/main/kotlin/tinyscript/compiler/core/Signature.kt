@@ -45,8 +45,10 @@ class SignatureCollection {
 	val operators: MutableList<Operator> = ArrayList()
 	val methods: MutableList<Method> = ArrayList()
 
-	fun inheritSignatures(objectType: ObjectType) {
-		TODO()
+	fun addSignatures(signatures: SignatureCollection) {
+		signatures.symbols.values.forEach { addSymbol(it) }
+		signatures.operators.forEach { addOperator(it) }
+		signatures.methods.forEach { addMethod(it) }
 	}
 
 	fun getSymbol(name: String): Symbol? {
