@@ -99,8 +99,8 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				out.write(")()")
 			}
 			is TinyScriptParser.FunctionCallExpressionContext -> {
-				val functionType = (infoMap[ctx.expression()] as FunctionCallExpressionInfo).functionType
-				writeFunctionCall(ctx, functionType)
+				val analysisInfo = infoMap[ctx] as FunctionCallExpressionInfo
+				writeFunctionCall(ctx, analysisInfo.functionType)
 			}
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
 				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
