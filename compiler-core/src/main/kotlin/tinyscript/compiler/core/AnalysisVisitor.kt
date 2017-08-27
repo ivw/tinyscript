@@ -221,6 +221,7 @@ class AnalysisVisitor(val filePath: Path) {
 						}
 						else -> throw AnalysisError("unsupported expression type '$expressionType'", filePath, declaration.start)
 					}
+					infoMap[declaration] = InheritDeclarationInfo(scope, expressionType)
 				}
 				else -> throw RuntimeException("unknown declaration type")
 			}

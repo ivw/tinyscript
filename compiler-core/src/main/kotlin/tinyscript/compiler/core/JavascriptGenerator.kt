@@ -253,6 +253,24 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				}
 				is TinyScriptParser.ImplicitDeclarationContext ->
 					throw RuntimeException("implicit declaration not allowed here")
+				is TinyScriptParser.InheritDeclarationContext -> {
+					val analysisInfo = infoMap[declaration] as InheritDeclarationInfo
+					when (analysisInfo.expressionType) {
+						is ClassType -> {
+							out.write("(")
+							writeExpression(declaration.expression())
+							out.write(").call(this);")
+							out.newLine()
+						}
+						is ObjectType -> {
+							out.write("Object.assign(this, ")
+							writeExpression(declaration.expression())
+							out.write(");")
+							out.newLine()
+						}
+						else -> throw RuntimeException("unsupported expression type")
+					}
+				}
 				else -> throw RuntimeException("unknown declaration type")
 			}
 		}

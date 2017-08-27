@@ -2,8 +2,7 @@ var myConstant = "initial value";
 var myVariable = "initial value";
 var myStringOrNull = null;
 var main = () => ((myStringOrNull = "foo"));
-var multiplyByTwo = (n, ) => ($op0_1(n, 2));
-var sayHello = () => (println("Hello", ));
+var multiplyByTwo = (n, ) => ($op(n, 2));
 var Animal = function () {
   // this.name;
   this.sayName = () => (println("my name is $name", ));
@@ -27,10 +26,8 @@ var Printer = function () {
   // this.print;
 };
 var Copier = function () {
-  (function () {
-    (Scanner).call(this);
-    (Printer).call(this);
-  }).call(this);
+  (Scanner).call(this);
+  (Printer).call(this);
   this.copy = () => ((function () {
     this.scan();
     return this.print();
@@ -44,12 +41,12 @@ var Point = function () {
   // this.x;
   // this.y;
 };
-var $op1_0 = ($0, $1) => (new (function () {
+var $op = ($0, $1) => (new (function () {
   (Point).call(this);
-  this.x = $op0_0($0.x, $1.x);
-  this.y = $op0_0($0.y, $1.y);
+  this.x = $op($0.x, $1.x);
+  this.y = $op($0.y, $1.y);
 })());
-var myPoint = $op1_0(new (function () {
+var myPoint = $op(new (function () {
   (Point).call(this);
   this.x = 1;
   this.y = 2;

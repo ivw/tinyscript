@@ -25,3 +25,5 @@ open class FunctionCallExpressionInfo(
 		type: Type,
 		val functionType: FunctionType
 ) : ExpressionInfo(scope, type)
+
+open class InheritDeclarationInfo(scope: Scope, val expressionType: FinalType) : AnalysisInfo(scope)
