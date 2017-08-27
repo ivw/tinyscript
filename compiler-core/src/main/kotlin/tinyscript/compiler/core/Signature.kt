@@ -17,19 +17,6 @@ class Symbol(
 	}
 }
 
-class SymbolMapBuilder {
-	private val symbolMap = LinkedHashMap<String, Symbol>()
-
-	fun add(symbol: Symbol): SymbolMapBuilder {
-		symbolMap[symbol.name] = symbol
-		return this
-	}
-
-	fun build(): LinkedHashMap<String, Symbol> {
-		return symbolMap
-	}
-}
-
 class Operator(
 		val name: String,
 		val lhsType: FinalType?,
@@ -37,8 +24,6 @@ class Operator(
 		type: Type,
 		isAbstract: Boolean = false
 ) : Signature(type, isAbstract) {
-	lateinit var identifier: String // scope-unique identifier, with the shape "$depth_$index", used for generated code
-
 	override fun toString(): String {
 		return "$name: $type"
 	}
@@ -50,9 +35,60 @@ class Method(
 		type: Type,
 		isAbstract: Boolean = false
 ) : Signature(type, isAbstract) {
-	lateinit var identifier: String // scope-unique identifier, with the shape "$depth_$index", used for generated code
-
 	override fun toString(): String {
 		return "$name: $type"
+	}
+}
+
+class SignatureCollection {
+	val symbols: MutableMap<String, Symbol> = LinkedHashMap()
+	val operators: MutableList<Operator> = ArrayList()
+	val methods: MutableList<Method> = ArrayList()
+
+	fun inheritSignatures(objectType: ObjectType) {
+		TODO()
+	}
+
+	fun getSymbol(name: String): Symbol? {
+		return symbols[name]
+	}
+
+	fun addSymbol(symbol: Symbol) {
+		symbols[symbol.name]?.let { superSymbol ->
+			if (!superSymbol.type.final().accepts(symbol.type.final()))
+				throw RuntimeException("incompatible override on field '${symbol.name}': ${superSymbol.type} does not accept ${symbol.type}")
+		}
+
+		symbols[symbol.name] = symbol
+	}
+
+	fun getOperator(name: String, lhsType: FinalType?, rhsType: FinalType): Operator? {
+		return if (lhsType == null) {
+			operators.findLast { operator ->
+				operator.name == name
+						&& operator.lhsType == null
+						&& operator.rhsType.accepts(rhsType)
+			}
+		} else {
+			operators.findLast { operator ->
+				operator.name == name
+						&& operator.lhsType != null && operator.lhsType.accepts(lhsType)
+						&& operator.rhsType.accepts(rhsType)
+			}
+		}
+	}
+
+	fun addOperator(operator: Operator) {
+		operators.add(operator)
+	}
+
+	fun getMethod(name: String, arguments: ObjectType): Method? {
+		return methods.findLast { method ->
+			method.name == name && method.params.accepts(arguments)
+		}
+	}
+
+	fun addMethod(method: Method) {
+		methods.add(method)
 	}
 }

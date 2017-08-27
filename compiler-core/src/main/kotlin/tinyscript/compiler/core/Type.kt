@@ -47,7 +47,7 @@ object AnyType : FinalType {
 
 // see the "objectType" rule in the grammar
 open class ObjectType(
-		val symbols: LinkedHashMap<String, Symbol> = LinkedHashMap(),
+		val signatures: SignatureCollection = SignatureCollection(),
 		val identities: MutableSet<ObjectType> = HashSet()
 ) : FinalType {
 	override fun accepts(type: FinalType): Boolean {
@@ -55,8 +55,8 @@ open class ObjectType(
 
 		if (!type.identities.containsAll(identities)) return false
 
-		for ((name, symbol) in symbols) {
-			val subSymbol = type.symbols[name]
+		for ((name, symbol) in signatures.symbols) {
+			val subSymbol = type.signatures.symbols[name]
 			if (subSymbol == null) {
 				if (symbol.isAbstract)
 					return false
@@ -69,7 +69,7 @@ open class ObjectType(
 	}
 
 	override fun toString(): String {
-		return "ObjectType<identities.size = ${identities.size}, symbols = [${symbols.values.joinToString()}]>"
+		return "ObjectType<signatures = $signatures, identities.size = ${identities.size}>"
 	}
 }
 

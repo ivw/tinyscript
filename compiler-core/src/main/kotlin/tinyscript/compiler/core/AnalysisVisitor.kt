@@ -21,7 +21,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
-		val scope = LocalScope(globalScope)
+		val scope = Scope(globalScope, SignatureCollection())
 		for (declaration in ctx.declaration()) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> {
@@ -49,7 +49,7 @@ class AnalysisVisitor(val filePath: Path) {
 						expressionType == null,
 						signatureCtx.getToken(TinyScriptParser.Mut, 0) != null
 				)
-				scope.defineSymbol(symbol)
+				scope.signatures.addSymbol(symbol)
 
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
@@ -61,9 +61,10 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.PrefixOperatorContext -> {
 				val rhsType = visitType(signatureCtx.type(), scope)
 
-				val expressionScope = FunctionScope(scope, ObjectType(SymbolMapBuilder()
-						.add(Symbol("$0", rhsType))
-						.build()
+				val expressionScope = FunctionScope(scope, ObjectType(
+						SignatureCollection().apply {
+							addSymbol(Symbol("$0", rhsType))
+						}
 				))
 				val expressionType = expressionCtx?.let { visitExpression(it, expressionScope) }
 				val typeAnnotationType: FinalType? = typeCtx?.let { visitType(it, scope) }
@@ -73,7 +74,7 @@ class AnalysisVisitor(val filePath: Path) {
 						signatureCtx.Operator().text, null, rhsType, type,
 						expressionType == null
 				)
-				scope.defineOperator(operator)
+				scope.signatures.addOperator(operator)
 
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
@@ -88,10 +89,11 @@ class AnalysisVisitor(val filePath: Path) {
 				val lhsType = visitType(signatureCtx.type(0), scope)
 				val rhsType = visitType(signatureCtx.type(1), scope)
 
-				val expressionScope = FunctionScope(scope, ObjectType(SymbolMapBuilder()
-						.add(Symbol("$0", lhsType))
-						.add(Symbol("$1", rhsType))
-						.build()
+				val expressionScope = FunctionScope(scope, ObjectType(
+						SignatureCollection().apply {
+							addSymbol(Symbol("$0", lhsType))
+							addSymbol(Symbol("$1", rhsType))
+						}
 				))
 				val expressionType = expressionCtx?.let { visitExpression(it, expressionScope) }
 				val typeAnnotationType: FinalType? = typeCtx?.let { visitType(it, scope) }
@@ -101,7 +103,7 @@ class AnalysisVisitor(val filePath: Path) {
 						signatureCtx.Operator().text, lhsType, rhsType, type,
 						expressionType == null
 				)
-				scope.defineOperator(operator)
+				scope.signatures.addOperator(operator)
 
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
@@ -124,7 +126,7 @@ class AnalysisVisitor(val filePath: Path) {
 						signatureCtx.Name().text, params, type,
 						expressionType == null
 				)
-				scope.defineMethod(method)
+				scope.signatures.addMethod(method)
 
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
@@ -153,7 +155,8 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.NullableTypeContext -> NullableType(visitType(ctx.type(), scope))
 			is TinyScriptParser.ObjectTypeTypeContext -> visitObjectType(ctx.objectType(), scope)
 			is TinyScriptParser.TypeReferenceContext -> {
-				val referenceSymbol = scope.resolveSymbolOrFail(ctx.Name().text)
+				val referenceSymbol = scope.resolveSymbol(ctx.Name().text)
+						?: throw AnalysisError("unresolved symbol '${ctx.Name().text}'", filePath, ctx.start)
 				val classType = referenceSymbol.type.final() as ClassType
 				classType.objectType
 			}
@@ -184,7 +187,7 @@ class AnalysisVisitor(val filePath: Path) {
 						true,
 						ctx.getToken(TinyScriptParser.Mut, 0) != null
 				)
-				scope.defineSymbol(symbol)
+				scope.signatures.addSymbol(symbol)
 			}
 			else -> throw RuntimeException("unknown ObjectTypeField type")
 		}
@@ -208,7 +211,7 @@ class AnalysisVisitor(val filePath: Path) {
 		}
 
 		if (mustBeConcrete) {
-			objectType.symbols.values.forEach { symbol ->
+			objectType.signatures.symbols.values.forEach { symbol ->
 				if (symbol.isAbstract) throw AnalysisError("field '${symbol.name}' not initialized", filePath, ctx.start)
 			}
 		}
@@ -217,7 +220,7 @@ class AnalysisVisitor(val filePath: Path) {
 	}
 
 	fun visitBlock(ctx: TinyScriptParser.BlockContext, scope: Scope): Type {
-		val blockScope = LocalScope(scope)
+		val blockScope = Scope(scope, SignatureCollection())
 		for (declaration in ctx.declaration()) {
 			when (declaration) {
 				is TinyScriptParser.AbstractDeclarationContext -> throw RuntimeException("invalid abstract declaration")
@@ -266,13 +269,15 @@ class AnalysisVisitor(val filePath: Path) {
 		val name = nameToken.text
 
 		return if (lhsExpressionCtx == null) {
-			scope.resolveSymbolOrFail(name)
+			scope.resolveSymbol(name)
+					?: throw AnalysisError("unresolved symbol '$name'", filePath, nameToken.symbol)
 		} else {
 			val lhsExpressionType = visitExpression(lhsExpressionCtx, scope)
 			if (lhsExpressionType !is ObjectType)
 				throw AnalysisError("invalid field reference: $lhsExpressionType is not an object", filePath, lhsExpressionCtx.start)
 
-			lhsExpressionType.symbols[name] ?: throw AnalysisError("unresolved field '$name'", filePath, nameToken.symbol)
+			lhsExpressionType.signatures.getSymbol(name)
+					?: throw AnalysisError("unresolved field '$name'", filePath, nameToken.symbol)
 		}
 	}
 
@@ -307,9 +312,6 @@ class AnalysisVisitor(val filePath: Path) {
 				objectScope.objectType
 			}
 			is TinyScriptParser.SuperExpressionContext -> {
-				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
-						?: throw AnalysisError("not inside object scope", filePath, ctx.start)
-
 				TODO()
 			}
 			is TinyScriptParser.ReferenceExpressionContext -> {

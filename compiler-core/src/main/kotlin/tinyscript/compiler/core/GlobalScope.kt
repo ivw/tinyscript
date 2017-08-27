@@ -5,31 +5,28 @@ val intClass = ClassType(ObjectType())
 val floatClass = ClassType(ObjectType())
 val booleanClass = ClassType(ObjectType())
 
-val globalScope: Scope = run {
-	val scope = LocalScope(null)
-
-	scope.defineSymbol(Symbol("String", stringClass))
-	scope.defineSymbol(Symbol("Int", intClass))
-	scope.defineSymbol(Symbol("Float", floatClass))
-	scope.defineSymbol(Symbol("Boolean", booleanClass))
-	scope.defineSymbol(Symbol("println", FunctionType(
-			ObjectType(SymbolMapBuilder()
-					.add(Symbol("m", stringClass.objectType))
-					.build()),
+val globalScope: Scope = Scope(null, SignatureCollection().apply {
+	addSymbol(Symbol("String", stringClass))
+	addSymbol(Symbol("Int", intClass))
+	addSymbol(Symbol("Float", floatClass))
+	addSymbol(Symbol("Boolean", booleanClass))
+	addSymbol(Symbol("println", FunctionType(
+			ObjectType(SignatureCollection().apply {
+				addSymbol(Symbol("m", stringClass.objectType))
+			}),
 			AnyType
 	)))
 
-	scope.defineOperator(Operator(
+	addOperator(Operator(
 			"+",
 			intClass.objectType,
 			intClass.objectType,
 			intClass.objectType
 	))
-	scope.defineOperator(Operator(
+	addOperator(Operator(
 			"*",
 			intClass.objectType,
 			intClass.objectType,
 			intClass.objectType
 	))
-	scope
-}
+})

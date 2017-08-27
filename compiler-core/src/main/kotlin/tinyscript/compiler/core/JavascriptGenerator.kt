@@ -30,7 +30,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 						val operatorInfo = infoMap[signature] as OperatorInfo
 
 						out.write("var \$op")
-						out.write(operatorInfo.operator.identifier)
+//						out.write(operatorInfo.operator.identifier) TODO
 						out.write(" = (\$0) => (")
 						writeExpression(ctx.expression())
 						out.write(");")
@@ -40,7 +40,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 						val operatorInfo = infoMap[signature] as OperatorInfo
 
 						out.write("var \$op")
-						out.write(operatorInfo.operator.identifier)
+//						out.write(operatorInfo.operator.identifier) TODO
 						out.write(" = (\$0, \$1) => (")
 						writeExpression(ctx.expression())
 						out.write(");")
@@ -50,7 +50,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 						val methodInfo = infoMap[signature] as MethodInfo
 
 						out.write("var \$method")
-						out.write(methodInfo.method.identifier)
+//						out.write(methodInfo.method.identifier) TODO
 						out.write(" = ")
 						writeFunction(signature.`object`(), ctx.expression())
 						out.write(";")
@@ -83,7 +83,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 				val name = ctx.Name().text
 				val objectScope = ObjectScope.resolveObjectScope(referenceExpressionInfo.scope)
 				// if the symbol is resolved from objectScope, then we have to generate "this."
-				if (objectScope != null && objectScope.objectType.symbols[name] === referenceExpressionInfo.symbol) {
+				if (objectScope != null && objectScope.objectType.signatures.symbols[name] === referenceExpressionInfo.symbol) {
 					out.write("this.")
 				}
 				out.write(name)
@@ -105,7 +105,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 			is TinyScriptParser.PrefixOperatorCallExpressionContext -> {
 				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
 				out.write("\$op")
-				out.write(analysisInfo.operator.identifier)
+//				out.write(analysisInfo.operator.identifier) TODO
 				out.write("(")
 				writeExpression(ctx.expression())
 				out.write(")")
@@ -113,7 +113,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 			is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 				val analysisInfo = infoMap[ctx] as OperatorCallExpressionInfo
 				out.write("\$op")
-				out.write(analysisInfo.operator.identifier)
+//				out.write(analysisInfo.operator.identifier) TODO
 				out.write("(")
 				writeExpression(ctx.expression(0))
 				out.write(", ")
@@ -172,7 +172,7 @@ class JavascriptGenerator(out: BufferedWriter, val infoMap: Map<ParserRuleContex
 		writeExpression(ctx.expression())
 		out.write("(")
 
-		val paramIterator = functionType.params.symbols.values.iterator()
+		val paramIterator = functionType.params.signatures.symbols.values.iterator()
 
 		for (declaration in ctx.`object`().declaration()) {
 			if (!paramIterator.hasNext())
