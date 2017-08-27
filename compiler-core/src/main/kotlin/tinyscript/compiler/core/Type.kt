@@ -50,6 +50,11 @@ open class ObjectType(
 		val signatures: SignatureCollection = SignatureCollection(),
 		val identities: MutableSet<ClassType> = HashSet()
 ) : FinalType {
+	fun inheritFromObjectType(objectType: ObjectType) {
+		signatures.addSignatures(objectType.signatures)
+		identities.addAll(objectType.identities)
+	}
+
 	override fun accepts(type: FinalType): Boolean {
 		if (type !is ObjectType) return false
 
@@ -75,8 +80,8 @@ open class ObjectType(
 
 fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
 	val objectType = ObjectType()
-	// TODO inherit from a
-	// TODO inherit from b
+	objectType.inheritFromObjectType(a)
+	objectType.inheritFromObjectType(b)
 	return objectType
 }
 

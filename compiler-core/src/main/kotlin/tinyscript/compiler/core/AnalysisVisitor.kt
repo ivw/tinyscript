@@ -212,12 +212,10 @@ class AnalysisVisitor(val filePath: Path) {
 					when (expressionType) {
 						is ClassType -> {
 							objectType.identities.add(expressionType)
-							objectType.identities.addAll(expressionType.objectType.identities)
-							objectType.signatures.addSignatures(expressionType.objectType.signatures)
+							objectType.inheritFromObjectType(expressionType.objectType)
 						}
 						is ObjectType -> {
-							objectType.identities.addAll(expressionType.identities)
-							objectType.signatures.addSignatures(expressionType.signatures)
+							objectType.inheritFromObjectType(expressionType)
 						}
 						else -> throw AnalysisError("unsupported expression type '$expressionType'", filePath, declaration.start)
 					}
