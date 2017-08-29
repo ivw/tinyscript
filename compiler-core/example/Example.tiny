@@ -16,7 +16,7 @@ Animal = class [
 
 Dog = class [
 	&Animal
-	bark = -> println[m ="woof"]
+	bark = -> println[m = "woof"]
 ]
 
 myDog = [&Dog, name = "Foo"]
