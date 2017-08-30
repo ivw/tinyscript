@@ -50,9 +50,14 @@ open class ObjectType(
 		val signatures: SignatureCollection = SignatureCollection(),
 		val identities: MutableSet<ClassType> = HashSet()
 ) : FinalType {
-	fun inheritFromObjectType(objectType: ObjectType) {
+	fun inheritFromObject(objectType: ObjectType) {
 		signatures.addSignatures(objectType.signatures)
 		identities.addAll(objectType.identities)
+	}
+
+	fun inheritFromClass(classType: ClassType) {
+		identities.add(classType)
+		classType.objectType?.let { inheritFromObject(it) }
 	}
 
 	override fun accepts(type: FinalType): Boolean {
@@ -80,8 +85,8 @@ open class ObjectType(
 
 fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
 	val objectType = ObjectType()
-	objectType.inheritFromObjectType(a)
-	objectType.inheritFromObjectType(b)
+	objectType.inheritFromObject(a)
+	objectType.inheritFromObject(b)
 	return objectType
 }
 
@@ -89,8 +94,7 @@ fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
 	val objectType = ObjectType()
 	val commonIdentities = a.identities.intersect(b.identities)
 	commonIdentities.forEach { identity ->
-		objectType.identities.add(identity)
-		identity.objectType?.let { objectType.inheritFromObjectType(it) }
+		objectType.inheritFromClass(identity)
 	}
 	return objectType
 }
@@ -98,8 +102,7 @@ fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
 
 class ClassType(val objectType: ObjectType? = null) : FinalType {
 	val simpleInstanceType: ObjectType = ObjectType().apply {
-		if (objectType != null) inheritFromObjectType(objectType)
-		identities.add(this@ClassType)
+		inheritFromClass(this@ClassType)
 	}
 
 	override fun accepts(type: FinalType): Boolean = false

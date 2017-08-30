@@ -214,14 +214,8 @@ class AnalysisVisitor(val sourceDescription: String) {
 					val expressionType = visitExpression(declaration.expression(), objectScope).final()
 
 					when (expressionType) {
-						is ClassType -> {
-							objectType.identities.add(expressionType)
-							if (expressionType.objectType != null)
-								objectType.inheritFromObjectType(expressionType.objectType)
-						}
-						is ObjectType -> {
-							objectType.inheritFromObjectType(expressionType)
-						}
+						is ClassType -> objectType.inheritFromClass(expressionType)
+						is ObjectType -> objectType.inheritFromObject(expressionType)
 						else -> throw AnalysisError("unsupported expression type '$expressionType'", sourceDescription, declaration.start)
 					}
 					infoMap[declaration] = InheritDeclarationInfo(scope, expressionType)
