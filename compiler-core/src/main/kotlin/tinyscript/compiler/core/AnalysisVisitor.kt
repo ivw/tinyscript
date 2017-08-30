@@ -6,7 +6,7 @@ import tinyscript.compiler.core.parser.TinyScriptParser
 import java.nio.file.Path
 import java.util.*
 
-class AnalysisVisitor(val filePath: Path) {
+class AnalysisVisitor(val sourceDescription: String) {
 	val infoMap: MutableMap<ParserRuleContext, AnalysisInfo> = HashMap()
 
 	val deferredAnalyses: LinkedList<DeferredType> = LinkedList()
@@ -54,7 +54,7 @@ class AnalysisVisitor(val filePath: Path) {
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw AnalysisError("invalid value for symbol '$symbol': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
+						throw AnalysisError("invalid value for symbol '$symbol': $typeAnnotationType does not accept $finalExpressionType", sourceDescription, signatureCtx.start)
 				}
 				symbol
 			}
@@ -79,7 +79,7 @@ class AnalysisVisitor(val filePath: Path) {
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw AnalysisError("invalid value for operator '$operator': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
+						throw AnalysisError("invalid value for operator '$operator': $typeAnnotationType does not accept $finalExpressionType", sourceDescription, signatureCtx.start)
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
@@ -108,7 +108,7 @@ class AnalysisVisitor(val filePath: Path) {
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw AnalysisError("invalid value for operator '$operator': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
+						throw AnalysisError("invalid value for operator '$operator': $typeAnnotationType does not accept $finalExpressionType", sourceDescription, signatureCtx.start)
 				}
 
 				infoMap[signatureCtx] = OperatorInfo(scope, operator)
@@ -131,7 +131,7 @@ class AnalysisVisitor(val filePath: Path) {
 				if (typeAnnotationType != null && expressionType != null) {
 					val finalExpressionType = expressionType.final()
 					if (!typeAnnotationType.accepts(finalExpressionType))
-						throw AnalysisError("invalid value for method '$method': $typeAnnotationType does not accept $finalExpressionType", filePath, signatureCtx.start)
+						throw AnalysisError("invalid value for method '$method': $typeAnnotationType does not accept $finalExpressionType", sourceDescription, signatureCtx.start)
 				}
 
 				infoMap[signatureCtx] = MethodInfo(scope, method)
@@ -156,9 +156,9 @@ class AnalysisVisitor(val filePath: Path) {
 			is TinyScriptParser.ObjectTypeTypeContext -> visitObjectType(ctx.objectType(), scope)
 			is TinyScriptParser.TypeReferenceContext -> {
 				val referenceSymbol = scope.resolveSymbol(ctx.Name().text)
-						?: throw AnalysisError("unresolved symbol '${ctx.Name().text}'", filePath, ctx.start)
+						?: throw AnalysisError("unresolved symbol '${ctx.Name().text}'", sourceDescription, ctx.start)
 				val classType = referenceSymbol.type.final() as ClassType
-				classType.objectType
+				classType.simpleInstanceType
 			}
 			is TinyScriptParser.IntersectObjectTypeContext -> {
 				val leftType = visitType(ctx.type(0), scope) as ObjectType
@@ -212,12 +212,13 @@ class AnalysisVisitor(val filePath: Path) {
 					when (expressionType) {
 						is ClassType -> {
 							objectType.identities.add(expressionType)
-							objectType.inheritFromObjectType(expressionType.objectType)
+							if (expressionType.objectType != null)
+								objectType.inheritFromObjectType(expressionType.objectType)
 						}
 						is ObjectType -> {
 							objectType.inheritFromObjectType(expressionType)
 						}
-						else -> throw AnalysisError("unsupported expression type '$expressionType'", filePath, declaration.start)
+						else -> throw AnalysisError("unsupported expression type '$expressionType'", sourceDescription, declaration.start)
 					}
 					infoMap[declaration] = InheritDeclarationInfo(scope, expressionType)
 				}
@@ -227,7 +228,7 @@ class AnalysisVisitor(val filePath: Path) {
 
 		if (mustBeConcrete) {
 			objectType.signatures.symbols.values.forEach { symbol ->
-				if (symbol.isAbstract) throw AnalysisError("field '${symbol.name}' not initialized", filePath, ctx.start)
+				if (symbol.isAbstract) throw AnalysisError("field '${symbol.name}' not initialized", sourceDescription, ctx.start)
 			}
 		}
 
@@ -285,26 +286,26 @@ class AnalysisVisitor(val filePath: Path) {
 
 		return if (lhsExpressionCtx == null) {
 			scope.resolveSymbol(name)
-					?: throw AnalysisError("unresolved symbol '$name'", filePath, nameToken.symbol)
+					?: throw AnalysisError("unresolved symbol '$name'", sourceDescription, nameToken.symbol)
 		} else {
 			val lhsExpressionType = visitExpression(lhsExpressionCtx, scope)
 			if (lhsExpressionType !is ObjectType)
-				throw AnalysisError("invalid field reference: $lhsExpressionType is not an object", filePath, lhsExpressionCtx.start)
+				throw AnalysisError("invalid field reference: $lhsExpressionType is not an object", sourceDescription, lhsExpressionCtx.start)
 
 			lhsExpressionType.signatures.getSymbol(name)
-					?: throw AnalysisError("unresolved field '$name'", filePath, nameToken.symbol)
+					?: throw AnalysisError("unresolved field '$name'", sourceDescription, nameToken.symbol)
 		}
 	}
 
 	fun visitReassignmentExpression(nameToken: TerminalNode, lhsExpressionCtx: TinyScriptParser.ExpressionContext?, rhsExpressionCtx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
 		val symbol = visitReference(nameToken, lhsExpressionCtx, scope)
 
-		if (!symbol.isMutable) throw AnalysisError("symbol not reassignable", filePath, nameToken.symbol)
+		if (!symbol.isMutable) throw AnalysisError("symbol not reassignable", sourceDescription, nameToken.symbol)
 
 		val finalSymbolType = symbol.type.final()
 		val finalNewValueType = visitExpression(rhsExpressionCtx, scope).final()
 		if (!finalSymbolType.accepts(finalNewValueType))
-			throw AnalysisError("invalid reassignment: $finalSymbolType does not accept $finalNewValueType", filePath, nameToken.symbol)
+			throw AnalysisError("invalid reassignment: $finalSymbolType does not accept $finalNewValueType", sourceDescription, nameToken.symbol)
 
 		return NullableType(AnyType)
 	}
@@ -312,17 +313,17 @@ class AnalysisVisitor(val filePath: Path) {
 	fun visitExpression(ctx: TinyScriptParser.ExpressionContext, scope: Scope): Type {
 		return when (ctx) {
 			is TinyScriptParser.BlockExpressionContext -> visitBlock(ctx.block(), scope)
-			is TinyScriptParser.IntegerLiteralExpressionContext -> intClass.objectType
-			is TinyScriptParser.FloatLiteralExpressionContext -> floatClass.objectType
-			is TinyScriptParser.StringLiteralExpressionContext -> stringClass.objectType
-			is TinyScriptParser.BooleanLiteralExpressionContext -> booleanClass.objectType
+			is TinyScriptParser.IntegerLiteralExpressionContext -> intClass.simpleInstanceType
+			is TinyScriptParser.FloatLiteralExpressionContext -> floatClass.simpleInstanceType
+			is TinyScriptParser.StringLiteralExpressionContext -> stringClass.simpleInstanceType
+			is TinyScriptParser.BooleanLiteralExpressionContext -> booleanClass.simpleInstanceType
 			is TinyScriptParser.ClassExpressionContext -> visitClassExpression(ctx, scope)
 			is TinyScriptParser.NullExpressionContext -> NullableType(
 					if (ctx.type() != null) visitType(ctx.type(), scope) else AnyType
 			)
 			is TinyScriptParser.ThisExpressionContext -> {
 				val objectScope: ObjectScope = ObjectScope.resolveObjectScope(scope)
-						?: throw AnalysisError("not inside object scope", filePath, ctx.start)
+						?: throw AnalysisError("not inside object scope", sourceDescription, ctx.start)
 
 				objectScope.objectType
 			}
@@ -344,11 +345,11 @@ class AnalysisVisitor(val filePath: Path) {
 				visitObject(ctx.`object`(), scope, true)
 			is TinyScriptParser.FunctionCallExpressionContext -> {
 				val functionType = (visitExpression(ctx.expression(), scope).final() as? FunctionType)
-						?: throw AnalysisError("must be a function", filePath, ctx.start)
+						?: throw AnalysisError("must be a function", sourceDescription, ctx.start)
 
 				val arguments = visitObject(ctx.`object`(), scope, true)
 				if (!functionType.params.accepts(arguments))
-					throw AnalysisError("invalid arguments", filePath, ctx.`object`().start)
+					throw AnalysisError("invalid arguments", sourceDescription, ctx.`object`().start)
 
 				infoMap[ctx] = FunctionCallExpressionInfo(scope, functionType.returnType, functionType)
 				functionType.returnType
@@ -361,7 +362,7 @@ class AnalysisVisitor(val filePath: Path) {
 				val name = ctx.Operator().text
 				val rhsType = visitExpression(ctx.expression(), scope).final()
 				val operator = scope.resolveOperator(name, null, rhsType)
-						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
+						?: throw AnalysisError("unresolved operator '$name'", sourceDescription, ctx.start)
 
 				infoMap[ctx] = OperatorCallExpressionInfo(scope, operator.type, operator)
 				operator.type
@@ -371,15 +372,15 @@ class AnalysisVisitor(val filePath: Path) {
 				val lhsType = visitExpression(ctx.expression(0), scope).final()
 				val rhsType = visitExpression(ctx.expression(1), scope).final()
 				val operator = scope.resolveOperator(name, lhsType, rhsType)
-						?: throw AnalysisError("unresolved operator '$name'", filePath, ctx.start)
+						?: throw AnalysisError("unresolved operator '$name'", sourceDescription, ctx.start)
 
 				infoMap[ctx] = OperatorCallExpressionInfo(scope, operator.type, operator)
 				operator.type
 			}
 			is TinyScriptParser.ConditionalExpressionContext -> {
 				ctx.block().forEach {
-					if (visitBlock(it, scope).final() !== booleanClass.objectType)
-						throw AnalysisError("condition must be of boolean type", filePath, it.start)
+					if (visitBlock(it, scope).final() !== booleanClass.simpleInstanceType)
+						throw AnalysisError("condition must be of boolean type", sourceDescription, it.start)
 				}
 
 				ctx.expression().map { visitExpression(it, scope).final() }.reduce { acc, expressionContext ->

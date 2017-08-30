@@ -10,8 +10,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class AnalysisError(message: String, filePath: Path, token: Token) : RuntimeException(
-		"(${filePath.fileName}:${token.line}) $message"
+class AnalysisError(message: String, sourceDescription: String, token: Token) : RuntimeException(
+		"(${sourceDescription}:${token.line}) $message"
 )
 
 fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
@@ -28,7 +28,7 @@ fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
-	val analysisVisitor = AnalysisVisitor(readPath)
+	val analysisVisitor = AnalysisVisitor(readPath.fileName.toString())
 	analysisVisitor.visitFile(fileCtx)
 	analysisVisitor.finishDeferredAnalyses()
 	println("Analysis done\n")

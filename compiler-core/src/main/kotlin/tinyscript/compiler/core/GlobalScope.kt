@@ -1,9 +1,9 @@
 package tinyscript.compiler.core
 
-val stringClass = ClassType(ObjectType())
-val intClass = ClassType(ObjectType())
-val floatClass = ClassType(ObjectType())
-val booleanClass = ClassType(ObjectType())
+val stringClass = ClassType()
+val intClass = ClassType()
+val floatClass = ClassType()
+val booleanClass = ClassType()
 
 val globalScope: Scope = Scope(null, SignatureCollection().apply {
 	addSymbol(Symbol("String", stringClass))
@@ -12,21 +12,21 @@ val globalScope: Scope = Scope(null, SignatureCollection().apply {
 	addSymbol(Symbol("Boolean", booleanClass))
 	addSymbol(Symbol("println", FunctionType(
 			ObjectType(SignatureCollection().apply {
-				addSymbol(Symbol("m", stringClass.objectType))
+				addSymbol(Symbol("m", stringClass.simpleInstanceType))
 			}),
 			AnyType
 	)))
 
 	addOperator(Operator(
 			"+",
-			intClass.objectType,
-			intClass.objectType,
-			intClass.objectType
+			intClass.simpleInstanceType,
+			intClass.simpleInstanceType,
+			intClass.simpleInstanceType
 	))
 	addOperator(Operator(
 			"*",
-			intClass.objectType,
-			intClass.objectType,
-			intClass.objectType
+			intClass.simpleInstanceType,
+			intClass.simpleInstanceType,
+			intClass.simpleInstanceType
 	))
 })

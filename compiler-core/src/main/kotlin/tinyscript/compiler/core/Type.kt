@@ -90,11 +90,16 @@ fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
 }
 
 
-class ClassType(val objectType: ObjectType) : FinalType {
+class ClassType(val objectType: ObjectType? = null) : FinalType {
+	val simpleInstanceType: ObjectType = ObjectType().apply {
+		if (objectType != null) inheritFromObjectType(objectType)
+		identities.add(this@ClassType)
+	}
+
 	override fun accepts(type: FinalType): Boolean = false
 
 	override fun toString(): String {
-		return "ClassType<$objectType>"
+		return "ClassType"
 	}
 }
 
