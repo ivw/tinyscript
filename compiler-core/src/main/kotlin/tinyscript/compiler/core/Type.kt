@@ -86,7 +86,13 @@ fun unionObjectType(a: ObjectType, b: ObjectType): ObjectType {
 }
 
 fun intersectObjectType(a: ObjectType, b: ObjectType): ObjectType {
-	TODO()
+	val objectType = ObjectType()
+	val commonIdentities = a.identities.intersect(b.identities)
+	commonIdentities.forEach { identity ->
+		objectType.identities.add(identity)
+		identity.objectType?.let { objectType.inheritFromObjectType(it) }
+	}
+	return objectType
 }
 
 
