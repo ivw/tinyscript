@@ -3,7 +3,6 @@ package tinyscript.compiler.core
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.TerminalNode
 import tinyscript.compiler.core.parser.TinyScriptParser
-import java.nio.file.Path
 import java.util.*
 
 class AnalysisVisitor(val sourceDescription: String) {
@@ -23,16 +22,21 @@ class AnalysisVisitor(val sourceDescription: String) {
 	fun visitFile(ctx: TinyScriptParser.FileContext) {
 		val scope = Scope(globalScope, SignatureCollection())
 		for (declaration in ctx.declaration()) {
-			when (declaration) {
-				is TinyScriptParser.AbstractDeclarationContext -> {
-					visitSignatureDeclaration(scope, declaration.signature(), declaration.type(), null)
-					// TODO check if `native`?
-				}
-				is TinyScriptParser.ConcreteDeclarationContext ->
-					visitSignatureDeclaration(scope, declaration.signature(), declaration.type(), declaration.expression())
-				is TinyScriptParser.ImplicitDeclarationContext -> throw RuntimeException("invalid implicit declaration")
-				else -> throw RuntimeException("unknown declaration type")
+			visitLocalDeclaration(declaration, scope)
+		}
+	}
+
+	fun visitLocalDeclaration(ctx: TinyScriptParser.DeclarationContext, scope: Scope) {
+		when (ctx) {
+			is TinyScriptParser.AbstractDeclarationContext -> {
+				visitSignatureDeclaration(scope, ctx.signature(), ctx.type(), null)
+				// TODO check if `native`?
 			}
+			is TinyScriptParser.ConcreteDeclarationContext ->
+				visitSignatureDeclaration(scope, ctx.signature(), ctx.type(), ctx.expression())
+			is TinyScriptParser.ImplicitDeclarationContext ->
+				visitExpression(ctx.expression(), scope)
+			else -> throw RuntimeException("unknown declaration type")
 		}
 	}
 
@@ -238,16 +242,7 @@ class AnalysisVisitor(val sourceDescription: String) {
 	fun visitBlock(ctx: TinyScriptParser.BlockContext, scope: Scope): Type {
 		val blockScope = Scope(scope, SignatureCollection())
 		for (declaration in ctx.declaration()) {
-			when (declaration) {
-				is TinyScriptParser.AbstractDeclarationContext -> throw RuntimeException("invalid abstract declaration")
-				is TinyScriptParser.ConcreteDeclarationContext ->
-					visitSignatureDeclaration(blockScope, declaration.signature(), declaration.type(), declaration.expression())
-				is TinyScriptParser.ImplicitDeclarationContext -> {
-					// local implicit declarations define no symbol. nothing is done with the expression value, but it is still checked.
-					visitExpression(declaration.expression(), blockScope)
-				}
-				else -> throw RuntimeException("unknown declaration type")
-			}
+			visitLocalDeclaration(declaration, blockScope)
 		}
 		return visitExpression(ctx.expression(), blockScope)
 	}
