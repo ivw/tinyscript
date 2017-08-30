@@ -10,7 +10,7 @@ import tinyscript.compiler.core.parser.TinyScriptParser
 import kotlin.test.assertFails
 
 fun analyse(codeString: String) {
-	val lexer = TinyScriptLexer(CharStreams.fromString(codeString))
+	val lexer = TinyScriptLexer(CharStreams.fromString(codeString.trimIndent()))
 	val parser = TinyScriptParser(CommonTokenStream(lexer))
 	val fileCtx = parser.file()
 
@@ -27,20 +27,68 @@ object AnalysisSpec : Spek({
 		it("allows definition with implicit type") {
 			analyse("""
 				myString = "foo"
-			""".trimIndent())
+			""")
 		}
 
 		it("allows definition with explicit type") {
 			analyse("""
 				myString: String = "foo"
-			""".trimIndent())
+			""")
 		}
 
 		it("disallows definition with wrong explicit type") {
 			assertFails {
 				analyse("""
 					myString: Int = "foo"
-				""".trimIndent())
+				""")
+			}
+		}
+
+		it("allows mutable declaration reassign") {
+			analyse("""
+				# myString = "foo"
+				myString <- "bar"
+			""")
+		}
+
+		it("disallows immutable declaration reassign") {
+			assertFails {
+				analyse("""
+					myString = "foo"
+					myString <- "bar"
+				""")
+			}
+		}
+
+		it("allows valid reassignment of definition with implicit nullable type") {
+			analyse("""
+				# myStringOrNull = <String>?
+				myStringOrNull <- "foo"
+			""")
+		}
+
+		it("disallows invalid reassignment of definition with implicit nullable type") {
+			assertFails {
+				analyse("""
+					# myStringOrNull = <String>?
+					myStringOrNull <- 123
+				""")
+			}
+		}
+
+		it("allows valid null-assignment of definition with explicit nullable type") {
+			analyse("""
+				# myStringOrNull: String? = "foo"
+				myStringOrNull <- <String>?
+			""")
+		}
+
+		it("disallows invalid null-assignment of definition with non-nullable type") {
+			assertFails {
+				analyse("""
+					# myStringOrNull = "foo"
+					myStringOrNull <- <String>?
+				""")
 			}
 		}
 	}
