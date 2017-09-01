@@ -62,34 +62,192 @@ object AnalysisSpec : Spek({
 
 		it("allows valid reassignment of definition with implicit nullable type") {
 			analyse("""
-				# myStringOrNull = <String>?
-				myStringOrNull <- "foo"
+				# myField = <String>?
+				myField <- "foo"
 			""")
 		}
 
 		it("disallows invalid reassignment of definition with implicit nullable type") {
 			assertFails {
 				analyse("""
-					# myStringOrNull = <String>?
-					myStringOrNull <- 123
+					# myField = <String>?
+					myField <- 123
 				""")
 			}
 		}
 
 		it("allows valid null-assignment of definition with explicit nullable type") {
 			analyse("""
-				# myStringOrNull: String? = "foo"
-				myStringOrNull <- <String>?
+				# myField: String? = "foo"
+				myField <- <String>?
 			""")
 		}
 
 		it("disallows invalid null-assignment of definition with non-nullable type") {
 			assertFails {
 				analyse("""
-					# myStringOrNull = "foo"
-					myStringOrNull <- <String>?
+					# myField = "foo"
+					myField <- <String>?
 				""")
 			}
+		}
+
+		it("disallows assigning a nullable value to a non-nullable field") {
+			assertFails {
+				analyse("""
+					myString: String = <String>?
+				""")
+			}
+		}
+
+		it("disallows assigning an invalid null value to a nullable field") {
+			assertFails {
+				analyse("""
+					myField: String? = ?
+				""")
+			}
+		}
+
+		it("disallows using forward references in local scope") {
+			assertFails {
+				analyse("""
+					myField = forwardField
+
+					forwardField = "foo"
+				""")
+			}
+		}
+
+		it("allows creating an object and referencing a field") {
+			analyse("""
+				myObject = [ foo = "bar" ]
+				myObject.foo
+
+				myObjectExplicit: [ foo: String ] = [ foo = "bar" ]
+				myObjectExplicit.foo
+			""")
+		}
+
+		it("disallows invalid object assignment") {
+			assertFails {
+				analyse("""
+					myObject: [ foo: String ]  = [ abc = 123 ]
+					myObject.foo
+				""")
+			}
+		}
+
+		it("disallows referencing fields of nullable object") {
+			assertFails {
+				analyse("""
+					myObject: [ foo: String ]?  = [ foo = "bar" ]
+					myObject.foo
+				""")
+			}
+		}
+
+		it("disallows referencing a non-existent field of an object") {
+			assertFails {
+				analyse("""
+					myObject: [ foo: String ]  = [ foo = "bar", abc = 123 ]
+					myObject.abc
+				""")
+			}
+		}
+
+		it("allows creating a class and inheriting from it in objects and classes") {
+			analyse("""
+				Animal = class [
+					name: String
+
+					sayName = -> println[m = "my name is ..."]
+				]
+
+				Dog = class [
+					&Animal
+					bark = -> println[m = "woof"]
+				]
+
+				myDog = [&Dog, name = "Foo"]
+			""")
+		}
+
+		it("disallows creating objects without making every field concrete") {
+			assertFails {
+				analyse("""
+					Animal = class [
+						name: String
+
+						sayName = -> println[m = "my name is ..."]
+					]
+
+					Dog = class [
+						&Animal
+						bark = -> println[m = "woof"]
+					]
+
+					myDog = [&Dog]
+				""")
+			}
+		}
+
+		it("allows using forward references in classes") {
+			analyse("""
+				Animal = class [
+					name: String = defaultAnimalName
+				]
+
+				defaultAnimalName = "Foo"
+
+				myAnimal = [&Animal]
+			""")
+		}
+
+		it("disallows inheriting an object in local scope") {
+			assertFails {
+				analyse("""
+					Point = class [ x: Int = 0, y: Int = 0 ]
+					&Point
+				""")
+			}
+		}
+
+		it("allows using a block expression") {
+			analyse("""
+				total: Int = (
+					# n = 0
+					n = n + 2
+					n = n + 3
+					n
+				)
+			""")
+		}
+
+		it("allows using functions with and without parameters") {
+			analyse("""
+				multiplyByTwo = [n: Int] -> n * 2
+				double = multiplyByTwo[n = 1]
+
+				sayHi = -> println[m = "Hi"]
+				sayHi[]
+			""")
+		}
+
+		it("disallows using a function with invalid arguments") {
+			assertFails {
+				analyse("""
+					multiplyByTwo = [n: Int] -> n * 2
+					foo = multiplyByTwo[]
+				""")
+			}
+		}
+
+		it("allows using forward references in functions") {
+			analyse("""
+				sayHi = -> println[m = hiMessage]
+				hiMessage = "Hi"
+				sayHi[]
+			""")
 		}
 	}
 })
