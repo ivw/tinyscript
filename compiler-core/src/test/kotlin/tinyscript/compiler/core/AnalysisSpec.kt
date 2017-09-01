@@ -173,11 +173,7 @@ object AnalysisSpec : Spek({
 
 		it("allows creating a class and inheriting from it in objects and classes") {
 			analyse("""
-				Animal = class [
-					name: String
-
-					sayName = -> println[m = "my name is ..."]
-				]
+				Animal = class [ name: String ]
 
 				Dog = class [
 					&Animal
@@ -191,11 +187,7 @@ object AnalysisSpec : Spek({
 		it("disallows creating objects without making every field concrete") {
 			assertFails {
 				analyse("""
-					Animal = class [
-						name: String
-
-						sayName = -> println[m = "my name is ..."]
-					]
+					Animal = class [ name: String ]
 
 					Dog = class [
 						&Animal
@@ -205,6 +197,43 @@ object AnalysisSpec : Spek({
 					myDog = [&Dog]
 				""")
 			}
+		}
+
+		it("allows assigning a class inherited object to a structural object type") {
+			analyse("""
+				Animal = class [ name: String ]
+				myObjectWithName: [name: String] = [&Animal, name = "Foo"]
+			""")
+		}
+
+		it("disallows disallows assigning an object with missing identities") {
+			assertFails {
+				analyse("""
+					Animal = class [ name: String ]
+					myAnimal: Animal = [name = "Foo"]
+				""")
+			}
+		}
+
+		it("allows multiple inheritance") {
+			analyse("""
+				Scanner = class [ scan: -> ? ]
+				Printer = class [ print: -> ? ]
+				Copier = class [
+					&Scanner
+					&Printer
+
+					copy = -> (
+						scan[]
+						print[]
+					)
+				]
+				foo: [&Scanner, &Printer] = [
+					&Copier
+					scan = -> println[]
+					print = -> println[]
+				]
+			""")
 		}
 
 		it("allows using forward references in classes") {
