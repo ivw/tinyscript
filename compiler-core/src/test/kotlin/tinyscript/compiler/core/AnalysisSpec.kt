@@ -285,6 +285,28 @@ object AnalysisSpec : Spek({
 			""")
 		}
 
+		it("allows valid function type annotation") {
+			analyse("""
+				multiplyByTwo: [n: Int] -> Int = [n: Int] -> n * 2
+			""")
+			analyse("""
+				multiplyByTwo: [n: Int, foo: String] -> ? = [n: Int] -> n * 2
+			""")
+		}
+
+		it("disallows invalid function type annotation") {
+			assertFails {
+				analyse("""
+					multiplyByTwo: [] -> Int = [n: Int] -> n * 2
+				""")
+			}
+			assertFails {
+				analyse("""
+					multiplyByTwo: [n: Int] -> String = [n: Int] -> n * 2
+				""")
+			}
+		}
+
 		it("disallows using a function with invalid arguments") {
 			assertFails {
 				analyse("""
