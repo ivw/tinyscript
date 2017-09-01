@@ -155,6 +155,22 @@ object AnalysisSpec : Spek({
 			}
 		}
 
+		it("allows mutable object field reassign") {
+			analyse("""
+				myObject = [ # foo: String? = <String>? ]
+				myObject.foo <- "bar"
+			""")
+		}
+
+		it("disallows immutable object field reassign") {
+			assertFails {
+				analyse("""
+					myObject = [ foo: String? = <String>? ]
+					myObject.foo <- "bar"
+				""")
+			}
+		}
+
 		it("allows creating a class and inheriting from it in objects and classes") {
 			analyse("""
 				Animal = class [
@@ -168,7 +184,7 @@ object AnalysisSpec : Spek({
 					bark = -> println[m = "woof"]
 				]
 
-				myDog = [&Dog, name = "Foo"]
+				myAnimal: [&Animal] = [&Dog, name = "Foo"]
 			""")
 		}
 
