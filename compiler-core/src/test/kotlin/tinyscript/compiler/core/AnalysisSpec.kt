@@ -184,7 +184,7 @@ object AnalysisSpec : Spek({
 					bark = -> println[m = "woof"]
 				]
 
-				myAnimal: [&Animal] = [&Dog, name = "Foo"]
+				myAnimal: Animal = [&Dog, name = "Foo"]
 			""")
 		}
 
