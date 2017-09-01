@@ -176,25 +176,29 @@ class AnalysisVisitor(val sourceDescription: String) {
 	fun visitObjectType(ctx: TinyScriptParser.ObjectTypeContext, scope: Scope): ObjectType {
 		val objectType = ObjectType()
 		val objectScope = ObjectScope(scope, objectType)
-		ctx.objectTypeField().forEach({ visitObjectTypeField(it, objectScope) })
-		return objectType
-	}
+		ctx.objectTypeField().forEach({ objectTypeFieldCtx ->
+			when (objectTypeFieldCtx) {
+				is TinyScriptParser.SymbolObjectTypeFieldContext -> {
+					val type: Type = visitType(objectTypeFieldCtx.type(), objectScope)
 
-	fun visitObjectTypeField(ctx: TinyScriptParser.ObjectTypeFieldContext, scope: Scope) {
-		when (ctx) {
-			is TinyScriptParser.SymbolObjectTypeFieldContext -> {
-				val type: Type = visitType(ctx.type(), scope)
-
-				val symbol = Symbol(
-						ctx.Name().text,
-						type,
-						true,
-						ctx.getToken(TinyScriptParser.Mut, 0) != null
-				)
-				scope.signatures.addSymbol(symbol)
+					val symbol = Symbol(
+							objectTypeFieldCtx.Name().text,
+							type,
+							true,
+							objectTypeFieldCtx.getToken(TinyScriptParser.Mut, 0) != null
+					)
+					objectScope.signatures.addSymbol(symbol)
+				}
+				is TinyScriptParser.InheritDeclarationObjectTypeFieldContext -> {
+					val referenceSymbol = objectScope.resolveSymbol(objectTypeFieldCtx.Name().text)
+							?: throw AnalysisError("unresolved symbol '${objectTypeFieldCtx.Name().text}'", sourceDescription, objectTypeFieldCtx.start)
+					val classType = referenceSymbol.type.final() as ClassType
+					objectType.inheritFromClass(classType)
+				}
+				else -> throw RuntimeException("unknown ObjectTypeField type")
 			}
-			else -> throw RuntimeException("unknown ObjectTypeField type")
-		}
+		})
+		return objectType
 	}
 
 	fun visitObject(ctx: TinyScriptParser.ObjectContext, scope: Scope, mustBeConcrete: Boolean): ObjectType {
@@ -218,7 +222,7 @@ class AnalysisVisitor(val sourceDescription: String) {
 						is ObjectType -> objectType.inheritFromObject(expressionType)
 						else -> throw AnalysisError("unsupported expression type '$expressionType'", sourceDescription, declaration.start)
 					}
-					infoMap[declaration] = InheritDeclarationInfo(scope, expressionType)
+					infoMap[declaration] = InheritDeclarationInfo(objectScope, expressionType)
 				}
 				else -> throw RuntimeException("unknown declaration type")
 			}

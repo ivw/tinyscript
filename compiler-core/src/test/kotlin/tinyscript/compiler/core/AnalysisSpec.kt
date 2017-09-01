@@ -213,6 +213,13 @@ object AnalysisSpec : Spek({
 					myAnimal: Animal = [name = "Foo"]
 				""")
 			}
+
+			assertFails {
+				analyse("""
+					Animal = class [ name: String ]
+					myAnimal: [&Animal] = [name = "Foo"]
+				""")
+			}
 		}
 
 		it("allows multiple inheritance") {
