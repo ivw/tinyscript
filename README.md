@@ -4,6 +4,10 @@ A minimal, safe programming language that compiles to JavaScript.
 
 Work in progress.
 
+[Code example](https://github.com/ivw/tinyscript/blob/master/compiler-core/example/Example.tiny)
+
+[Grammar](https://github.com/ivw/tinyscript/blob/master/compiler-core/src/main/antlr/tinyscript/compiler/core/parser/TinyScript.g4)
+
 ## Usage
 Java 8 is required.
 
