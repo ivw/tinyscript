@@ -29,6 +29,10 @@ object ConditionalExpressionSpec : Spek({
 			assertAnalysisFails("""
 				foo: String = if (true) "abc" else 3
 			""")
+			assertAnalysisFails("""
+				myObject = if (true) [ a = 1, foo = 3 ] else [ b = 2, foo = 4 ]
+				myObject.foo
+			""")
 		}
 	}
 })
