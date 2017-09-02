@@ -9,7 +9,7 @@ import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
 import kotlin.test.assertFails
 
-fun analyse(codeString: String) {
+fun assertAnalysis(codeString: String) {
 	val lexer = TinyScriptLexer(CharStreams.fromString(codeString.trimIndent()))
 	val parser = TinyScriptParser(CommonTokenStream(lexer))
 	val fileCtx = parser.file()
@@ -22,104 +22,94 @@ fun analyse(codeString: String) {
 	analysisVisitor.finishDeferredAnalyses()
 }
 
+fun assertAnalysisFails(codeString: String) {
+	assertFails { assertAnalysis(codeString) }
+}
+
 object AnalysisSpec : Spek({
 	describe("analysis") {
 		it("allows definition with implicit type") {
-			analyse("""
+			assertAnalysis("""
 				myString = "foo"
 			""")
 		}
 
 		it("allows definition with explicit type") {
-			analyse("""
+			assertAnalysis("""
 				myString: String = "foo"
 			""")
 		}
 
 		it("disallows definition with wrong explicit type") {
-			assertFails {
-				analyse("""
-					myString: Int = "foo"
-				""")
-			}
+			assertAnalysisFails("""
+				myString: Int = "foo"
+			""")
 		}
 
 		it("allows mutable declaration reassign") {
-			analyse("""
+			assertAnalysis("""
 				# myString = "foo"
 				myString <- "bar"
 			""")
 		}
 
 		it("disallows immutable declaration reassign") {
-			assertFails {
-				analyse("""
-					myString = "foo"
-					myString <- "bar"
-				""")
-			}
+			assertAnalysisFails("""
+				myString = "foo"
+				myString <- "bar"
+			""")
 		}
 
 		it("allows valid reassignment of definition with implicit nullable type") {
-			analyse("""
+			assertAnalysis("""
 				# myField = <String>?
 				myField <- "foo"
 			""")
 		}
 
 		it("disallows invalid reassignment of definition with implicit nullable type") {
-			assertFails {
-				analyse("""
-					# myField = <String>?
-					myField <- 123
-				""")
-			}
+			assertAnalysisFails("""
+				# myField = <String>?
+				myField <- 123
+			""")
 		}
 
 		it("allows valid null-assignment of definition with explicit nullable type") {
-			analyse("""
+			assertAnalysis("""
 				# myField: String? = "foo"
 				myField <- <String>?
 			""")
 		}
 
 		it("disallows invalid null-assignment of definition with non-nullable type") {
-			assertFails {
-				analyse("""
-					# myField = "foo"
-					myField <- <String>?
-				""")
-			}
+			assertAnalysisFails("""
+				# myField = "foo"
+				myField <- <String>?
+			""")
 		}
 
 		it("disallows assigning a nullable value to a non-nullable field") {
-			assertFails {
-				analyse("""
-					myString: String = <String>?
-				""")
-			}
+			assertAnalysisFails("""
+				myString: String = <String>?
+			""")
 		}
 
 		it("disallows assigning an invalid null value to a nullable field") {
-			assertFails {
-				analyse("""
-					myField: String? = ?
-				""")
-			}
+			assertAnalysisFails("""
+				myField: String? = ?
+			""")
 		}
 
 		it("disallows using forward references in local scope") {
-			assertFails {
-				analyse("""
-					myField = forwardField
+			assertAnalysisFails("""
+				myField = forwardField
 
-					forwardField = "foo"
-				""")
-			}
+				forwardField = "foo"
+			""")
 		}
 
 		it("allows creating an object and referencing a field") {
-			analyse("""
+			assertAnalysis("""
 				myObject = [ foo = "bar" ]
 				myObject.foo
 
@@ -129,50 +119,42 @@ object AnalysisSpec : Spek({
 		}
 
 		it("disallows invalid object assignment") {
-			assertFails {
-				analyse("""
-					myObject: [ foo: String ]  = [ abc = 123 ]
-					myObject.foo
-				""")
-			}
+			assertAnalysisFails("""
+				myObject: [ foo: String ]  = [ abc = 123 ]
+				myObject.foo
+			""")
 		}
 
 		it("disallows referencing fields of nullable object") {
-			assertFails {
-				analyse("""
-					myObject: [ foo: String ]?  = [ foo = "bar" ]
-					myObject.foo
-				""")
-			}
+			assertAnalysisFails("""
+				myObject: [ foo: String ]?  = [ foo = "bar" ]
+				myObject.foo
+			""")
 		}
 
 		it("disallows referencing a non-existent field of an object") {
-			assertFails {
-				analyse("""
-					myObject: [ foo: String ]  = [ foo = "bar", abc = 123 ]
-					myObject.abc
-				""")
-			}
+			assertAnalysisFails("""
+				myObject: [ foo: String ]  = [ foo = "bar", abc = 123 ]
+				myObject.abc
+			""")
 		}
 
 		it("allows mutable object field reassign") {
-			analyse("""
+			assertAnalysis("""
 				myObject = [ # foo: String? = <String>? ]
 				myObject.foo <- "bar"
 			""")
 		}
 
 		it("disallows immutable object field reassign") {
-			assertFails {
-				analyse("""
-					myObject = [ foo: String? = <String>? ]
-					myObject.foo <- "bar"
-				""")
-			}
+			assertAnalysisFails("""
+				myObject = [ foo: String? = <String>? ]
+				myObject.foo <- "bar"
+			""")
 		}
 
 		it("allows creating a class and inheriting from it in objects and classes") {
-			analyse("""
+			assertAnalysis("""
 				Animal = class [ name: String ]
 
 				Dog = class [
@@ -185,45 +167,39 @@ object AnalysisSpec : Spek({
 		}
 
 		it("disallows creating objects without making every field concrete") {
-			assertFails {
-				analyse("""
-					Animal = class [ name: String ]
+			assertAnalysisFails("""
+				Animal = class [ name: String ]
 
-					Dog = class [
-						&Animal
-						bark = -> println[m = "woof"]
-					]
+				Dog = class [
+					&Animal
+					bark = -> println[m = "woof"]
+				]
 
-					myDog = [&Dog]
-				""")
-			}
+				myDog = [&Dog]
+			""")
 		}
 
 		it("allows assigning a class inherited object to a structural object type") {
-			analyse("""
+			assertAnalysis("""
 				Animal = class [ name: String ]
 				myObjectWithName: [name: String] = [&Animal, name = "Foo"]
 			""")
 		}
 
 		it("disallows disallows assigning an object with missing identities") {
-			assertFails {
-				analyse("""
-					Animal = class [ name: String ]
-					myAnimal: Animal = [name = "Foo"]
-				""")
-			}
+			assertAnalysisFails("""
+				Animal = class [ name: String ]
+				myAnimal: Animal = [name = "Foo"]
+			""")
 
-			assertFails {
-				analyse("""
-					Animal = class [ name: String ]
-					myAnimal: [&Animal] = [name = "Foo"]
-				""")
-			}
+			assertAnalysisFails("""
+				Animal = class [ name: String ]
+				myAnimal: [&Animal] = [name = "Foo"]
+			""")
 		}
 
 		it("allows multiple inheritance") {
-			analyse("""
+			assertAnalysis("""
 				Scanner = class [ scan: -> ? ]
 				Printer = class [ print: -> ? ]
 				Copier = class [
@@ -244,7 +220,7 @@ object AnalysisSpec : Spek({
 		}
 
 		it("allows using forward references in classes") {
-			analyse("""
+			assertAnalysis("""
 				Animal = class [
 					name: String = defaultAnimalName
 				]
@@ -256,16 +232,14 @@ object AnalysisSpec : Spek({
 		}
 
 		it("disallows inheriting an object in local scope") {
-			assertFails {
-				analyse("""
-					Point = class [ x: Int = 0, y: Int = 0 ]
-					&Point
-				""")
-			}
+			assertAnalysisFails("""
+				Point = class [ x: Int = 0, y: Int = 0 ]
+				&Point
+			""")
 		}
 
 		it("allows using a block expression") {
-			analyse("""
+			assertAnalysis("""
 				total: Int = (
 					# n = 0
 					n = n + 2
@@ -276,7 +250,7 @@ object AnalysisSpec : Spek({
 		}
 
 		it("allows using functions with and without parameters") {
-			analyse("""
+			assertAnalysis("""
 				multiplyByTwo = [n: Int] -> n * 2
 				double = multiplyByTwo[n = 1]
 
@@ -286,41 +260,56 @@ object AnalysisSpec : Spek({
 		}
 
 		it("allows valid function type annotation") {
-			analyse("""
+			assertAnalysis("""
 				multiplyByTwo: [n: Int] -> Int = [n: Int] -> n * 2
 			""")
-			analyse("""
+			assertAnalysis("""
 				multiplyByTwo: [n: Int, foo: String] -> ? = [n: Int] -> n * 2
 			""")
 		}
 
 		it("disallows invalid function type annotation") {
-			assertFails {
-				analyse("""
-					multiplyByTwo: [] -> Int = [n: Int] -> n * 2
-				""")
-			}
-			assertFails {
-				analyse("""
-					multiplyByTwo: [n: Int] -> String = [n: Int] -> n * 2
-				""")
-			}
+			assertAnalysisFails("""
+				multiplyByTwo: [] -> Int = [n: Int] -> n * 2
+			""")
+			assertAnalysisFails("""
+				multiplyByTwo: [n: Int] -> String = [n: Int] -> n * 2
+			""")
 		}
 
 		it("disallows using a function with invalid arguments") {
-			assertFails {
-				analyse("""
-					multiplyByTwo = [n: Int] -> n * 2
-					foo = multiplyByTwo[]
-				""")
-			}
+			assertAnalysisFails("""
+				multiplyByTwo = [n: Int] -> n * 2
+				foo = multiplyByTwo[]
+			""")
 		}
 
 		it("allows using forward references in functions") {
-			analyse("""
+			assertAnalysis("""
 				sayHi = -> println[m = hiMessage]
 				hiMessage = "Hi"
 				sayHi[]
+			""")
+		}
+
+		it("allows using a conditional expression with object identity intersection") {
+			assertAnalysis("""
+				Animal = class [ name: String ]
+
+				Dog = class [
+					&Animal
+					bark = -> println[m = "woof"]
+				]
+
+				Cat = class [
+					&Animal
+					meow = -> println[m = "meow"]
+				]
+
+				myAnimal = if
+					(true) [&Dog, name = "Foo"]
+					else [&Cat, name = "Bar"]
+				println[m = myAnimal.name]
 			""")
 		}
 	}
