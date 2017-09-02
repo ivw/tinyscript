@@ -29,7 +29,7 @@ class ObjectScope(parentScope: Scope?, val objectType: ObjectType) : Scope(paren
 	}
 }
 
-class FunctionScope(parentScope: Scope?, val params: ObjectType) : Scope(
+class FunctionScope(parentScope: Scope?, params: ObjectType) : Scope(
 		Scope(parentScope, params.signatures),
 		SignatureCollection()
 )

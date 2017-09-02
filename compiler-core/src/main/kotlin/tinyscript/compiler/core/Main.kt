@@ -11,7 +11,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class AnalysisError(message: String, sourceDescription: String, token: Token) : RuntimeException(
-		"(${sourceDescription}:${token.line}) $message"
+		"($sourceDescription:${token.line}) $message"
 )
 
 fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
