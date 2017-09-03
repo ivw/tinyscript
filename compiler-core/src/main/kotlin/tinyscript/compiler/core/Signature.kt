@@ -56,7 +56,7 @@ class SignatureCollection {
 	}
 
 	fun addSymbol(symbol: Symbol) {
-		symbols[symbol.name]?.let { superSymbol ->
+		getSymbol(symbol.name)?.let { superSymbol ->
 			if (!superSymbol.type.final().accepts(symbol.type.final()))
 				throw RuntimeException("incompatible override on field '${symbol.name}': ${superSymbol.type} does not accept ${symbol.type}")
 		}

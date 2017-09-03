@@ -14,7 +14,7 @@ class AnalysisError(message: String, sourceDescription: String, token: Token) : 
 		"($sourceDescription:${token.line}) $message"
 )
 
-fun writeTinyScriptToJavascript(readPath: Path, writePath: Path) {
+fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Reading file '${readPath.fileName}'\n")
 	val inputCharStream = CharStreams.fromPath(readPath)
 
@@ -48,7 +48,7 @@ fun main(args: Array<String>) {
 
 	val outputJsFileName = tinyScriptFileName.removeSuffix(".tiny") + ".js"
 
-	writeTinyScriptToJavascript(
+	compileTinyScriptToJavascript(
 			Paths.get(tinyScriptFileName),
 			Paths.get(outputJsFileName)
 	)
