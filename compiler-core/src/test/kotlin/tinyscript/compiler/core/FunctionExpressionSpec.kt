@@ -23,6 +23,16 @@ object FunctionExpressionSpec : Spek({
 			""")
 		}
 
+		it("must be analysed even when not called") {
+			assertAnalysisFails("""
+				foo = -> abc
+			""")
+
+			assertAnalysisFails("""
+				foo = -> (-> abc)
+			""")
+		}
+
 		it("can be used with an explicit type") {
 			assertAnalysis("""
 				multiplyByTwo: [n: Int] -> Int = [n: Int] -> n * 2
