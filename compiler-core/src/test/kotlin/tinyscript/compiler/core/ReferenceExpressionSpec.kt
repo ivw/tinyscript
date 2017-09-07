@@ -11,6 +11,10 @@ object ReferenceExpressionSpec : Spek({
 				foo = 123
 				fooCopy: Int = foo
 			""")
+			assertAnalysisFails("""
+				foo = 123
+				fooCopy: Int = abc
+			""")
 		}
 
 		it("can not refer to fields to a nullable object directly") {
