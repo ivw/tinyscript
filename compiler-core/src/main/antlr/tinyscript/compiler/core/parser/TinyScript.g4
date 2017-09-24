@@ -3,20 +3,20 @@ grammar TinyScript;
 @header {package tinyscript.compiler.core.parser;}
 
 // start
-file: NL* (declaration ((',' | NL+) declaration)* NL*)? EOF;
+file: NL* (declaration ((';' | NL+) declaration)* NL*)? EOF;
 
 declaration
-	:	signature ':' type										# AbstractDeclaration
-	|	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
-	|	expression												# ImplicitDeclaration
+	:	Mut? Name initializer									# SymbolDeclaration
+	|	Name object initializer									# MethodDeclaration
+	|	(lhs=type)? Operator rhs=type initializer				# OperatorDeclaration
+	|	Mut? 'class' Name object								# ClassDeclaration
+	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
 
-signature
-	:	Mut? Name												# Symbol
-	|	Operator type											# PrefixOperator
-	|	type Operator type										# InfixOperator
-	|	(type '.')? Name object									# Method
+initializer
+	:	':' type												# AbstractInitializer
+	|	(':' type)? '=' NL* expression							# ConcreteInitializer
 	;
 
 expression
@@ -34,11 +34,9 @@ expression
 	|	expression object										# FunctionCallExpression
 	|	Operator expression										# PrefixOperatorCallExpression
 	|	expression NL* Operator NL* expression					# InfixOperatorCallExpression
-	|	Mut? 'class' object										# ClassExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
 	|	Name '<-' expression									# ReassignmentExpression
 	|	expression NL* '.' Name '<-' expression					# DotReassignmentExpression
-	|	object? Mut? '->' NL* expression						# FunctionExpression
 	;
 
 block: '(' NL* (declaration (';' | NL+))* expression NL* ')';
@@ -47,12 +45,10 @@ object: '[' NL* (declaration ((',' | NL+) declaration)* NL*)? ']';
 
 type
 	:	'(' type ')'											# ParenType
-	|	objectType? Mut? '->' type								# FunctionType
 	|	'?'														# NullType
 	|	type '?'												# NullableType
 	|	Mut? objectType											# ObjectTypeType
 	|	Name													# TypeReference
-	|	type '|' type											# IntersectObjectType
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';

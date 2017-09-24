@@ -2,34 +2,34 @@ myConstant = "initial value"
 # myVariable = "initial value"
 # myStringOrNull = <String>?
 
-main = -> (
+main[] = (
 	myStringOrNull <- "foo"
 )
 
-multiplyByTwo = [n: Int] -> n * 2
+multiplyByTwo[n: Int] = n * 2
 
-Animal = class [
+class Animal [
 	name: String
 
-	sayName = -> println[m = "my name is $name"]
+	sayName[] = println[m = "my name is $name"]
 ]
 
-Dog = class [
+class Dog [
 	&Animal
-	bark = -> println[m = "woof"]
+	bark[] = println[m = "woof"]
 ]
 
 myDog = [&Dog, name = "Foo"]
 
 myObject = [ foo = "bar", abc = 123 ]
 
-Scanner = class [ scan: -> ? ]
-Printer = class [ print: -> ? ]
-Copier = class [
+class Scanner [ scan[]: ? ]
+class Printer [ print[]: ? ]
+class Copier [
 	&Scanner
 	&Printer
 
-    copy = -> (
+    copy[] = (
         scan[]
         print[]
     )
@@ -37,7 +37,7 @@ Copier = class [
 
 message: String = if (true) "Hello" else "Hi"
 
-Point = class [ x: Int, y: Int ]
+class Point [ x: Int, y: Int ]
 
 Point + Point = [
 	&Point
