@@ -3,7 +3,9 @@ grammar TinyScript;
 @header {package tinyscript.compiler.core.parser;}
 
 // start
-file: NL* (declaration ((';' | NL+) declaration)* NL*)? EOF;
+file: NL* declarations? EOF;
+
+declarations: declaration ((',' | NL+) declaration)* NL*;
 
 declaration
 	:	Mut? Name initializer									# SymbolDeclaration
@@ -37,14 +39,16 @@ expression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
 	|	Name '<-' expression									# ReassignmentExpression
 	|	expression NL* '.' Name '<-' expression					# DotReassignmentExpression
+	|	object? Mut? '->' NL* expression						# FunctionExpression
 	;
 
-block: '(' NL* (declaration (';' | NL+))* expression NL* ')';
+block: '(' NL* (declarations (',' | NL+))? expression NL* ')';
 
-object: '[' NL* (declaration ((',' | NL+) declaration)* NL*)? ']';
+object: '[' NL* declarations? ']';
 
 type
 	:	'(' type ')'											# ParenType
+	|	objectType? Mut? '->' type								# FunctionType
 	|	'?'														# NullType
 	|	type '?'												# NullableType
 	|	Mut? objectType											# ObjectTypeType
