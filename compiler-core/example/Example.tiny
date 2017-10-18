@@ -29,10 +29,10 @@ class Copier [
 	&Scanner
 	&Printer
 
-    copy[] = (
-        scan[]
-        print[]
-    )
+	copy[] = (
+		scan[]
+		print[]
+	)
 ]
 
 message: String = if (true) "Hello" else "Hi"
