@@ -8,10 +8,10 @@ file: NL* declarations? EOF;
 declarations: declaration ((',' | NL+) declaration)* NL*;
 
 declaration
-	:	Mut? Name initializer									# SymbolDeclaration
+	:	Name initializer										# SymbolDeclaration
 	|	Name object initializer									# MethodDeclaration
 	|	(lhs=type)? Operator rhs=type initializer				# OperatorDeclaration
-	|	Mut? 'class' Name object								# ClassDeclaration
+	|	'class' Name object										# ClassDeclaration
 	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
@@ -30,9 +30,7 @@ expression
 	|	('<' type '>')? '?'										# NullExpression
 	|	'this'													# ThisExpression
 	|	'super'													# SuperExpression
-	|	Name													# ReferenceExpression
-	|	expression NL* '.' Name									# DotReferenceExpression
-	|	Mut? object												# ObjectExpression
+	|	object													# ObjectExpression
 	|	expression object										# FunctionCallExpression
 	|	Operator expression										# PrefixOperatorCallExpression
 	|	expression NL* Operator NL* expression					# InfixOperatorCallExpression
@@ -51,14 +49,14 @@ type
 	|	objectType? Mut? '->' type								# FunctionType
 	|	'?'														# NullType
 	|	type '?'												# NullableType
-	|	Mut? objectType											# ObjectTypeType
+	|	objectType												# ObjectTypeType
 	|	Name													# TypeReference
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
-	:	Mut? Name ':' type										# SymbolObjectTypeField
+	:	Name ':' type											# SymbolObjectTypeField
 	|	'&' Name												# InheritDeclarationObjectTypeField
 	;
 
