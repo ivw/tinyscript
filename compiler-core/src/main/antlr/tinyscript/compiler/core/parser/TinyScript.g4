@@ -30,13 +30,13 @@ expression
 	|	('<' type '>')? '?'										# NullExpression
 	|	'this'													# ThisExpression
 	|	'super'													# SuperExpression
+	|	Name													# ReferenceExpression
+	|	expression NL* '.' Name									# DotReferenceExpression
 	|	object													# ObjectExpression
 	|	expression object										# FunctionCallExpression
 	|	Operator expression										# PrefixOperatorCallExpression
 	|	expression NL* Operator NL* expression					# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
-	|	Name '<-' expression									# ReassignmentExpression
-	|	expression NL* '.' Name '<-' expression					# DotReassignmentExpression
 	|	object? Mut? '->' NL* expression						# FunctionExpression
 	;
 
