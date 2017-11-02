@@ -1,48 +1,19 @@
-myConstant = "initial value"
-# myVariable = "initial value"
-# myStringOrNull = <String>?
+main[]! = (
+    myFunc[]!: ? = ?
+    myFunc[]!
 
-main[] = (
-	myStringOrNull <- "foo"
+    myGet!: ? = ?
+    myGet!
+
+    IntBox +! Int: ?
+    myIntBox +! 1
+
+    myExpr: []! -> ? = []! -> ?
+    myExprShort: ! -> ? = ! -> ?
+    (myExpr)[]!
+
+    returnsFunc! = ! -> ?
+    returnsFunc![]!
+
+    ?
 )
-
-multiplyByTwo[n: Int] = n * 2
-
-class Animal [
-	name: String
-
-	sayName[] = println[m = "my name is $name"]
-]
-
-class Dog [
-	&Animal
-	bark[] = println[m = "woof"]
-]
-
-myDog = [&Dog, name = "Foo"]
-
-myObject = [ foo = "bar", abc = 123 ]
-
-class Scanner [ scan[]: ? ]
-class Printer [ print[]: ? ]
-class Copier [
-	&Scanner
-	&Printer
-
-	copy[] = (
-		scan[]
-		print[]
-	)
-]
-
-message: String = if (true) "Hello" else "Hi"
-
-class Point [ x: Int, y: Int ]
-
-Point + Point = [
-	&Point
-	x = $0.x + $1.x
-	y = $0.y + $1.y
-]
-
-myPoint = [ &Point, x = 1, y = 2 ] + [ &Point, x = 1, y = 2 ]
