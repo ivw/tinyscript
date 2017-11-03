@@ -5,7 +5,7 @@ main[]! = (
     myGet!: ? = ?
     myGet!
 
-    IntBox +! Int: ?
+    IntBox +! Int: ? = ?
     myIntBox +! 1
 
     myExpr: []! -> ? = []! -> ?

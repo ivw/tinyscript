@@ -34,7 +34,7 @@ expression
 	|	expression NL* '.' Name Impure?							# DotReferenceExpression
 	|	object													# ObjectExpression
 	|	expression object Impure?								# FunctionCallExpression
-	|	Operator expression										# PrefixOperatorCallExpression
+	|	Operator Impure? expression								# PrefixOperatorCallExpression
 	|	expression NL* Operator Impure? NL* expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
 	|	object? Impure? '->' NL* expression						# FunctionExpression
