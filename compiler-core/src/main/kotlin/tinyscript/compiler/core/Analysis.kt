@@ -2,8 +2,6 @@ package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
 
-val globalScope = Scope(null)
-
 class Scope(
 	val parentScope: Scope?,
 	val declarations: List<Declaration> = ArrayList()
@@ -49,4 +47,17 @@ fun TinyScriptParser.SignatureContext.analyse(): Signature = when (this) {
 	is TinyScriptParser.FunctionSignatureContext ->
 		FunctionSignature(Name().text, `object`(), Impure() != null)
 	else -> TODO()
+}
+
+fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
+	is TinyScriptParser.BlockExpressionContext ->
+		block().analyse(scope)
+	is TinyScriptParser.IntegerLiteralExpressionContext ->
+		IntExpression(text.toInt())
+	else -> TODO()
+}
+
+fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
+	val blockScope = declarations().analyseImperative(scope)
+	return BlockExpression(blockScope, expression().analyse(blockScope))
 }

@@ -88,3 +88,11 @@ class FunctionType(val params: ObjectType, val returnType: Type) : Type() {
 		return "FunctionType<$params -> $returnType>"
 	}
 }
+
+class IntType(val minValue: Int = Int.MIN_VALUE, val maxValue: Int = Int.MAX_VALUE) : Type() {
+	override fun accepts(type: Type): Boolean {
+		if (type !is IntType) return false
+
+		return type.minValue >= minValue && type.maxValue <= maxValue
+	}
+}

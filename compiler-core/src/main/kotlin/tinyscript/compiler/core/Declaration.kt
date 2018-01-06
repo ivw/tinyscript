@@ -18,7 +18,7 @@ class AbstractDeclaration(
 }
 
 class ConcreteDeclaration(
-	private val signature: Signature,
+	val signature: Signature,
 	private val typeCtx: TinyScriptParser.TypeContext?,
 	private val expressionCtx: TinyScriptParser.ExpressionContext
 ) : Declaration() {
