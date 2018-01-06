@@ -8,17 +8,19 @@ file: NL* declarations? NL* EOF;
 declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
-	:	Name Impure? initializer								# SymbolDeclaration
-	|	Name object Impure? initializer							# MethodDeclaration
-	|	(lhs=type)? Operator Impure? rhs=type initializer		# OperatorDeclaration
+	:	signature ':' type										# AbstractDeclaration
+	|	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
 	|	'class' Name object										# ClassDeclaration
+	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumDeclaration
+	|	'type' Name '=' type									# TypeDeclaration
 	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
 
-initializer
-	:	':' type												# AbstractInitializer
-	|	(':' type)? '=' NL* expression							# ConcreteInitializer
+signature
+	:	Name Impure?											# SymbolSignature
+	|	Name object Impure?										# FunctionSignature
+	|	(lhs=type)? Operator Impure? rhs=type					# OperatorSignature
 	;
 
 expression
@@ -37,6 +39,8 @@ expression
 	|	Operator Impure? expression								# PrefixOperatorCallExpression
 	|	expression NL* Operator Impure? NL* expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression		# ConditionalExpression
+	|	expression 'if' NL* (block expression NL*)+ 'else' expression		# ExprConditionalExpression // not sure yet.
+	|	expression 'then' NL* expression						# SingleConditionalExpression
 	|	object? Impure? '->' NL* expression						# FunctionExpression
 	;
 
@@ -51,12 +55,13 @@ type
 	|	type '?'												# NullableType
 	|	objectType												# ObjectTypeType
 	|	Name													# TypeReference
+	|	type block												# DependentType
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
-	:	Name ':' type											# SymbolObjectTypeField
+	:	signature ':' type										# SymbolObjectTypeField
 	|	'&' Name												# InheritDeclarationObjectTypeField
 	;
 

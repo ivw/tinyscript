@@ -14,9 +14,7 @@ fun assertAnalysis(codeString: String) {
 	if (parser.numberOfSyntaxErrors > 0)
 		throw RuntimeException("parsing failed")
 
-	val analysisVisitor = AnalysisVisitor("testCode")
-	analysisVisitor.visitFile(fileCtx)
-	analysisVisitor.finishDeferredAnalyses()
+	fileCtx.analyse()
 }
 
 fun assertAnalysisFails(codeString: String) {

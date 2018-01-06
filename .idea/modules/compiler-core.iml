@@ -5,6 +5,7 @@
     <content url="file://$MODULE_DIR$/../../compiler-core">
       <excludeFolder url="file://$MODULE_DIR$/../../compiler-core/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../compiler-core/build" />
+      <excludeFolder url="file://$MODULE_DIR$/../../compiler-core/gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../compiler-core/out" />
     </content>
     <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
