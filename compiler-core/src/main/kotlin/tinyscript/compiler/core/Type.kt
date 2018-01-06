@@ -17,35 +17,33 @@ object AnyType : Type() {
 	}
 }
 
+class Field(val signature: Signature, val type: Type, val isInitialized: Boolean)
+
 class ObjectType(
-	val declarations: List<Declaration> = ArrayList(),
+	val fields: List<Field> = ArrayList(),
 	val classes: MutableSet<ClassType> = HashSet()
 ) : Type() {
+	fun resolveField(signature: Signature): Field? =
+		fields.lastOrNull { it.signature.accepts(signature) }
+
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
 
-		/*
-		[ &Foo, bar: Int, abc = 123 ]  accepts  [ &Foo, bar = 1, c = 2]
-		 */
+		// `[ &Foo, bar: Int, abc = 123 ]` accepts `[ &Foo, bar = 1, c = 2 ]`
 
 		if (!type.classes.containsAll(classes)) return false
 
-		for (declaration in declarations) {
-			// TODO
-//			val subDeclaration = type.declarations.resolve...
-//			if (subDeclaration == null) {
-//				if (declaration.isAbstract)
-//					return false
-//			} else {
-//				if (!declaration.type.accepts(subDeclaration.type))
-//					return false
-//			}
+		return fields.all { field ->
+			val subField = type.resolveField(field.signature)
+			if (subField != null)
+				field.type.accepts(subField.type)
+			else
+				field.isInitialized
 		}
-		return true
 	}
 
 	override fun toString(): String {
-		return "ObjectType<declarations = $declarations, classes.size = ${classes.size}>"
+		return "ObjectType<fields = $fields, classes.size = ${classes.size}>"
 	}
 }
 
@@ -80,7 +78,7 @@ class FunctionType(val params: ObjectType, val returnType: Type) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 
-		// [d: Dog] -> Dog   accepts   [d: Animal] -> SpecialDog
+		// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
 		return type.params.accepts(params) && returnType.accepts(type.returnType)
 	}
 
