@@ -15,22 +15,23 @@ class Scope(
 fun TinyScriptParser.FileContext.analyse() =
 	declarations().analyseDeclarative(globalScope)
 
-fun TinyScriptParser.DeclarationsContext.analyseDeclarative(parentScope: Scope): Scope =
+fun TinyScriptParser.DeclarationsContext.analyseDeclarative(parentScope: Scope): List<Declaration> =
 	Scope(parentScope, declaration().map { it.analyse() }).apply {
 		// now that the scope is filled completely, we can finish the declaration analyses
 		declarations.forEach { it.finishAnalysis(this) }
-	}
+	}.declarations
 
 // in an impure imperative scope (like a blockScope), the order matters, and there can be no forward references.
-fun TinyScriptParser.DeclarationsContext.analyseImperative(parentScope: Scope): Scope {
+fun TinyScriptParser.DeclarationsContext.analyseImperative(parentScope: Scope): List<Declaration> {
 	val mutableDeclarations: MutableList<Declaration> = ArrayList()
-	return Scope(parentScope, mutableDeclarations).apply {
+	Scope(parentScope, mutableDeclarations).apply {
 		declaration().forEach { declarationCtx ->
 			val declaration = declarationCtx.analyse()
 			mutableDeclarations.add(declaration)
 			declaration.finishAnalysis(this)
 		}
 	}
+	return mutableDeclarations
 }
 
 fun TinyScriptParser.DeclarationContext.analyse(): Declaration = when (this) {
@@ -54,10 +55,17 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		block().analyse(scope)
 	is TinyScriptParser.IntegerLiteralExpressionContext ->
 		IntExpression(text.toInt())
+	is TinyScriptParser.ObjectExpressionContext ->
+		`object`().analyse(scope)
 	else -> TODO()
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val blockScope = declarations().analyseImperative(scope)
-	return BlockExpression(blockScope, expression().analyse(blockScope))
+	val declarations = declarations().analyseImperative(scope)
+	return BlockExpression(declarations, expression().analyse(Scope(scope, declarations)))
+}
+
+fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
+	val declarations = declarations().analyseImperative(scope)
+	return ObjectExpression(declarations)
 }
