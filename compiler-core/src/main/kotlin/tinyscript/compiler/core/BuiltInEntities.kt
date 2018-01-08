@@ -1,6 +1,6 @@
 package tinyscript.compiler.core
 
-val globalScope: Scope = Scope(null, ArrayList<Declaration>().apply {
+val builtInEntities = EntityCollection().apply {
 	// TODO
 //	add(AbstractDeclaration(FunctionSignature("println"), ))
-})
+}

@@ -4,35 +4,22 @@ import tinyscript.compiler.core.parser.TinyScriptParser
 
 class Scope(
 	val parentScope: Scope?,
-	val declarations: List<Declaration> = ArrayList()
+	val entities: EntityCollection = EntityCollection()
 ) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
-	fun resolve(predicate: (Declaration) -> Boolean): Declaration? =
-		declarations.lastOrNull(predicate) ?: parentScope?.resolve(predicate)
+	fun resolve(predicate: (Entity) -> Boolean): Entity? =
+		entities.lastOrNull(predicate) ?: parentScope?.resolve(predicate)
 }
 
-fun TinyScriptParser.FileContext.analyse() =
-	declarations().analyseDeclarative(globalScope)
+class DeclarationCollection(
+	val scope: Scope,
+	val declarations: List<Declaration>
+)
 
-fun TinyScriptParser.DeclarationsContext.analyseDeclarative(parentScope: Scope): List<Declaration> =
-	Scope(parentScope, declaration().map { it.analyse() }).apply {
-		// now that the scope is filled completely, we can finish the declaration analyses
-		declarations.forEach { it.finishAnalysis(this) }
-	}.declarations
+fun List<TinyScriptParser.DeclarationContext>.analyseUnordered(parentScope: Scope): DeclarationCollection = TODO()
 
-// in an impure imperative scope (like a blockScope), the order matters, and there can be no forward references.
-fun TinyScriptParser.DeclarationsContext.analyseImperative(parentScope: Scope): List<Declaration> {
-	val mutableDeclarations: MutableList<Declaration> = ArrayList()
-	Scope(parentScope, mutableDeclarations).apply {
-		declaration().forEach { declarationCtx ->
-			val declaration = declarationCtx.analyse()
-			mutableDeclarations.add(declaration)
-			declaration.finishAnalysis(this)
-		}
-	}
-	return mutableDeclarations
-}
+fun List<TinyScriptParser.DeclarationContext>.analyseSerial(parentScope: Scope): DeclarationCollection = TODO()
 
 fun TinyScriptParser.DeclarationContext.analyse(): Declaration = when (this) {
 	is TinyScriptParser.AbstractDeclarationContext ->
@@ -61,11 +48,11 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val declarations = declarations().analyseImperative(scope)
-	return BlockExpression(declarations, expression().analyse(Scope(scope, declarations)))
+	val declarationCollection = declarations().declaration().analyseSerial(scope)
+	return BlockExpression(declarationCollection, expression().analyse(declarationCollection.scope))
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	val declarations = declarations().analyseImperative(scope)
-	return ObjectExpression(declarations)
+	val declarationCollection = declarations().declaration().analyseSerial(scope)
+	return ObjectExpression(declarationCollection)
 }

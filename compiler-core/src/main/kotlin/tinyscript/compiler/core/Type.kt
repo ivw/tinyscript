@@ -17,15 +17,10 @@ object AnyType : Type() {
 	}
 }
 
-class Field(val signature: Signature, val type: Type, val isInitialized: Boolean)
-
 class ObjectType(
-	val fields: List<Field> = ArrayList(),
+	val entities: EntityCollection = EntityCollection(),
 	val classes: MutableSet<ClassType> = HashSet()
 ) : Type() {
-	fun resolveField(signature: Signature): Field? =
-		fields.lastOrNull { it.signature.accepts(signature) }
-
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
 
@@ -33,17 +28,17 @@ class ObjectType(
 
 		if (!type.classes.containsAll(classes)) return false
 
-		return fields.all { field ->
-			val subField = type.resolveField(field.signature)
-			if (subField != null)
-				field.type.accepts(subField.type)
+		return entities.all { entity ->
+			val subEntity = type.entities.resolve(entity.signature)
+			if (subEntity != null)
+				entity.type.accepts(subEntity.type)
 			else
-				field.isInitialized
+				entity.isInitialized
 		}
 	}
 
 	override fun toString(): String {
-		return "ObjectType<fields = $fields, classes.size = ${classes.size}>"
+		return "ObjectType<entities = $entities, classes.size = ${classes.size}>"
 	}
 }
 
