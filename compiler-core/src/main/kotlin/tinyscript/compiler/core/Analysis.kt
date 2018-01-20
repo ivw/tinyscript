@@ -14,12 +14,12 @@ class Scope(
 
 class DeclarationCollection(
 	val scope: Scope,
-	val declarations: List<Declaration>
+	val orderedDeclarations: List<Declaration>
 )
 
-fun List<TinyScriptParser.DeclarationContext>.analyseUnordered(parentScope: Scope): DeclarationCollection = TODO()
+fun List<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope): DeclarationCollection {
 
-fun List<TinyScriptParser.DeclarationContext>.analyseSerial(parentScope: Scope): DeclarationCollection = TODO()
+}
 
 fun TinyScriptParser.DeclarationContext.analyse(): Declaration = when (this) {
 	is TinyScriptParser.AbstractDeclarationContext ->
@@ -48,11 +48,11 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val declarationCollection = declarations().declaration().analyseSerial(scope)
+	val declarationCollection = declarations().declaration().analyse(scope)
 	return BlockExpression(declarationCollection, expression().analyse(declarationCollection.scope))
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	val declarationCollection = declarations().declaration().analyseSerial(scope)
+	val declarationCollection = declarations().declaration().analyse(scope)
 	return ObjectExpression(declarationCollection)
 }

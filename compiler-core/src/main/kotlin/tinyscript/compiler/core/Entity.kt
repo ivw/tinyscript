@@ -1,5 +1,9 @@
 package tinyscript.compiler.core
 
-class Entity(val type: Type, val isInitialized: Boolean)
+sealed class Entity
+
+abstract class SignatureEntity(val isInitialized: Boolean) {
+	abstract fun getType(): Type
+}
 
 class EntityCollection : ArrayList<Entity>()
