@@ -40,9 +40,9 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="compiler-core_main" />
     <orderEntry type="library" name="Gradle: org.antlr:antlr4:4.7" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jre8:1.2.10" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jre8:1.2.20" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.spek:spek-api:1.1.4" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-test:1.2.10" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-test:1.2.20" level="project" />
     <orderEntry type="library" name="Gradle: org.antlr:antlr4-runtime:4.7" level="project" />
     <orderEntry type="library" name="Gradle: org.antlr:antlr-runtime:3.5.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.jetbrains.spek:spek-junit-platform-engine:1.1.4" level="project" />
@@ -50,8 +50,8 @@
     <orderEntry type="library" name="Gradle: org.abego.treelayout:org.abego.treelayout.core:1.0.3" level="project" />
     <orderEntry type="library" name="Gradle: org.glassfish:javax.json:1.0.4" level="project" />
     <orderEntry type="library" name="Gradle: com.ibm.icu:icu4j:58.2" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.10" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jre7:1.2.10" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.20" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jre7:1.2.20" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.0.6" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
   </component>

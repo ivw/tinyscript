@@ -8,9 +8,7 @@ file: NL* declarations? NL* EOF;
 declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
-	:	signature ':' type										# AbstractDeclaration
-	|	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
-	|	'class' Name object										# ClassDeclaration
+	:	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumDeclaration
 	|	'type' Name '=' type									# TypeDeclaration
 	|	expression												# NonDeclaration
@@ -19,7 +17,7 @@ declaration
 
 signature
 	:	Name Impure?											# SymbolSignature
-	|	Name object Impure?										# FunctionSignature
+	|	Name objectType Impure?									# FunctionSignature
 	|	(lhs=type)? Operator Impure? rhs=type					# OperatorSignature
 	;
 

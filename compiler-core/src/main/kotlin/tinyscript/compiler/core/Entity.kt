@@ -2,7 +2,7 @@ package tinyscript.compiler.core
 
 sealed class Entity
 
-abstract class SignatureEntity(val isInitialized: Boolean) {
+abstract class SignatureEntity {
 	abstract fun getType(): Type
 }
 
