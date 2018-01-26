@@ -18,14 +18,12 @@ class DeclarationCollection(
 )
 
 fun List<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope): DeclarationCollection {
-
+	TODO()
 }
 
 fun TinyScriptParser.DeclarationContext.analyse(): Declaration = when (this) {
-	is TinyScriptParser.AbstractDeclarationContext ->
-		AbstractDeclaration(signature().analyse(), type())
 	is TinyScriptParser.ConcreteDeclarationContext ->
-		ConcreteDeclaration(signature().analyse(), type(), expression())
+		ConcreteDeclaration(signature().analyse(), TODO(), TODO())
 	else -> TODO()
 }
 
@@ -33,7 +31,7 @@ fun TinyScriptParser.SignatureContext.analyse(): Signature = when (this) {
 	is TinyScriptParser.SymbolSignatureContext ->
 		SymbolSignature(Name().text, Impure() != null)
 	is TinyScriptParser.FunctionSignatureContext ->
-		FunctionSignature(Name().text, `object`(), Impure() != null)
+		FunctionSignature(Name().text, TODO(), Impure() != null)
 	else -> TODO()
 }
 

@@ -14,7 +14,8 @@ fun assertAnalysis(codeString: String) {
 	if (parser.numberOfSyntaxErrors > 0)
 		throw RuntimeException("parsing failed")
 
-	fileCtx.analyse()
+//	fileCtx.analyse()
+	TODO()
 }
 
 fun assertAnalysisFails(codeString: String) {

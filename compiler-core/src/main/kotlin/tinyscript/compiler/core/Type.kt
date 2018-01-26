@@ -28,13 +28,14 @@ class ObjectType(
 
 		if (!type.classes.containsAll(classes)) return false
 
-		return entities.all { entity ->
-			val subEntity = type.entities.resolve(entity.signature)
-			if (subEntity != null)
-				entity.type.accepts(subEntity.type)
-			else
-				entity.isInitialized
-		}
+		TODO()
+//		return entities.all { entity ->
+//			val subEntity = type.entities.resolve(entity.signature)
+//			if (subEntity != null)
+//				entity.type.accepts(subEntity.type)
+//			else
+//				entity.isInitialized
+//		}
 	}
 
 	override fun toString(): String {

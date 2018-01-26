@@ -1,31 +1,19 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.util.Deferred
 
-abstract class Declaration {
-	var isFinishing: Boolean = false
+abstract class Declaration
 
-	abstract fun finishAnalysis(scope: Scope): Unit
-}
-
-class AbstractDeclaration(
-	val signature: Signature,
-	private val typeCtx: TinyScriptParser.TypeContext
-) : Declaration() {
-	override fun finishAnalysis(scope: Scope) {
-
-	}
-}
+class TypeDeclaration(
+	val name: String,
+	val deferredType: Deferred<Type>
+)
 
 class ConcreteDeclaration(
 	val signature: Signature,
-	private val typeCtx: TinyScriptParser.TypeContext?,
-	private val expressionCtx: TinyScriptParser.ExpressionContext
-) : Declaration() {
-	override fun finishAnalysis(scope: Scope) {
-
-	}
-}
+	val type: Type?,
+	val deferredExpression: Deferred<Expression>
+) : Declaration()
 
 abstract class Signature
 
@@ -36,6 +24,6 @@ class SymbolSignature(
 
 class FunctionSignature(
 	val name: String,
-	val objectCtx: TinyScriptParser.ObjectContext,
+	val paramsObjectType: ObjectType,
 	val isImpure: Boolean
 ) : Signature()
