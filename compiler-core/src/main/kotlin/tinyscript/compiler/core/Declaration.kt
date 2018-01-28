@@ -7,7 +7,7 @@ abstract class Declaration
 class TypeDeclaration(
 	val name: String,
 	val deferredType: Deferred<Type>
-)
+): Declaration()
 
 class ConcreteDeclaration(
 	val signature: Signature,

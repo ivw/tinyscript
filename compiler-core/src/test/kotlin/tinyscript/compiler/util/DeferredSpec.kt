@@ -12,12 +12,7 @@ object DeferredSpec : Spek({
 	describe("Deferred") {
 		it("can") {
 			var i = 0
-			val deferred = object : Deferred<Int>() {
-				override fun finalize(): Int {
-					assertTrue(isFinalizing)
-					return i
-				}
-			}
+			val deferred = Deferred { i }
 
 			assertFalse(deferred.isFinalized)
 			assertFalse(deferred.isFinalizing)
@@ -34,13 +29,11 @@ object DeferredSpec : Spek({
 		}
 
 		it("should throw an error if there is a cycle") {
-			val deferred = object : Deferred<String>() {
-				override fun finalize(): String {
-					return this.get()
-				}
-			}
+			var deferred1: Deferred<Int>? = null
+			val deferred2: Deferred<Int> = Deferred { deferred1!!.get() }
+			deferred1 = Deferred { deferred2.get() }
 			assertFailsWith(RuntimeException::class) {
-				deferred.get()
+				deferred2.get()
 			}
 		}
 	}

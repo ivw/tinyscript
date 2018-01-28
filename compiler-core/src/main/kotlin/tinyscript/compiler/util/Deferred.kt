@@ -1,6 +1,6 @@
 package tinyscript.compiler.util
 
-abstract class Deferred<T> {
+class Deferred<out T>(private val finalize: () -> T) {
 	private var value: T? = null
 
 	val isFinalized: Boolean get() = value != null
@@ -18,6 +18,4 @@ abstract class Deferred<T> {
 				isFinalizing = false
 			}
 		}
-
-	protected abstract fun finalize(): T
 }

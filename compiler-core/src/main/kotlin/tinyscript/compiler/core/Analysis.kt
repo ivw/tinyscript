@@ -1,6 +1,7 @@
 package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.util.Deferred
 
 class Scope(
 	val parentScope: Scope?,
@@ -18,20 +19,27 @@ class DeclarationCollection(
 )
 
 fun List<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope): DeclarationCollection {
+	val scope = Scope(null, builtInEntities)
+	val declarations: List<Declaration> = map { it.analyse(scope) }
+	declarations.forEach { it.finalize() }
+
 	TODO()
 }
 
-fun TinyScriptParser.DeclarationContext.analyse(): Declaration = when (this) {
-	is TinyScriptParser.ConcreteDeclarationContext ->
-		ConcreteDeclaration(signature().analyse(), TODO(), TODO())
+// Note: When this function is called, the scope is not filled yet. It is when `finalize` is called.
+fun TinyScriptParser.DeclarationContext.analyse(scope: Scope): Declaration = when (this) {
+	is TinyScriptParser.TypeDeclarationContext -> TypeDeclaration(
+		Name().text,
+		Deferred { type().analyse(scope) }
+	)
 	else -> TODO()
 }
 
-fun TinyScriptParser.SignatureContext.analyse(): Signature = when (this) {
+fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {
 	is TinyScriptParser.SymbolSignatureContext ->
 		SymbolSignature(Name().text, Impure() != null)
 	is TinyScriptParser.FunctionSignatureContext ->
-		FunctionSignature(Name().text, TODO(), Impure() != null)
+		FunctionSignature(Name().text, objectType().analyse(scope), Impure() != null)
 	else -> TODO()
 }
 
@@ -54,3 +62,10 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 	val declarationCollection = declarations().declaration().analyse(scope)
 	return ObjectExpression(declarationCollection)
 }
+
+fun TinyScriptParser.TypeContext.analyse(scope: Scope): Type = when (this) {
+	is TinyScriptParser.ParenTypeContext -> type().analyse(scope)
+	else -> TODO()
+}
+
+fun TinyScriptParser.ObjectTypeContext.analyse(scope: Scope): ObjectType = TODO()
