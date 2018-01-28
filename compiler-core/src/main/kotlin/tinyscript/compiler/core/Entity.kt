@@ -1,9 +1,17 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.util.Deferred
+
 sealed class Entity
 
-abstract class SignatureEntity {
-	abstract fun getType(): Type
-}
+class SignatureEntity(
+	val signature: Signature,
+	val deferredExpression: Deferred<Expression>
+): Entity()
+
+class TypeEntity(
+	val name: String,
+	val deferredType: Deferred<Type>
+): Entity()
 
 class EntityCollection : ArrayList<Entity>()

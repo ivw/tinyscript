@@ -31,7 +31,9 @@ fun TinyScriptParser.DeclarationContext.analyse(scope: Scope): Declaration = whe
 	is TinyScriptParser.TypeDeclarationContext -> TypeDeclaration(
 		Name().text,
 		Deferred { type().analyse(scope) }
-	)
+	).also {
+		scope.entities.add(TypeEntity(it.name, it.deferredType))
+	}
 	else -> TODO()
 }
 
