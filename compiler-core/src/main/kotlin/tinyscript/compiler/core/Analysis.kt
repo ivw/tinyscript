@@ -18,8 +18,8 @@ class DeclarationCollection(
 	val orderedDeclarations: List<Declaration>
 )
 
-fun List<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope): DeclarationCollection {
-	val scope = Scope(null, builtInEntities)
+fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationCollection {
+	val scope = Scope(parentScope, builtInEntities)
 	val declarations: List<Declaration> = map { it.analyse(scope) }
 	declarations.forEach { it.finalize() }
 
@@ -28,12 +28,13 @@ fun List<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope): Decla
 
 // Note: When this function is called, the scope is not filled yet. It is when `finalize` is called.
 fun TinyScriptParser.DeclarationContext.analyse(scope: Scope): Declaration = when (this) {
-	is TinyScriptParser.TypeDeclarationContext -> TypeDeclaration(
-		Name().text,
-		Deferred { type().analyse(scope) }
-	).also {
-		scope.entities.add(TypeEntity(it.name, it.deferredType))
-	}
+	is TinyScriptParser.TypeDeclarationContext ->
+		TypeDeclaration(
+			Name().text,
+			Deferred { type().analyse(scope) }
+		).also {
+			scope.entities.add(TypeEntity(it.name, it.deferredType))
+		}
 	else -> TODO()
 }
 
