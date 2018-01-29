@@ -20,7 +20,7 @@ class IntExpression(val value: Int) : Expression() {
 }
 
 class ObjectExpression(val declarationCollection: DeclarationCollection) : Expression() {
-	override val type = ObjectType(declarationCollection.scope.entities)
+	override val type = ObjectType(declarationCollection.scope.entities, TODO())
 
 	override val isImpure: Boolean
 		get() = TODO("not implemented")

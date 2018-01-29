@@ -13,5 +13,3 @@ class TypeEntity(
 	val name: String,
 	val deferredType: Deferred<Type>
 ): Entity()
-
-class EntityCollection : ArrayList<Entity>()

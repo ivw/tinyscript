@@ -1,6 +1,6 @@
 package tinyscript.compiler.core
 
-val builtInEntities = EntityCollection().apply {
+val builtInEntities: List<Entity> = ArrayList<Entity>().apply {
 	// TODO
 //	add(AbstractDeclaration(FunctionSignature("println"), ))
 }

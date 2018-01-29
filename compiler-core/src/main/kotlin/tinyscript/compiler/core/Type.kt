@@ -18,8 +18,8 @@ object AnyType : Type() {
 }
 
 class ObjectType(
-	val entities: EntityCollection = EntityCollection(),
-	val classes: MutableSet<ClassType> = HashSet()
+	val entities: List<Entity>,
+	val classes: Set<ClassType>
 ) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false

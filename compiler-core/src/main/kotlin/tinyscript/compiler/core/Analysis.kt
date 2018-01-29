@@ -2,10 +2,12 @@ package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
 import tinyscript.compiler.util.Deferred
+import java.util.*
+import kotlin.collections.ArrayList
 
 class Scope(
 	val parentScope: Scope?,
-	val entities: EntityCollection = EntityCollection()
+	val entities: List<Entity>
 ) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
@@ -19,23 +21,29 @@ class DeclarationCollection(
 )
 
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationCollection {
-	val scope = Scope(parentScope, builtInEntities)
-	val declarations: List<Declaration> = map { it.analyse(scope) }
+	val entities: MutableList<Entity> = ArrayList()
+	val scope = Scope(parentScope, entities)
+	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
+
+	val declarations: List<Declaration> = map { declarationCtx ->
+		when (declarationCtx) {
+			is TinyScriptParser.TypeDeclarationContext ->
+				TypeDeclaration(
+					declarationCtx.Name().text,
+					Deferred {
+						// TODO add to orderedDeclarations?
+						declarationCtx.type().analyse(scope)
+					}
+				).also {
+					entities.add(TypeEntity(it.name, it.deferredType))
+				}
+			else -> TODO()
+		}
+	}
+
 	declarations.forEach { it.finalize() }
 
-	TODO()
-}
-
-// Note: When this function is called, the scope is not filled yet. It is when `finalize` is called.
-fun TinyScriptParser.DeclarationContext.analyse(scope: Scope): Declaration = when (this) {
-	is TinyScriptParser.TypeDeclarationContext ->
-		TypeDeclaration(
-			Name().text,
-			Deferred { type().analyse(scope) }
-		).also {
-			scope.entities.add(TypeEntity(it.name, it.deferredType))
-		}
-	else -> TODO()
+	return DeclarationCollection(scope, orderedDeclarations)
 }
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {

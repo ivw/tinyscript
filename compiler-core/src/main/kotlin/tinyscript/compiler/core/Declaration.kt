@@ -2,18 +2,31 @@ package tinyscript.compiler.core
 
 import tinyscript.compiler.util.Deferred
 
-abstract class Declaration
+abstract class Declaration {
+	/**
+	 * Make sure that every deferred in this object is finalized.
+	 */
+	abstract fun finalize()
+}
 
 class TypeDeclaration(
 	val name: String,
 	val deferredType: Deferred<Type>
-): Declaration()
+) : Declaration() {
+	override fun finalize() {
+		deferredType.get()
+	}
+}
 
 class ConcreteDeclaration(
 	val signature: Signature,
 	val type: Type?,
 	val deferredExpression: Deferred<Expression>
-) : Declaration()
+) : Declaration() {
+	override fun finalize() {
+		deferredExpression.get()
+	}
+}
 
 abstract class Signature
 
