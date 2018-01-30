@@ -43,6 +43,27 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				))
 				deferreds.add(deferredType)
 			}
+			is TinyScriptParser.ConcreteDeclarationContext -> {
+				val deferredSignature: Deferred<Signature> = Deferred {
+					declarationCtx.signature().analyse(scope)
+				}
+				val deferredExpressionType: Deferred<Type> = Deferred {
+					val concreteDeclaration = ConcreteDeclaration(
+						deferredSignature.get(),
+						declarationCtx.type()?.analyse(scope),
+						declarationCtx.expression().analyse(scope)
+					)
+					// TODO check if type annotation accepts expression type
+					orderedDeclarations.add(concreteDeclaration)
+					concreteDeclaration.type ?: concreteDeclaration.expression.type
+				}
+				entities.add(SignatureEntity(
+					deferredSignature,
+					deferredExpressionType
+				))
+				deferreds.add(deferredSignature)
+				deferreds.add(deferredExpressionType)
+			}
 			else -> TODO()
 		}
 	}

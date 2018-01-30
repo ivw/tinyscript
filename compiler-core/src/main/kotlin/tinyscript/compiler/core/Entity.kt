@@ -5,8 +5,8 @@ import tinyscript.compiler.util.Deferred
 sealed class Entity
 
 class SignatureEntity(
-	val signature: Signature,
-	val deferredExpression: Deferred<Expression>
+	val deferredSignature: Deferred<Signature>,
+	val deferredType: Deferred<Type>
 ): Entity()
 
 class TypeEntity(
