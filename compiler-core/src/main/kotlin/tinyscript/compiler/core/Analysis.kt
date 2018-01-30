@@ -25,23 +25,27 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	val scope = Scope(parentScope, entities)
 	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
 
-	val declarations: List<Declaration> = map { declarationCtx ->
+	val deferredDeclarations: List<Deferred<Declaration>> = map { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.TypeDeclarationContext ->
-				TypeDeclaration(
-					declarationCtx.Name().text,
-					Deferred {
-						// TODO add to orderedDeclarations?
+				Deferred {
+					TypeDeclaration(
+						declarationCtx.Name().text,
 						declarationCtx.type().analyse(scope)
-					}
-				).also {
-					entities.add(TypeEntity(it.name, it.deferredType))
+					)
+						.also { orderedDeclarations.add(it) }
 				}
+					.also {
+						entities.add(TypeEntity(
+							declarationCtx.Name().text,
+							Deferred { it.get().type } // TODO
+						))
+					}
 			else -> TODO()
 		}
 	}
 
-	declarations.forEach { it.finalize() }
+	deferredDeclarations.forEach { it.get() }
 
 	return DeclarationCollection(scope, orderedDeclarations)
 }
