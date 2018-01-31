@@ -13,6 +13,10 @@ class ConcreteDeclaration(
 	val expression: Expression
 ) : Declaration()
 
+class NonDeclaration(
+	val expression: Expression
+) : Declaration()
+
 abstract class Signature
 
 class SymbolSignature(

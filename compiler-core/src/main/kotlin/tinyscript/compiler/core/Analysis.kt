@@ -61,6 +61,17 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				deferreds.add(deferredSignature)
 				deferreds.add(deferredType)
 			}
+			is TinyScriptParser.NonDeclarationContext -> {
+				val deferredExpression = Deferred {
+					declarationCtx.expression().analyse(scope)
+						.also { expression ->
+							orderedDeclarations.add(NonDeclaration(
+								expression
+							))
+						}
+				}
+				deferreds.add(deferredExpression)
+			}
 			else -> TODO()
 		}
 	}
