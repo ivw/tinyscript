@@ -29,40 +29,37 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	forEach { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.TypeDeclarationContext -> {
+				val name = declarationCtx.Name().text
 				val deferredType = Deferred {
-					val typeDeclaration = TypeDeclaration(
-						declarationCtx.Name().text,
-						declarationCtx.type().analyse(scope)
-					)
-					orderedDeclarations.add(typeDeclaration)
-					typeDeclaration.type
+					declarationCtx.type().analyse(scope)
+						.also { type ->
+							orderedDeclarations.add(TypeDeclaration(name, type))
+						}
 				}
-				entities.add(TypeEntity(
-					declarationCtx.Name().text,
-					deferredType
-				))
+				entities.add(TypeEntity(name, deferredType))
 				deferreds.add(deferredType)
 			}
 			is TinyScriptParser.ConcreteDeclarationContext -> {
 				val deferredSignature: Deferred<Signature> = Deferred {
 					declarationCtx.signature().analyse(scope)
 				}
-				val deferredExpressionType: Deferred<Type> = Deferred {
-					val concreteDeclaration = ConcreteDeclaration(
+				val deferredType: Deferred<Type> = Deferred {
+					val explicitType: Type? = declarationCtx.type()?.analyse(scope)
+					val expression = declarationCtx.expression().analyse(scope)
+					// TODO check if explicit type accepts expression type
+					orderedDeclarations.add(ConcreteDeclaration(
 						deferredSignature.get(),
-						declarationCtx.type()?.analyse(scope),
-						declarationCtx.expression().analyse(scope)
-					)
-					// TODO check if type annotation accepts expression type
-					orderedDeclarations.add(concreteDeclaration)
-					concreteDeclaration.type ?: concreteDeclaration.expression.type
+						explicitType,
+						expression
+					))
+					explicitType ?: expression.type
 				}
 				entities.add(SignatureEntity(
 					deferredSignature,
-					deferredExpressionType
+					deferredType
 				))
 				deferreds.add(deferredSignature)
-				deferreds.add(deferredExpressionType)
+				deferreds.add(deferredType)
 			}
 			else -> TODO()
 		}
