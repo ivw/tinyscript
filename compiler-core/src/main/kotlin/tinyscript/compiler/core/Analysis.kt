@@ -95,6 +95,23 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		block().analyse(scope)
 	is TinyScriptParser.IntegerLiteralExpressionContext ->
 		IntExpression(text.toInt())
+	is TinyScriptParser.ReferenceExpressionContext -> {
+		val name: String = Name().text
+		val isImpure = Impure() != null
+		val entity: SignatureEntity = scope.resolve {
+			if (it !is SignatureEntity) return@resolve false
+			val signature = it.deferredSignature.get()
+
+			signature is SymbolSignature
+				&& signature.name == name
+				&& signature.isImpure == isImpure
+		} ?: throw RuntimeException("unresolved reference")
+		ReferenceExpression(
+			name,
+			isImpure,
+			entity.deferredType.get()
+		)
+	}
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
 	else -> TODO()

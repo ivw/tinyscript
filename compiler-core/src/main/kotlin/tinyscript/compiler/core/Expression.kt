@@ -6,7 +6,10 @@ sealed class Expression {
 	abstract val isImpure: Boolean
 }
 
-class BlockExpression(val declarationCollection: DeclarationCollection, val expression: Expression) : Expression() {
+class BlockExpression(
+	val declarationCollection: DeclarationCollection,
+	val expression: Expression
+) : Expression() {
 	override val type get() = expression.type
 
 	override val isImpure: Boolean
@@ -25,3 +28,9 @@ class ObjectExpression(val declarationCollection: DeclarationCollection) : Expre
 	override val isImpure: Boolean
 		get() = TODO("not implemented")
 }
+
+class ReferenceExpression(
+	val name: String,
+	override val isImpure: Boolean,
+	override val type: Type
+) : Expression()
