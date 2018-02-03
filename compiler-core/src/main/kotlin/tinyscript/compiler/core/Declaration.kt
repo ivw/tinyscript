@@ -2,12 +2,12 @@ package tinyscript.compiler.core
 
 abstract class Declaration
 
-class TypeDeclaration(
+class TypeAliasDeclaration(
 	val name: String,
 	val type: Type
 ) : Declaration()
 
-class ConcreteDeclaration(
+class SignatureDeclaration(
 	val signature: Signature,
 	val type: Type?,
 	val expression: Expression
@@ -19,7 +19,7 @@ class NonDeclaration(
 
 abstract class Signature
 
-class SymbolSignature(
+class NameSignature(
 	val name: String,
 	val isImpure: Boolean
 ) : Signature()

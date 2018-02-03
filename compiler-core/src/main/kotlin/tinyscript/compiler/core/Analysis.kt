@@ -28,18 +28,18 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	val deferreds: MutableList<Deferred<*>> = ArrayList()
 	forEach { declarationCtx ->
 		when (declarationCtx) {
-			is TinyScriptParser.TypeDeclarationContext -> {
+			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = declarationCtx.Name().text
 				val deferredType = Deferred {
 					declarationCtx.type().analyse(scope)
 						.also { type ->
-							orderedDeclarations.add(TypeDeclaration(name, type))
+							orderedDeclarations.add(TypeAliasDeclaration(name, type))
 						}
 				}
 				entities.add(TypeEntity(name, deferredType))
 				deferreds.add(deferredType)
 			}
-			is TinyScriptParser.ConcreteDeclarationContext -> {
+			is TinyScriptParser.SignatureDeclarationContext -> {
 				val deferredSignature: Deferred<Signature> = Deferred {
 					declarationCtx.signature().analyse(scope)
 				}
@@ -47,7 +47,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					val explicitType: Type? = declarationCtx.type()?.analyse(scope)
 					val expression = declarationCtx.expression().analyse(scope)
 					// TODO check if explicit type accepts expression type
-					orderedDeclarations.add(ConcreteDeclaration(
+					orderedDeclarations.add(SignatureDeclaration(
 						deferredSignature.get(),
 						explicitType,
 						expression
@@ -83,8 +83,8 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 }
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {
-	is TinyScriptParser.SymbolSignatureContext ->
-		SymbolSignature(Name().text, Impure() != null)
+	is TinyScriptParser.NameSignatureContext ->
+		NameSignature(Name().text, Impure() != null)
 	is TinyScriptParser.FunctionSignatureContext ->
 		FunctionSignature(Name().text, objectType().analyse(scope), Impure() != null)
 	else -> TODO()

@@ -8,15 +8,15 @@ file: NL* declarations? NL* EOF;
 declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
-	:	signature (':' type)? '=' NL* expression				# ConcreteDeclaration
-	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumDeclaration
-	|	'type' Name '=' type									# TypeDeclaration
+	:	signature (':' type)? '=' NL* expression				# SignatureDeclaration
+	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumTypeDeclaration
+	|	'type' Name '=' type									# TypeAliasDeclaration
 	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
 
 signature
-	:	Name Impure?											# SymbolSignature
+	:	Name Impure?											# NameSignature
 	|	Name objectType Impure?									# FunctionSignature
 	|	(lhs=type)? Operator Impure? rhs=type					# OperatorSignature
 	;
