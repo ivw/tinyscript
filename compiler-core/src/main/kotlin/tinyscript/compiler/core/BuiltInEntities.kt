@@ -1,6 +1,12 @@
 package tinyscript.compiler.core
 
-val builtInEntities: List<Entity> = ArrayList<Entity>().apply {
-	// TODO
-//	add(AbstractDeclaration(FunctionSignature("println"), ))
+import tinyscript.compiler.util.Deferred
+
+val builtInEntities: EntityCollection = MutableEntityCollection().apply {
+	functionEntities.add(FunctionEntity(
+		"println",
+		Deferred { ObjectType(MutableEntityCollection(), emptySet()) },
+		true,
+		Deferred { AnyType }
+	))
 }

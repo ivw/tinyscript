@@ -7,12 +7,23 @@ import kotlin.collections.ArrayList
 
 class Scope(
 	val parentScope: Scope?,
-	val entities: List<Entity>
+	val entityCollection: EntityCollection
 ) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
-	fun resolve(predicate: (Entity) -> Boolean): Entity? =
-		entities.lastOrNull(predicate) ?: parentScope?.resolve(predicate)
+	fun findNameEntity(name: String, isImpure: Boolean): NameEntity? =
+		entityCollection.findNameEntity(name, isImpure)
+			?: parentScope?.findNameEntity(name, isImpure)
+
+	fun findFunctionEntity(
+		name: String, paramsObjectType: ObjectType, isImpure: Boolean
+	): FunctionEntity? =
+		entityCollection.findFunctionEntity(name, paramsObjectType, isImpure)
+			?: parentScope?.findFunctionEntity(name, paramsObjectType, isImpure)
+
+	fun findTypeEntity(name: String): TypeEntity? =
+		entityCollection.findTypeEntity(name)
+			?: parentScope?.findTypeEntity(name)
 }
 
 class DeclarationCollection(
@@ -21,8 +32,8 @@ class DeclarationCollection(
 )
 
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationCollection {
-	val entities: MutableList<Entity> = ArrayList()
-	val scope = Scope(parentScope, entities)
+	val entityCollection = MutableEntityCollection()
+	val scope = Scope(parentScope, entityCollection)
 	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
 
 	val deferreds: MutableList<Deferred<*>> = ArrayList()
@@ -36,30 +47,56 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 							orderedDeclarations.add(TypeAliasDeclaration(name, type))
 						}
 				}
-				entities.add(TypeEntity(name, deferredType))
+				entityCollection.typeEntities.add(TypeEntity(name, deferredType))
 				deferreds.add(deferredType)
 			}
 			is TinyScriptParser.SignatureDeclarationContext -> {
-				val deferredSignature: Deferred<Signature> = Deferred {
-					declarationCtx.signature().analyse(scope)
+				val signatureCtx = declarationCtx.signature()
+				when (signatureCtx) {
+					is TinyScriptParser.NameSignatureContext -> {
+						val name: String = signatureCtx.Name().text
+						val isImpure: Boolean = signatureCtx.Impure() != null
+						val deferredType: Deferred<Type> = Deferred {
+							val explicitType: Type? = declarationCtx.type()?.analyse(scope)
+							val expression = declarationCtx.expression().analyse(scope)
+							// TODO check if explicit type accepts expression type
+							orderedDeclarations.add(NameDeclaration(
+								name,
+								isImpure,
+								explicitType,
+								expression
+							))
+							explicitType ?: expression.type
+						}
+						entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
+						deferreds.add(deferredType)
+					}
+					is TinyScriptParser.FunctionSignatureContext -> {
+						val name: String = signatureCtx.Name().text
+						val isImpure: Boolean = signatureCtx.Impure() != null
+						val deferredParamsObjectType = Deferred<ObjectType> {
+							signatureCtx.objectType().analyse(scope)
+						}
+						val deferredType: Deferred<Type> = Deferred {
+							val explicitType: Type? = declarationCtx.type()?.analyse(scope)
+							val expression = declarationCtx.expression().analyse(scope)
+							// TODO check if explicit type accepts expression type
+							orderedDeclarations.add(FunctionDeclaration(
+								name,
+								deferredParamsObjectType.get(),
+								isImpure,
+								explicitType,
+								expression
+							))
+							explicitType ?: expression.type
+						}
+						entityCollection.functionEntities.add(FunctionEntity(
+							name, deferredParamsObjectType, isImpure, deferredType
+						))
+						deferreds.add(deferredParamsObjectType)
+						deferreds.add(deferredType)
+					}
 				}
-				val deferredType: Deferred<Type> = Deferred {
-					val explicitType: Type? = declarationCtx.type()?.analyse(scope)
-					val expression = declarationCtx.expression().analyse(scope)
-					// TODO check if explicit type accepts expression type
-					orderedDeclarations.add(SignatureDeclaration(
-						deferredSignature.get(),
-						explicitType,
-						expression
-					))
-					explicitType ?: expression.type
-				}
-				entities.add(SignatureEntity(
-					deferredSignature,
-					deferredType
-				))
-				deferreds.add(deferredSignature)
-				deferreds.add(deferredType)
 			}
 			is TinyScriptParser.NonDeclarationContext -> {
 				val deferredExpression = Deferred {
@@ -82,14 +119,6 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	return DeclarationCollection(scope, orderedDeclarations)
 }
 
-fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {
-	is TinyScriptParser.NameSignatureContext ->
-		NameSignature(Name().text, Impure() != null)
-	is TinyScriptParser.FunctionSignatureContext ->
-		FunctionSignature(Name().text, objectType().analyse(scope), Impure() != null)
-	else -> TODO()
-}
-
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
 	is TinyScriptParser.BlockExpressionContext ->
 		block().analyse(scope)
@@ -98,18 +127,12 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.ReferenceExpressionContext -> {
 		val name: String = Name().text
 		val isImpure = Impure() != null
-		val entity: SignatureEntity = scope.resolve {
-			if (it !is SignatureEntity) return@resolve false
-			val signature = it.deferredSignature.get()
-
-			signature is SymbolSignature
-				&& signature.name == name
-				&& signature.isImpure == isImpure
-		} ?: throw RuntimeException("unresolved reference")
+		val nameEntity: NameEntity = scope.findNameEntity(name, isImpure)
+			?: throw RuntimeException("unresolved reference")
 		ReferenceExpression(
 			name,
 			isImpure,
-			entity.deferredType.get()
+			nameEntity.deferredType.get()
 		)
 	}
 	is TinyScriptParser.ObjectExpressionContext ->

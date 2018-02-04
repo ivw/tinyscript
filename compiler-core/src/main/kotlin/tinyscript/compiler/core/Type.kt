@@ -18,7 +18,7 @@ object AnyType : Type() {
 }
 
 class ObjectType(
-	val entities: List<Entity>,
+	val entityCollection: EntityCollection,
 	val classes: Set<ClassType>
 ) : Type() {
 	override fun accepts(type: Type): Boolean {
@@ -29,8 +29,8 @@ class ObjectType(
 		if (!type.classes.containsAll(classes)) return false
 
 		TODO()
-//		return entities.all { entity ->
-//			val subEntity = type.entities.resolve(entity.signature)
+//		return entityCollection.all { entity ->
+//			val subEntity = type.entityCollection.resolve(entity.signature)
 //			if (subEntity != null)
 //				entity.type.accepts(subEntity.type)
 //			else
@@ -39,7 +39,7 @@ class ObjectType(
 	}
 
 	override fun toString(): String {
-		return "ObjectType<entities = $entities, classes.size = ${classes.size}>"
+		return "ObjectType<entityCollection = $entityCollection, classes.size = ${classes.size}>"
 	}
 }
 
