@@ -1,6 +1,6 @@
 package tinyscript.compiler.core
 
-abstract class Declaration
+sealed class Declaration
 
 abstract class SignatureDeclaration(
 	val type: Type?,
