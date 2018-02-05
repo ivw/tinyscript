@@ -20,17 +20,6 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	val deferreds: MutableList<Deferred<*>> = ArrayList()
 	forEach { declarationCtx ->
 		when (declarationCtx) {
-			is TinyScriptParser.TypeAliasDeclarationContext -> {
-				val name = declarationCtx.Name().text
-				val deferredType = Deferred {
-					declarationCtx.typeExpression().analyse(scope)
-						.also { type ->
-							orderedDeclarations.add(TypeAliasDeclaration(name, type))
-						}
-				}
-				entityCollection.typeEntities.add(TypeEntity(name, deferredType))
-				deferreds.add(deferredType)
-			}
 			is TinyScriptParser.SignatureDeclarationContext -> {
 				val signatureCtx = declarationCtx.signature()
 				when (signatureCtx) {
@@ -78,6 +67,17 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 						deferreds.add(deferredType)
 					}
 				}
+			}
+			is TinyScriptParser.TypeAliasDeclarationContext -> {
+				val name = declarationCtx.Name().text
+				val deferredType = Deferred {
+					declarationCtx.typeExpression().analyse(scope)
+						.also { type ->
+							orderedDeclarations.add(TypeAliasDeclaration(name, type))
+						}
+				}
+				entityCollection.typeEntities.add(TypeEntity(name, deferredType))
+				deferreds.add(deferredType)
 			}
 			is TinyScriptParser.NonDeclarationContext -> {
 				val deferredExpression = Deferred {

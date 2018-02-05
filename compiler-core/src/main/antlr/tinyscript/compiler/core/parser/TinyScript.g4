@@ -9,8 +9,8 @@ declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
 	:	signature (':' typeExpression)? '=' NL* expression		# SignatureDeclaration
-	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumTypeDeclaration
 	|	'type' Name '=' typeExpression							# TypeAliasDeclaration
+	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumTypeDeclaration
 	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
