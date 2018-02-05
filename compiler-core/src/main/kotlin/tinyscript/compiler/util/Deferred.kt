@@ -10,7 +10,7 @@ class Deferred<out T>(private val finalize: () -> T) {
 
 	fun get(): T =
 		value ?: run {
-			if (isFinalizing) throw RuntimeException("cycle detected")
+			if (isFinalizing) throw CycleException()
 
 			isFinalizing = true
 			return finalize().also {
@@ -18,4 +18,6 @@ class Deferred<out T>(private val finalize: () -> T) {
 				isFinalizing = false
 			}
 		}
+
+	private class CycleException : RuntimeException()
 }

@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
-import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {
 	val lexer = TinyScriptLexer(CharStreams.fromString(codeString.trimIndent()))
@@ -17,6 +17,9 @@ fun assertAnalysis(codeString: String) {
 	fileCtx.declarations().declaration().analyse(Scope(null, builtInEntities))
 }
 
-fun assertAnalysisFails(codeString: String) {
-	assertFails { assertAnalysis(codeString) }
+fun assertAnalysisFails(
+	codeString: String,
+	exceptionClass: kotlin.reflect.KClass<out Throwable> = AnalysisException::class
+) {
+	assertFailsWith(exceptionClass) { assertAnalysis(codeString) }
 }

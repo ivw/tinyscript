@@ -5,6 +5,8 @@ import tinyscript.compiler.util.Deferred
 import java.util.*
 import kotlin.collections.ArrayList
 
+class AnalysisException(message: String) : Throwable(message)
+
 class Scope(
 	val parentScope: Scope?,
 	val entityCollection: EntityCollection
@@ -128,7 +130,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val name: String = Name().text
 		val isImpure = Impure() != null
 		val nameEntity: NameEntity = scope.findNameEntity(name, isImpure)
-			?: throw RuntimeException("unresolved reference")
+			?: throw AnalysisException("unresolved reference")
 		ReferenceExpression(
 			name,
 			isImpure,

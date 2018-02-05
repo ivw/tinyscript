@@ -2,7 +2,6 @@ package tinyscript.compiler.javascript
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.Token
 import tinyscript.compiler.core.Scope
 import tinyscript.compiler.core.analyse
 import tinyscript.compiler.core.builtInEntities
@@ -10,10 +9,6 @@ import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
 import java.nio.file.Path
 import java.nio.file.Paths
-
-class AnalysisError(message: String, sourceDescription: String, token: Token) : RuntimeException(
-	"($sourceDescription:${token.line}) $message"
-)
 
 fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Reading file '${readPath.fileName}'\n")

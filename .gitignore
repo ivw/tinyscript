@@ -46,3 +46,5 @@ fabric.properties
 
 # Inspection profiles
 .idea/inspectionProfiles
+
+/build/
