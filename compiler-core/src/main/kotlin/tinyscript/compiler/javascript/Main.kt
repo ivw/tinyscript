@@ -7,6 +7,9 @@ import tinyscript.compiler.core.analyse
 import tinyscript.compiler.core.builtInEntities
 import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.util.IndentedWriter
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -24,14 +27,14 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
-	fileCtx.declarations().declaration().analyse(Scope(null, builtInEntities))
+	val declarationCollection = fileCtx.declarations().declaration().analyse(Scope(null, builtInEntities))
 	println("Analysis done\n")
 
-//	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
-//		val javascriptGenerator = JavascriptGenerator(writer, analysisVisitor.infoMap)
-//		javascriptGenerator.writeFile(fileCtx)
-//		println("Written to file '${writePath.fileName}'\n")
-//	}
+	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
+		val indentedWriter = IndentedWriter(writer)
+		declarationCollection.writeJS(indentedWriter)
+		println("Written to file '${writePath.fileName}'\n")
+	}
 }
 
 fun main(args: Array<String>) {
