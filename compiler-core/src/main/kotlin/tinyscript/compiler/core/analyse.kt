@@ -23,7 +23,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = declarationCtx.Name().text
 				val deferredType = Deferred {
-					declarationCtx.type().analyse(scope)
+					declarationCtx.typeExpression().analyse(scope)
 						.also { type ->
 							orderedDeclarations.add(TypeAliasDeclaration(name, type))
 						}
@@ -38,7 +38,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 						val name: String = signatureCtx.Name().text
 						val isImpure: Boolean = signatureCtx.Impure() != null
 						val deferredType: Deferred<Type> = Deferred {
-							val explicitType: Type? = declarationCtx.type()?.analyse(scope)
+							val explicitType: Type? = declarationCtx.typeExpression()?.analyse(scope)
 							val expression = declarationCtx.expression().analyse(scope)
 							// TODO check if explicit type accepts expression type
 							orderedDeclarations.add(NameDeclaration(
@@ -59,7 +59,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 							signatureCtx.objectType().analyse(scope)
 						}
 						val deferredType: Deferred<Type> = Deferred {
-							val explicitType: Type? = declarationCtx.type()?.analyse(scope)
+							val explicitType: Type? = declarationCtx.typeExpression()?.analyse(scope)
 							val expression = declarationCtx.expression().analyse(scope)
 							// TODO check if explicit type accepts expression type
 							orderedDeclarations.add(FunctionDeclaration(
@@ -131,8 +131,9 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 	return ObjectExpression(declarationCollection)
 }
 
-fun TinyScriptParser.TypeContext.analyse(scope: Scope): Type = when (this) {
-	is TinyScriptParser.ParenTypeContext -> type().analyse(scope)
+fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (this) {
+	is TinyScriptParser.ParenTypeExpressionContext -> typeExpression().analyse(scope)
+	is TinyScriptParser.ObjectTypeExpressionContext -> objectType().analyse(scope)
 	else -> TODO()
 }
 

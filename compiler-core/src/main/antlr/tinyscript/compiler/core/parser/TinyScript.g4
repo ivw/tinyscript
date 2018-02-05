@@ -8,9 +8,9 @@ file: NL* declarations? NL* EOF;
 declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
-	:	signature (':' type)? '=' NL* expression				# SignatureDeclaration
+	:	signature (':' typeExpression)? '=' NL* expression		# SignatureDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'	# EnumTypeDeclaration
-	|	'type' Name '=' type									# TypeAliasDeclaration
+	|	'type' Name '=' typeExpression							# TypeAliasDeclaration
 	|	expression												# NonDeclaration
 	|	'&' expression											# InheritDeclaration
 	;
@@ -18,7 +18,7 @@ declaration
 signature
 	:	Name Impure?											# NameSignature
 	|	Name objectType Impure?									# FunctionSignature
-	|	(lhs=type)? Operator Impure? rhs=type					# OperatorSignature
+	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression		# OperatorSignature
 	;
 
 expression
@@ -27,7 +27,7 @@ expression
 	|	FloatLiteral											# FloatLiteralExpression
 	|	StringLiteral											# StringLiteralExpression
 	|	BooleanLiteral											# BooleanLiteralExpression
-	|	('<' type '>')? '?'										# NullExpression
+	|	('<' typeExpression '>')? '?'							# NullExpression
 	|	'this'													# ThisExpression
 	|	'super'													# SuperExpression
 	|	Name Impure?											# ReferenceExpression
@@ -46,20 +46,20 @@ block: '(' NL* (declarations (',' | NL+))? expression NL* ')';
 
 object: '[' NL* declarations? NL* ']';
 
-type
-	:	'(' type ')'											# ParenType
-	|	objectType? Impure? '->' type							# FunctionType
-	|	'?'														# NullType
-	|	type '?'												# NullableType
-	|	objectType												# ObjectTypeType
-	|	Name													# TypeReference
-	|	type block												# DependentType
+typeExpression
+	:	'(' typeExpression ')'									# ParenTypeExpression
+	|	objectType? Impure? '->' typeExpression					# FunctionTypeExpression
+	|	'?'														# NullTypeExpression
+	|	typeExpression '?'										# NullableTypeExpression
+	|	objectType												# ObjectTypeExpression
+	|	Name													# TypeReferenceExpression
+	|	typeExpression block									# DependentTypeExpression
 	;
 
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
-	:	signature ':' type										# SymbolObjectTypeField
+	:	signature ':' typeExpression							# SymbolObjectTypeField
 	|	'&' Name												# InheritDeclarationObjectTypeField
 	;
 
