@@ -20,53 +20,42 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	val deferreds: MutableList<Deferred<*>> = ArrayList()
 	forEach { declarationCtx ->
 		when (declarationCtx) {
-			is TinyScriptParser.SignatureDeclarationContext -> {
-				val signatureCtx = declarationCtx.signature()
-				when (signatureCtx) {
-					is TinyScriptParser.NameSignatureContext -> {
-						val name: String = signatureCtx.Name().text
-						val isImpure: Boolean = signatureCtx.Impure() != null
-						val deferredType: Deferred<Type> = Deferred {
-							val explicitType: Type? = declarationCtx.typeExpression()?.analyse(scope)
-							val expression = declarationCtx.expression().analyse(scope)
-							// TODO check if explicit type accepts expression type
-							orderedDeclarations.add(NameDeclaration(
-								name,
-								isImpure,
-								explicitType,
-								expression
-							))
-							explicitType ?: expression.type
-						}
-						entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
-						deferreds.add(deferredType)
-					}
-					is TinyScriptParser.FunctionSignatureContext -> {
-						val name: String = signatureCtx.Name().text
-						val isImpure: Boolean = signatureCtx.Impure() != null
-						val deferredParamsObjectType = Deferred<ObjectType> {
-							signatureCtx.objectType().analyse(scope)
-						}
-						val deferredType: Deferred<Type> = Deferred {
-							val explicitType: Type? = declarationCtx.typeExpression()?.analyse(scope)
-							val expression = declarationCtx.expression().analyse(scope)
-							// TODO check if explicit type accepts expression type
-							orderedDeclarations.add(FunctionDeclaration(
-								name,
-								deferredParamsObjectType.get(),
-								isImpure,
-								explicitType,
-								expression
-							))
-							explicitType ?: expression.type
-						}
-						entityCollection.functionEntities.add(FunctionEntity(
-							name, deferredParamsObjectType, isImpure, deferredType
-						))
-						deferreds.add(deferredParamsObjectType)
-						deferreds.add(deferredType)
-					}
+			is TinyScriptParser.NameDeclarationContext -> {
+				val name: String = declarationCtx.Name().text
+				val isImpure: Boolean = declarationCtx.Impure() != null
+				val deferredType: Deferred<Type> = Deferred {
+					val initializer = declarationCtx.initializer().analyse(scope)
+					orderedDeclarations.add(NameDeclaration(
+						name,
+						isImpure,
+						initializer
+					))
+					initializer.type
 				}
+				entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
+				deferreds.add(deferredType)
+			}
+			is TinyScriptParser.FunctionDeclarationContext -> {
+				val name: String = declarationCtx.Name().text
+				val isImpure: Boolean = declarationCtx.Impure() != null
+				val deferredParamsObjectType = Deferred {
+					declarationCtx.objectType().analyse(scope)
+				}
+				val deferredType: Deferred<Type> = Deferred {
+					val initializer = declarationCtx.initializer().analyse(scope)
+					orderedDeclarations.add(FunctionDeclaration(
+						name,
+						deferredParamsObjectType.get(),
+						isImpure,
+						initializer
+					))
+					initializer.type
+				}
+				entityCollection.functionEntities.add(FunctionEntity(
+					name, deferredParamsObjectType, isImpure, deferredType
+				))
+				deferreds.add(deferredParamsObjectType)
+				deferreds.add(deferredType)
 			}
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = declarationCtx.Name().text
@@ -98,6 +87,13 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	deferreds.forEach { it.get() }
 
 	return DeclarationCollection(scope, orderedDeclarations)
+}
+
+fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
+	val explicitType: Type? = typeExpression()?.analyse(scope)
+	val expression = expression().analyse(scope)
+	// TODO check if explicit type accepts expression type
+	return Initializer(explicitType, expression)
 }
 
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {

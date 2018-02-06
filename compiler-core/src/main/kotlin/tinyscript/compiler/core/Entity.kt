@@ -4,22 +4,18 @@ import tinyscript.compiler.util.Deferred
 
 sealed class Entity
 
-abstract class SignatureEntity(
-	val deferredType: Deferred<Type>
-): Entity()
-
 class NameEntity(
 	val name: String,
 	val isImpure: Boolean,
-	deferredType: Deferred<Type>
-): SignatureEntity(deferredType)
+	val deferredType: Deferred<Type>
+): Entity()
 
 class FunctionEntity(
 	val name: String,
 	val deferredParamsObjectType: Deferred<ObjectType>,
 	val isImpure: Boolean,
-	deferredType: Deferred<Type>
-): SignatureEntity(deferredType)
+	val deferredType: Deferred<Type>
+): Entity()
 
 class TypeEntity(
 	val name: String,

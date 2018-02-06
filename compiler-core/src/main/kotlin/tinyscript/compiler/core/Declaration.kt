@@ -2,25 +2,22 @@ package tinyscript.compiler.core
 
 sealed class Declaration
 
-abstract class SignatureDeclaration(
-	val type: Type?,
-	val expression: Expression
-): Declaration()
+class Initializer(val explicitType: Type?, val expression: Expression) {
+	val type get() = explicitType ?: expression.type
+}
 
 class NameDeclaration(
 	val name: String,
 	val isImpure: Boolean,
-	type: Type?,
-	expression: Expression
-) : SignatureDeclaration(type, expression)
+	val initializer: Initializer
+) : Declaration()
 
 class FunctionDeclaration(
 	val name: String,
 	val paramsObjectType: ObjectType,
 	val isImpure: Boolean,
-	type: Type?,
-	expression: Expression
-) : SignatureDeclaration(type, expression)
+	val initializer: Initializer
+) : Declaration()
 
 class TypeAliasDeclaration(
 	val name: String,
