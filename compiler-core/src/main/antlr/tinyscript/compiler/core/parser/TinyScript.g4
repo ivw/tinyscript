@@ -58,8 +58,8 @@ objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
 	:	Name Impure? ':' typeExpression											# NameObjectTypeField
-	|	Name objectType Impure? initializer ':' typeExpression					# FunctionObjectTypeField
-	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression initializer ':' typeExpression	# OperatorObjectTypeField
+	|	Name objectType Impure? ':' typeExpression								# FunctionObjectTypeField
+	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression ':' typeExpression	# OperatorObjectTypeField
 	|	'&' Name																# InheritDeclarationObjectTypeField
 	;
 

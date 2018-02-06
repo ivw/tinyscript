@@ -133,4 +133,43 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (t
 	else -> TODO()
 }
 
-fun TinyScriptParser.ObjectTypeContext.analyse(scope: Scope): ObjectType = TODO()
+fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType {
+	val entityCollection = MutableEntityCollection()
+	val scope = Scope(parentScope, entityCollection)
+
+	val deferreds: MutableList<Deferred<*>> = ArrayList()
+	objectTypeField().forEach { objectTypeFieldCtx ->
+		when (objectTypeFieldCtx) {
+			is TinyScriptParser.NameObjectTypeFieldContext -> {
+				val name: String = objectTypeFieldCtx.Name().text
+				val isImpure: Boolean = objectTypeFieldCtx.Impure() != null
+				val deferredType: Deferred<Type> = Deferred {
+					objectTypeFieldCtx.typeExpression().analyse(scope)
+				}
+				entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
+				deferreds.add(deferredType)
+			}
+			is TinyScriptParser.FunctionObjectTypeFieldContext -> {
+				val name: String = objectTypeFieldCtx.Name().text
+				val isImpure: Boolean = objectTypeFieldCtx.Impure() != null
+				val deferredParamsObjectType = Deferred {
+					objectTypeFieldCtx.objectType().analyse(scope)
+				}
+				val deferredType: Deferred<Type> = Deferred {
+					objectTypeFieldCtx.typeExpression().analyse(scope)
+				}
+				entityCollection.functionEntities.add(FunctionEntity(
+					name, deferredParamsObjectType, isImpure, deferredType
+				))
+				deferreds.add(deferredParamsObjectType)
+				deferreds.add(deferredType)
+			}
+			else -> TODO()
+		}
+	}
+
+	// finalize all deferreds that are not finalized yet
+	deferreds.forEach { it.get() }
+
+	return ObjectType(entityCollection, emptySet())
+}
