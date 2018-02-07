@@ -3,9 +3,31 @@ package tinyscript.compiler.javascript
 import tinyscript.compiler.core.*
 import tinyscript.compiler.util.IndentedWriter
 
-fun DeclarationCollection.writeJS(out: IndentedWriter): Unit = TODO()
+fun DeclarationCollection.writeJS(out: IndentedWriter) =
+	orderedDeclarations.forEach { it.writeJS(out) }
 
-fun Declaration.writeJS(out: IndentedWriter): Unit = TODO()
+fun Declaration.writeJS(out: IndentedWriter): Unit = when (this) {
+	is NameDeclaration -> {
+		out.write("var ")
+		out.write(name)
+		out.write(" = ")
+		initializer.expression.writeJS(out)
+		out.write(";")
+		out.newLine()
+	}
+	is FunctionDeclaration -> {
+		out.write("var ")
+		out.write(name)
+		out.write(" = (TODO) => ")
+		initializer.expression.writeJS(out)
+		out.write(";")
+		out.newLine()
+	}
+	is TypeAliasDeclaration -> {
+	}
+	is NonDeclaration ->
+		expression.writeJS(out)
+}
 
 fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is BlockExpression -> {
@@ -29,5 +51,10 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is IntExpression -> {
 		out.write(value.toString())
 	}
-	else -> TODO()
+	is ObjectExpression -> {
+		// TODO
+	}
+	is ReferenceExpression -> {
+		out.write(name)
+	}
 }

@@ -99,7 +99,7 @@ fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
 
 	explicitType?.let {
 		if (!it.accepts(expression.type))
-			throw AnalysisException("explicit typr does not accept expression type")
+			throw AnalysisException("explicit type does not accept expression type")
 	}
 
 	return Initializer(explicitType, expression)
