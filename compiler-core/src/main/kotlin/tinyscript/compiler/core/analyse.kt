@@ -43,6 +43,10 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				}
 				val deferredType: Deferred<Type> = Deferred {
 					val initializer = declarationCtx.initializer().analyse(scope)
+
+					if (!isImpure && initializer.expression.isImpure)
+						throw AnalysisException("function expression must be pure if the signature is pure")
+
 					orderedDeclarations.add(FunctionDeclaration(
 						name,
 						deferredParamsObjectType.get(),
@@ -92,7 +96,12 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
 	val explicitType: Type? = typeExpression()?.analyse(scope)
 	val expression = expression().analyse(scope)
-	// TODO check if explicit type accepts expression type
+
+	explicitType?.let {
+		if (!it.accepts(expression.type))
+			throw AnalysisException("explicit typr does not accept expression type")
+	}
+
 	return Initializer(explicitType, expression)
 }
 
