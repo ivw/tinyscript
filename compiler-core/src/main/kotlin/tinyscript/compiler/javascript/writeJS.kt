@@ -51,10 +51,20 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is IntExpression -> {
 		out.write(value.toString())
 	}
+	is FloatExpression -> {
+		out.write(value.toString())
+	}
+	is NullExpression -> {
+		out.write("null")
+	}
 	is ObjectExpression -> {
 		// TODO
 	}
 	is ReferenceExpression -> {
 		out.write(name)
+	}
+	is FunctionCallExpression -> {
+		out.write(name)
+		argumentsObjectExpression.writeJS(out)
 	}
 }

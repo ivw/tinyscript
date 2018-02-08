@@ -61,6 +61,9 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				deferreds.add(deferredParamsObjectType)
 				deferreds.add(deferredType)
 			}
+			is TinyScriptParser.OperatorDeclarationContext -> {
+				// TODO
+			}
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = declarationCtx.Name().text
 				val deferredType = Deferred {
@@ -71,6 +74,9 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				}
 				entityCollection.typeEntities.add(TypeEntity(name, deferredType))
 				deferreds.add(deferredType)
+			}
+			is TinyScriptParser.EnumTypeDeclarationContext -> {
+				// TODO
 			}
 			is TinyScriptParser.NonDeclarationContext -> {
 				val deferredExpression = Deferred {
@@ -83,7 +89,10 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				}
 				deferreds.add(deferredExpression)
 			}
-			else -> TODO()
+			is TinyScriptParser.InheritDeclarationContext -> {
+				// TODO
+			}
+			else -> throw RuntimeException("unknown declaration class")
 		}
 	}
 
@@ -110,6 +119,12 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		block().analyse(scope)
 	is TinyScriptParser.IntegerLiteralExpressionContext ->
 		IntExpression(text.toInt())
+	is TinyScriptParser.FloatLiteralExpressionContext ->
+		FloatExpression(text.toDouble())
+	is TinyScriptParser.StringLiteralExpressionContext -> TODO()
+	is TinyScriptParser.BooleanLiteralExpressionContext -> TODO()
+	is TinyScriptParser.NullExpressionContext ->
+		NullExpression(typeExpression()?.analyse(scope) ?: AnyType)
 	is TinyScriptParser.ReferenceExpressionContext -> {
 		val name: String = Name().text
 		val isImpure = Impure() != null
@@ -123,6 +138,19 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	}
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
+	is TinyScriptParser.FunctionCallExpressionContext -> {
+		val name: String = Name().text
+		val isImpure = Impure() != null
+		val argumentsObjectExpression = `object`().analyse(scope)
+		val functionEntity: FunctionEntity = scope.findFunctionEntity(name, argumentsObjectExpression.type, isImpure)
+			?: throw AnalysisException("unresolved reference")
+		FunctionCallExpression(
+			name,
+			argumentsObjectExpression,
+			isImpure,
+			functionEntity.deferredType.get()
+		)
+	}
 	else -> TODO()
 }
 

@@ -18,7 +18,16 @@ class BlockExpression(
 
 class IntExpression(val value: Int) : Expression() {
 	override val type = IntType(value, value)
+	override val isImpure: Boolean get() = false
+}
 
+class FloatExpression(val value: Double) : Expression() {
+	override val type = FloatType(value, value)
+	override val isImpure: Boolean get() = false
+}
+
+class NullExpression(val nonNullType: Type): Expression() {
+	override val type: Type = NullableType(nonNullType)
 	override val isImpure: Boolean get() = false
 }
 
@@ -31,6 +40,13 @@ class ObjectExpression(val declarationCollection: DeclarationCollection) : Expre
 
 class ReferenceExpression(
 	val name: String,
+	override val isImpure: Boolean,
+	override val type: Type
+) : Expression()
+
+class FunctionCallExpression(
+	val name: String,
+	val argumentsObjectExpression: ObjectExpression,
 	override val isImpure: Boolean,
 	override val type: Type
 ) : Expression()

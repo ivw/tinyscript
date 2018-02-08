@@ -90,3 +90,11 @@ class IntType(val minValue: Int = Int.MIN_VALUE, val maxValue: Int = Int.MAX_VAL
 		return type.minValue >= minValue && type.maxValue <= maxValue
 	}
 }
+
+class FloatType(val minValue: Double = Double.MIN_VALUE, val maxValue: Double = Double.MAX_VALUE) : Type() {
+	override fun accepts(type: Type): Boolean {
+		if (type !is FloatType) return false
+
+		return type.minValue >= minValue && type.maxValue <= maxValue
+	}
+}
