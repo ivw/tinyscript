@@ -31,7 +31,7 @@ fun Declaration.writeJS(out: IndentedWriter): Unit = when (this) {
 
 fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is BlockExpression -> {
-		if (declarationCollection.orderedDeclarations.isEmpty()) {
+		if (declarationCollection == null || declarationCollection.orderedDeclarations.isEmpty()) {
 			out.write("(")
 			expression.writeJS(out)
 			out.write(")")

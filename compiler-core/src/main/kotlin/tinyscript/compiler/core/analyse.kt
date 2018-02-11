@@ -12,6 +12,9 @@ class DeclarationCollection(
 	val orderedDeclarations: List<Declaration>
 )
 
+fun TinyScriptParser.DeclarationsContext.analyse(parentScope: Scope?, isPure: Boolean): DeclarationCollection =
+	declaration().analyse(parentScope, isPure)
+
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, isPure: Boolean): DeclarationCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
@@ -164,12 +167,12 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val declarationCollection = declarations().declaration().analyse(scope, false)
-	return BlockExpression(declarationCollection, expression().analyse(declarationCollection.scope))
+	val declarationCollection = declarations()?.analyse(scope, false)
+	return BlockExpression(declarationCollection, expression().analyse(declarationCollection?.scope ?: scope))
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	val declarationCollection = declarations().declaration().analyse(scope, false)
+	val declarationCollection = declarations()?.analyse(scope, false)
 	return ObjectExpression(declarationCollection)
 }
 

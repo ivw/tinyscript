@@ -7,7 +7,7 @@ sealed class Expression {
 }
 
 class BlockExpression(
-	val declarationCollection: DeclarationCollection,
+	val declarationCollection: DeclarationCollection?,
 	val expression: Expression
 ) : Expression() {
 	override val type get() = expression.type
@@ -26,13 +26,16 @@ class FloatExpression(val value: Double) : Expression() {
 	override val isImpure: Boolean get() = false
 }
 
-class NullExpression(val nonNullType: Type): Expression() {
+class NullExpression(val nonNullType: Type) : Expression() {
 	override val type: Type = NullableType(nonNullType)
 	override val isImpure: Boolean get() = false
 }
 
-class ObjectExpression(val declarationCollection: DeclarationCollection) : Expression() {
-	override val type = ObjectType(declarationCollection.scope.entityCollection, TODO())
+class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expression() {
+	override val type = ObjectType(
+		declarationCollection?.let { it.scope.entityCollection },
+		TODO()
+	)
 
 	override val isImpure: Boolean
 		get() = TODO("not implemented")

@@ -18,7 +18,7 @@ object AnyType : Type() {
 }
 
 class ObjectType(
-	val entityCollection: EntityCollection,
+	val entityCollection: EntityCollection?,
 	val classes: Set<ClassType>
 ) : Type() {
 	override fun accepts(type: Type): Boolean {
