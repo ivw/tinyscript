@@ -9,17 +9,19 @@ class AnalysisException(message: String) : Throwable(message)
 
 class DeclarationCollection(
 	val scope: Scope,
-	val orderedDeclarations: List<Declaration>
+	val orderedDeclarations: List<Declaration>,
+	val hasImpureDeclarations: Boolean
 )
 
-fun TinyScriptParser.DeclarationsContext.analyse(parentScope: Scope?, isPure: Boolean): DeclarationCollection =
-	declaration().analyse(parentScope, isPure)
+fun TinyScriptParser.DeclarationsContext.analyse(parentScope: Scope?, allowImpure: Boolean): DeclarationCollection =
+	declaration().analyse(parentScope, allowImpure)
 
-fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, isPure: Boolean): DeclarationCollection {
+fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, allowImpure: Boolean): DeclarationCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
 	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
 
+	var hasImpureDeclarations = false
 	val deferreds: MutableList<Deferred<*>> = ArrayList()
 	forEach { declarationCtx ->
 		when (declarationCtx) {
@@ -29,8 +31,9 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, i
 				val deferredType: Deferred<Type> = Deferred { isRoot: Boolean ->
 					val initializer = declarationCtx.initializer().analyse(scope)
 					if (!isImpure && initializer.expression.isImpure) {
-						if (isPure) throw AnalysisException("impure declaration in pure scope not allowed")
+						if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
 						if (!isRoot) throw AnalysisException("can not forward reference an order-sensitive declaration")
+						hasImpureDeclarations = true
 					}
 
 					orderedDeclarations.add(NameDeclaration(
@@ -91,8 +94,9 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, i
 					declarationCtx.expression().analyse(scope)
 						.also { expression ->
 							if (expression.isImpure) {
-								if (isPure) throw AnalysisException("impure declaration in pure scope not allowed")
+								if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
 								if (!isRoot) throw RuntimeException("this should be impossible")
+								hasImpureDeclarations = true
 							}
 							orderedDeclarations.add(NonDeclaration(
 								expression
@@ -111,7 +115,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, i
 	// finalize all deferreds that are not finalized yet
 	deferreds.forEach { it.get(true) }
 
-	return DeclarationCollection(scope, orderedDeclarations)
+	return DeclarationCollection(scope, orderedDeclarations, hasImpureDeclarations)
 }
 
 fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
@@ -167,12 +171,12 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val declarationCollection = declarations()?.analyse(scope, false)
+	val declarationCollection = declarations()?.analyse(scope, true)
 	return BlockExpression(declarationCollection, expression().analyse(declarationCollection?.scope ?: scope))
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	val declarationCollection = declarations()?.analyse(scope, false)
+	val declarationCollection = declarations()?.analyse(scope, true)
 	return ObjectExpression(declarationCollection)
 }
 

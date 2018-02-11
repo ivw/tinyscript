@@ -12,8 +12,8 @@ class BlockExpression(
 ) : Expression() {
 	override val type get() = expression.type
 
-	override val isImpure: Boolean
-		get() = TODO("not implemented")
+	override val isImpure: Boolean =
+		(declarationCollection?.hasImpureDeclarations ?: false) || expression.isImpure
 }
 
 class IntExpression(val value: Int) : Expression() {
@@ -34,11 +34,11 @@ class NullExpression(val nonNullType: Type) : Expression() {
 class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expression() {
 	override val type = ObjectType(
 		declarationCollection?.let { it.scope.entityCollection },
-		TODO()
+		emptySet() // TODO
 	)
 
 	override val isImpure: Boolean
-		get() = TODO("not implemented")
+		get() = declarationCollection?.hasImpureDeclarations ?: false
 }
 
 class ReferenceExpression(

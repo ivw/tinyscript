@@ -29,7 +29,7 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Starting analysis")
 	val declarationCollection = fileCtx.declarations().declaration().analyse(
 		Scope(null, builtInEntities),
-		true
+		false
 	)
 	println("Analysis done\n")
 
