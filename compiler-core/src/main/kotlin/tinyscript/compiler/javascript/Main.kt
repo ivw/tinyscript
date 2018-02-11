@@ -27,7 +27,10 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
-	val declarationCollection = fileCtx.declarations().declaration().analyse(Scope(null, builtInEntities))
+	val declarationCollection = fileCtx.declarations().declaration().analyse(
+		Scope(null, builtInEntities),
+		true
+	)
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
