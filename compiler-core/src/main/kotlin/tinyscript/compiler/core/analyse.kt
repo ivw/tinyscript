@@ -89,7 +89,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, i
 						.also { expression ->
 							if (expression.isImpure) {
 								if (isPure) throw AnalysisException("impure declaration in pure scope not allowed")
-								if (!isRoot) throw AnalysisException("can not forward reference an order-sensitive declaration")
+								if (!isRoot) throw RuntimeException("this should be impossible")
 							}
 							orderedDeclarations.add(NonDeclaration(
 								expression
