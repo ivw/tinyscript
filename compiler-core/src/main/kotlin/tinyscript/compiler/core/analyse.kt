@@ -178,7 +178,19 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 
 fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (this) {
 	is TinyScriptParser.ParenTypeExpressionContext -> typeExpression().analyse(scope)
+	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionType(
+		objectType()?.analyse(scope) ?: ObjectType(null, emptySet()),
+		typeExpression().analyse(scope)
+	)
+	is TinyScriptParser.NullTypeExpressionContext -> NullableType(AnyType)
+	is TinyScriptParser.NullableTypeExpressionContext -> NullableType(typeExpression().analyse(scope))
 	is TinyScriptParser.ObjectTypeExpressionContext -> objectType().analyse(scope)
+	is TinyScriptParser.TypeReferenceExpressionContext -> {
+		val name: String = Name().text
+		val typeEntity: TypeEntity = scope.findTypeEntity(name)
+			?: throw AnalysisException("unresolved reference")
+		typeEntity.deferredType.get()
+	}
 	else -> TODO()
 }
 

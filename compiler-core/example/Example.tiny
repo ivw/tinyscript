@@ -8,12 +8,5 @@ main[]! = (
     IntBox +! Int: ? = ?
     myIntBox +! 1
 
-    myExpr: []! -> ? = []! -> ?
-    myExprShort: ! -> ? = ! -> ?
-    (myExpr)[]!
-
-    returnsFunc! = ! -> ?
-    returnsFunc![]!
-
     ?
 )
