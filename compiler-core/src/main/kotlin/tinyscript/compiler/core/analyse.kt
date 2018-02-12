@@ -183,7 +183,7 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (this) {
 	is TinyScriptParser.ParenTypeExpressionContext -> typeExpression().analyse(scope)
 	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionType(
-		objectType()?.analyse(scope) ?: ObjectType(null, emptySet()),
+		objectType()?.analyse(scope) ?: ObjectType(EmptyEntityCollection, emptySet()),
 		typeExpression().analyse(scope)
 	)
 	is TinyScriptParser.NullTypeExpressionContext -> NullableType(AnyType)

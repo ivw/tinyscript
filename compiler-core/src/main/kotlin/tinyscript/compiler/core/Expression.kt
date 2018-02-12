@@ -33,12 +33,14 @@ class NullExpression(val nonNullType: Type) : Expression() {
 
 class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expression() {
 	override val type = ObjectType(
-		declarationCollection?.let { it.scope.entityCollection },
+		if (declarationCollection != null)
+			declarationCollection.scope.entityCollection
+		else EmptyEntityCollection,
 		emptySet() // TODO
 	)
 
-	override val isImpure: Boolean
-		get() = declarationCollection?.hasImpureDeclarations ?: false
+	override val isImpure: Boolean =
+		declarationCollection?.hasImpureDeclarations ?: false
 }
 
 class ReferenceExpression(

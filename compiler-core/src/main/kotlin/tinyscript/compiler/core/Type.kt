@@ -18,24 +18,33 @@ object AnyType : Type() {
 }
 
 class ObjectType(
-	val entityCollection: EntityCollection?,
+	val entityCollection: EntityCollection,
 	val classes: Set<ClassType>
 ) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
 
-		// `[ &Foo, bar: Int, abc = 123 ]` accepts `[ &Foo, bar = 1, c = 2 ]`
+		// type `[ &Foo, bar: Int, abc = 123, foo[d: Dog]: Dog ]`
+		// accepts `[ &Foo, bar = 1, foo[d: Animal]: SpecialDog, c = 2 ]`
+		// TODO make sure this is covered in tests
 
 		if (!type.classes.containsAll(classes)) return false
 
-		TODO()
-//		return entityCollection.all { entity ->
-//			val subEntity = type.entityCollection.resolve(entity.signature)
-//			if (subEntity != null)
-//				entity.type.accepts(subEntity.type)
-//			else
-//				entity.isInitialized
-//		}
+		return entityCollection.nameEntities.all { nameEntity ->
+			val subNameEntity = type.entityCollection.findNameEntity(
+				nameEntity.name,
+				nameEntity.isImpure
+			)
+			return subNameEntity != null && nameEntity.deferredType.get().accepts(subNameEntity.deferredType.get())
+		}
+		&& entityCollection.functionEntities.all { functionEntity ->
+			val subFunctionEntity = type.entityCollection.findFunctionEntity(
+				functionEntity.name,
+				functionEntity.deferredParamsObjectType.get(),
+				functionEntity.isImpure
+			)
+			return subFunctionEntity != null && functionEntity.deferredType.get().accepts(subFunctionEntity.deferredType.get())
+		}
 	}
 
 	override fun toString(): String {
