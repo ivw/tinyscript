@@ -9,4 +9,6 @@ val builtInEntities: EntityCollection = MutableEntityCollection().apply {
 		true,
 		Deferred { AnyType }
 	))
+
+	typeEntities.add(TypeEntity("Int", Deferred { IntType() }))
 }

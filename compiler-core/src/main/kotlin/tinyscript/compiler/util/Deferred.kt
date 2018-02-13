@@ -9,7 +9,9 @@ class Deferred<out T>(private val finalize: (isRoot: Boolean) -> T) {
 	var isFinalizing: Boolean = false
 		private set
 
-	fun get(isRoot: Boolean = false): T =
+	fun get(): T = get(false)
+
+	private fun get(isRoot: Boolean): T =
 		value ?: run {
 			if (isFinalizing) throw CycleException()
 
@@ -21,4 +23,14 @@ class Deferred<out T>(private val finalize: (isRoot: Boolean) -> T) {
 		}
 
 	private class CycleException : RuntimeException()
+
+	class Collection {
+		private val deferreds: MutableList<Deferred<*>> = ArrayList()
+
+		fun add(deferred: Deferred<*>) = deferreds.add(deferred)
+
+		fun finalizeAll() {
+			deferreds.forEach { it.get(true) }
+		}
+	}
 }

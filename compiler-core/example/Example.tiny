@@ -5,8 +5,14 @@ main[]! = (
     myGet!: ? = ?
     myGet!
 
-    IntBox +! Int: ? = ?
-    myIntBox +! 1
+    // IntBox +! Int: ? = ?
+    // myIntBox +! 1
 
-    ?
+    type Node = [ parent: Node?, n: Int ]
+
+    rootNode: Node = [ parent = <Node>?, n = 123 ]
+
+    childNode: Node = [ parent = rootNode, n = 456 ]
+
+	childNode
 )

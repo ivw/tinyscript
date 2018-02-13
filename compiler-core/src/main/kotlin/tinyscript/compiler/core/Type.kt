@@ -24,6 +24,8 @@ class ObjectType(
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
 
+		if (type === this) return true
+
 		// type `[ &Foo, bar: Int, abc = 123, foo[d: Dog]: Dog ]`
 		// accepts `[ &Foo, bar = 1, foo[d: Animal]: SpecialDog, c = 2 ]`
 		// TODO make sure this is covered in tests
@@ -36,8 +38,7 @@ class ObjectType(
 				nameEntity.isImpure
 			)
 			return subNameEntity != null && nameEntity.deferredType.get().accepts(subNameEntity.deferredType.get())
-		}
-		&& entityCollection.functionEntities.all { functionEntity ->
+		} && entityCollection.functionEntities.all { functionEntity ->
 			val subFunctionEntity = type.entityCollection.findFunctionEntity(
 				functionEntity.name,
 				functionEntity.deferredParamsObjectType.get(),

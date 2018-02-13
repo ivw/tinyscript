@@ -25,8 +25,11 @@ fun Declaration.writeJS(out: IndentedWriter): Unit = when (this) {
 	}
 	is TypeAliasDeclaration -> {
 	}
-	is NonDeclaration ->
+	is NonDeclaration -> {
 		expression.writeJS(out)
+		out.write(";")
+		out.newLine()
+	}
 }
 
 fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
@@ -58,6 +61,7 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 		out.write("null")
 	}
 	is ObjectExpression -> {
+		out.write("[]")
 		// TODO
 	}
 	is ReferenceExpression -> {
@@ -65,6 +69,8 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	}
 	is FunctionCallExpression -> {
 		out.write(name)
+		out.write("(")
 		argumentsObjectExpression.writeJS(out)
+		out.write(")")
 	}
 }

@@ -3,14 +3,14 @@ package tinyscript.compiler.core
 import tinyscript.compiler.core.parser.TinyScriptParser
 import tinyscript.compiler.util.Deferred
 import java.util.*
-import kotlin.collections.ArrayList
 
 class AnalysisException(message: String) : Throwable(message)
 
 class DeclarationCollection(
 	val scope: Scope,
 	val orderedDeclarations: List<Declaration>,
-	val hasImpureDeclarations: Boolean
+	val hasImpureDeclarations: Boolean,
+	val deferreds: Deferred.Collection
 )
 
 fun TinyScriptParser.DeclarationsContext.analyse(parentScope: Scope?, allowImpure: Boolean): DeclarationCollection =
@@ -22,7 +22,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, a
 	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
 
 	var hasImpureDeclarations = false
-	val deferreds: MutableList<Deferred<*>> = ArrayList()
+	val deferreds = Deferred.Collection()
 	forEach { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.NameDeclarationContext -> {
@@ -53,14 +53,18 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, a
 					declarationCtx.objectType().analyse(scope)
 				}
 				val deferredType: Deferred<Type> = Deferred {
-					val initializer = declarationCtx.initializer().analyse(scope)
+					val paramsObjectType = deferredParamsObjectType.get()
+
+					val initializer = declarationCtx.initializer().analyse(
+						Scope(scope, paramsObjectType.entityCollection)
+					)
 
 					if (!isImpure && initializer.expression.isImpure)
 						throw AnalysisException("function expression must be pure if the signature is pure")
 
 					orderedDeclarations.add(FunctionDeclaration(
 						name,
-						deferredParamsObjectType.get(),
+						paramsObjectType,
 						isImpure,
 						initializer
 					))
@@ -112,10 +116,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, a
 		}
 	}
 
-	// finalize all deferreds that are not finalized yet
-	deferreds.forEach { it.get(true) }
-
-	return DeclarationCollection(scope, orderedDeclarations, hasImpureDeclarations)
+	return DeclarationCollection(scope, orderedDeclarations, hasImpureDeclarations, deferreds)
 }
 
 fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
@@ -192,7 +193,7 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (t
 	is TinyScriptParser.TypeReferenceExpressionContext -> {
 		val name: String = Name().text
 		val typeEntity: TypeEntity = scope.findTypeEntity(name)
-			?: throw AnalysisException("unresolved reference")
+			?: throw AnalysisException("unresolved reference '$name'")
 		typeEntity.deferredType.get()
 	}
 	else -> TODO()
@@ -202,7 +203,7 @@ fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
 
-	val deferreds: MutableList<Deferred<*>> = ArrayList()
+	val deferreds = Deferred.Collection()
 	objectTypeField().forEach { objectTypeFieldCtx ->
 		when (objectTypeFieldCtx) {
 			is TinyScriptParser.NameObjectTypeFieldContext -> {
@@ -232,9 +233,6 @@ fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType {
 			else -> TODO()
 		}
 	}
-
-	// finalize all deferreds that are not finalized yet
-	deferreds.forEach { it.get() }
 
 	return ObjectType(entityCollection, emptySet())
 }

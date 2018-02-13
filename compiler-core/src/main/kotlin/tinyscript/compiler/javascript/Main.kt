@@ -31,6 +31,7 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		Scope(null, builtInEntities),
 		false
 	)
+	declarationCollection.deferreds.finalizeAll()
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
