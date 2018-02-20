@@ -8,8 +8,7 @@ file: NL* declarations? NL* EOF;
 declarations: declaration ((',' | NL+) declaration)*;
 
 declaration
-	:	Name Impure? initializer												# NameDeclaration
-	|	Name objectType Impure? initializer										# FunctionDeclaration
+	:	(typeExpression '.')? Name objectType? Impure? initializer				# NameDeclaration
 	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression initializer	# OperatorDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
@@ -28,11 +27,9 @@ expression
 	|	('<' typeExpression '>')? '?'											# NullExpression
 	|	'this'																	# ThisExpression
 	|	'super'																	# SuperExpression
-	|	Name Impure?															# ReferenceExpression
-	|	expression NL* '.' Name Impure?											# DotReferenceExpression
 	|	object																	# ObjectExpression
-	|	Name object Impure?														# FunctionCallExpression
-	|	expression NL* '.' Name object Impure?									# DotFunctionCallExpression
+	|	Name object? Impure?													# NameReferenceExpression
+	|	expression NL* '.' Name object? Impure?									# DotNameReferenceExpression
 	|	Operator Impure? expression												# PrefixOperatorCallExpression
 	|	expression NL* Operator Impure? NL* expression							# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
@@ -58,9 +55,7 @@ typeExpression
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
-	:	Name Impure? ':' typeExpression											# NameObjectTypeField
-	|	Name objectType Impure? ':' typeExpression								# FunctionObjectTypeField
-	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression ':' typeExpression	# OperatorObjectTypeField
+	:	Name objectType? Impure? ':' typeExpression								# NameObjectTypeField
 	|	'&' Name																# InheritDeclarationObjectTypeField
 	;
 
