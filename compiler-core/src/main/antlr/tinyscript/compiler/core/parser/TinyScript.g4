@@ -41,9 +41,9 @@ block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
 objectStatement
-    :   Name initializer                                # FieldDeclaration
-    |   '&' expression															# InheritStatement
-    ;
+	:	Name initializer														# FieldDeclaration
+	|	'&' expression															# InheritStatement
+	;
 
 typeExpression
 	:	'(' typeExpression ')'													# ParenTypeExpression
@@ -55,11 +55,11 @@ typeExpression
 	|	typeExpression block													# DependentTypeExpression
 	;
 
-objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
+objectType: '[' NL* (objectTypeStatement ((',' | NL+) objectTypeStatement)* NL*)? ']';
 
-objectTypeField
-	:	Name ':' typeExpression								# NameObjectTypeField
-	|	'&' Name																# InheritDeclarationObjectTypeField
+objectTypeStatement
+	:	Name ':' typeExpression													# ObjectTypeField
+	|	'&' Name																# ObjectTypeInheritStatement
 	;
 
 // LEXER TOKENS
