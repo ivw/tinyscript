@@ -3,17 +3,16 @@ grammar TinyScript;
 @header {package tinyscript.compiler.core.parser;}
 
 // start
-file: NL* declarations? NL* EOF;
+file: NL* statementList? NL* EOF;
 
-declarations: declaration ((',' | NL+) declaration)*;
+statementList: statement ((',' | NL+) statement)*;
 
-declaration
+statement
 	:	(typeExpression '.')? Name objectType? Impure? initializer				# NameDeclaration
 	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression initializer	# OperatorDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
-	|	expression																# NonDeclaration
-	|	'&' expression															# InheritDeclaration
+	|	expression																# ExpressionStatement
 	;
 
 initializer: (':' typeExpression)? '=' NL* expression;
@@ -26,7 +25,6 @@ expression
 	|	BooleanLiteral															# BooleanLiteralExpression
 	|	('<' typeExpression '>')? '?'											# NullExpression
 	|	'this'																	# ThisExpression
-	|	'super'																	# SuperExpression
 	|	object																	# ObjectExpression
 	|	Name object? Impure?													# NameReferenceExpression
 	|	expression NL* '.' Name object? Impure?									# DotNameReferenceExpression
@@ -38,9 +36,14 @@ expression
 	|	object? Impure? '->' NL* expression										# FunctionExpression
 	;
 
-block: '(' NL* (declarations (',' | NL+))? expression NL* ')';
+block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
 
-object: '[' NL* declarations? NL* ']';
+object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
+
+objectStatement
+    :   Name initializer                                # FieldDeclaration
+    |   '&' expression															# InheritStatement
+    ;
 
 typeExpression
 	:	'(' typeExpression ')'													# ParenTypeExpression
@@ -55,7 +58,7 @@ typeExpression
 objectType: '[' NL* (objectTypeField ((',' | NL+) objectTypeField)* NL*)? ']';
 
 objectTypeField
-	:	Name objectType? Impure? ':' typeExpression								# NameObjectTypeField
+	:	Name ':' typeExpression								# NameObjectTypeField
 	|	'&' Name																# InheritDeclarationObjectTypeField
 	;
 
