@@ -8,7 +8,7 @@ file: NL* statementList? NL* EOF;
 statementList: statement ((',' | NL+) statement)*;
 
 statement
-	:	(typeExpression '.')? Name objectType? Impure? initializer				# NameDeclaration
+	:	(typeExpression '.')? Name Impure? objectType? initializer				# NameDeclaration
 	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression initializer	# OperatorDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
@@ -26,14 +26,14 @@ expression
 	|	('<' typeExpression '>')? '?'											# NullExpression
 	|	'this'																	# ThisExpression
 	|	object																	# ObjectExpression
-	|	Name object? Impure?													# NameReferenceExpression
-	|	expression NL* '.' Name object? Impure?									# DotNameReferenceExpression
+	|	Name Impure? object?													# NameReferenceExpression
+	|	expression NL* '.' Name? Impure? object?									# DotReferenceExpression
 	|	Operator Impure? expression												# PrefixOperatorCallExpression
 	|	expression NL* Operator Impure? NL* expression							# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	object? Impure? '->' NL* expression										# FunctionExpression
+	|	Impure? object? '->' NL* expression										# FunctionExpression
 	;
 
 block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
@@ -47,7 +47,7 @@ objectStatement
 
 typeExpression
 	:	'(' typeExpression ')'													# ParenTypeExpression
-	|	objectType? Impure? '->' typeExpression									# FunctionTypeExpression
+	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
 	|	'?'																		# NullTypeExpression
 	|	typeExpression '?'														# NullableTypeExpression
 	|	objectType																# ObjectTypeExpression
