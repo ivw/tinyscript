@@ -1,12 +1,34 @@
-main[]! = (
-    myFunc[]!: ? = ?
-    myFunc[]!
+main![] = (
+    myName = 123
+    myNameButImpureStatement = println![m = "Hello"]
+    myPureFunc[n: Int] = n * 2
+    myImpureParamlessFunc! = println![m = "Hello"]
+    myImpureFunc![n: Int] = println![m = n]
+    myPureParamlessAnonFunc = -> 3
+    myPureAnonFunc = [n: Int] -> n * 2
+    myImpureParamlessAnonFunc = ! -> println![m = "Hello"]
+    myImpureAnonFunc = ![n: Int] -> println![m = n]
+    println![m = "Impure expr statement"]
 
-    myGet!: ? = ?
-    myGet!
+    myName
+    myNameButImpureStatement
+    myPureFunc[n = 123]
+    myImpureParamlessFunc!
+    myImpureFunc![n = 123]
+    myPureParamlessAnonFunc.
+    myPureAnonFunc.[n = 123]
+    myImpureParamlessAnonFunc.!
+    myImpureAnonFunc.![n = 123]
 
-    // IntBox +! Int: ? = ?
-    // myIntBox +! 1
+    myXName: Int = 123
+    myXNameButImpureStatement: ? = println![m = "Hello"]
+    myXPureFunc[n: Int]: n = n * 2
+    myXImpureFuncParamless!: ? = println![m = "Hello"]
+    myXImpureFunc![n: Int]: ? = println![m = n]
+    myXPureParamlessAnonFunc: -> Int = -> 3
+    myXPureAnonFunc: [n: Int] -> Int = [n: Int] -> n * 2
+    myXImpureParamlessAnonFunc: ! -> ? = ! -> println![m = "Hello"]
+    myXImpureAnonFunc: ![n: Int] -> ? = ![n: Int] -> println![m = n]
 
     type Node = [ parent: Node?, n: Int ]
 
