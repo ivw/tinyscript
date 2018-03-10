@@ -2,7 +2,7 @@ group 'tinyscript'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.2.20'
+    ext.kotlin_version = '1.2.30'
 
     repositories {
         mavenCentral()
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     testCompile 'org.jetbrains.spek:spek-api:1.1.4'
     testRuntime 'org.jetbrains.spek:spek-junit-platform-engine:1.1.4'
     testCompile "org.jetbrains.kotlin:kotlin-test"
