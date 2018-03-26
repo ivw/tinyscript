@@ -8,14 +8,17 @@ file: NL* statementList? NL* EOF;
 statementList: statement ((',' | NL+) statement)*;
 
 statement
-	:	(typeExpression '.')? Name Impure? objectType? initializer				# NameDeclaration
-	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression initializer	# OperatorDeclaration
+	:	signature '=' expression												# ValueDeclaration
+	|	'native' signature ':' typeExpression									# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
 	|	expression																# ExpressionStatement
 	;
 
-initializer: (':' typeExpression)? '=' NL* expression;
+signature
+	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
+	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression				# OperatorSignature
+	;
 
 expression
 	:	block																	# BlockExpression
@@ -27,13 +30,13 @@ expression
 	|	'this'																	# ThisExpression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
-	|	expression NL* '.' Name? Impure? object?									# DotReferenceExpression
+	|	expression NL* '.' Name? Impure? object?								# DotReferenceExpression
 	|	Operator Impure? expression												# PrefixOperatorCallExpression
 	|	expression NL* Operator Impure? NL* expression							# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	Impure? objectType? '->' NL* expression										# FunctionExpression
+	|	Impure? objectType? '->' NL* expression									# FunctionExpression
 	;
 
 block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
@@ -41,7 +44,7 @@ block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
 objectStatement
-	:	Name initializer														# FieldDeclaration
+	:	Name '=' expression														# FieldDeclaration
 	|	'&' expression															# InheritStatement
 	;
 
