@@ -31,7 +31,7 @@ class MutableEntityCollection : EntityCollection {
 		functionEntities.find {
 			it.name == name
 				&& it.isImpure == isImpure
-				&& it.deferredParamsObjectType.get().accepts(paramsObjectType)
+				&& it.lazyParamsObjectType.get().accepts(paramsObjectType)
 		}
 
 	override fun findTypeEntity(name: String): TypeEntity? =

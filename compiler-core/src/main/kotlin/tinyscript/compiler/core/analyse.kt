@@ -1,39 +1,41 @@
 package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
-import tinyscript.compiler.util.Deferred
+import tinyscript.compiler.util.SafeLazy
 import java.util.*
 
 class AnalysisException(message: String) : Throwable(message)
 
-class DeclarationCollection(
+class StatementCollection(
 	val scope: Scope,
-	val orderedDeclarations: List<Declaration>,
-	val hasImpureDeclarations: Boolean,
-	val deferreds: Deferred.Collection
+	val orderedStatements: List<Statement>,
+	val hasImpureStatements: Boolean
 )
 
-fun TinyScriptParser.DeclarationsContext.analyse(parentScope: Scope?, allowImpure: Boolean): DeclarationCollection =
-	declaration().analyse(parentScope, allowImpure)
+fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection =
+	statement().analyse(parentScope, allowImpure)
 
-fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, allowImpure: Boolean): DeclarationCollection {
+fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
-	val orderedDeclarations: LinkedList<Declaration> = LinkedList()
+	val orderedStatements: LinkedList<Statement> = LinkedList()
 
-	var hasImpureDeclarations = false
-	val deferreds = Deferred.Collection()
+	var hasImpureStatements = false
 	forEach { declarationCtx ->
 		when (declarationCtx) {
+			is TinyScriptParser.ValueDeclarationContext -> {
+				val signature = declarationCtx.signature().analyse(scope)
+			}
+
 			is TinyScriptParser.NameDeclarationContext -> {
 				val name: String = declarationCtx.Name().text
 				val isImpure: Boolean = declarationCtx.Impure() != null
 				val deferredType: Deferred<Type> = Deferred { isRoot: Boolean ->
-					val initializer = declarationCtx.initializer().analyse(scope)
-					if (!isImpure && initializer.expression.isImpure) {
+					val expression = declarationCtx.expression().analyse(scope)
+					if (!isImpure && expression.isImpure) {
 						if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
 						if (!isRoot) throw AnalysisException("can not forward reference an order-sensitive declaration")
-						hasImpureDeclarations = true
+						hasImpureStatements = true
 					}
 
 					orderedDeclarations.add(NameDeclaration(
@@ -100,7 +102,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, a
 							if (expression.isImpure) {
 								if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
 								if (!isRoot) throw RuntimeException("this should be impossible")
-								hasImpureDeclarations = true
+								hasImpureStatements = true
 							}
 							orderedDeclarations.add(NonDeclaration(
 								expression
@@ -116,19 +118,18 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?, a
 		}
 	}
 
-	return DeclarationCollection(scope, orderedDeclarations, hasImpureDeclarations, deferreds)
+	return StatementCollection(scope, orderedStatements, hasImpureStatements)
 }
 
-fun TinyScriptParser.InitializerContext.analyse(scope: Scope): Initializer {
-	val explicitType: Type? = typeExpression()?.analyse(scope)
-	val expression = expression().analyse(scope)
-
-	explicitType?.let {
-		if (!it.accepts(expression.type))
-			throw AnalysisException("explicit type does not accept expression type")
-	}
-
-	return Initializer(explicitType, expression)
+fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {
+	is TinyScriptParser.NameSignatureContext -> NameSignature(
+		Name().text,
+		Impure() != null,
+		objectType()?.let { objectTypeCtx ->
+			SafeLazy { objectTypeCtx.analyse(scope) }
+		}
+	)
+	else -> throw RuntimeException("unknown signature class")
 }
 
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
@@ -181,8 +182,8 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 	return ObjectExpression(declarationCollection)
 }
 
-fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): Type = when (this) {
-	is TinyScriptParser.ParenTypeExpressionContext -> typeExpression().analyse(scope)
+fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression = when (this) {
+	is TinyScriptParser.ParenTypeExpressionContext -> ParenTypeExpression(typeExpression().analyse(scope))
 	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionType(
 		objectType()?.analyse(scope) ?: ObjectType(EmptyEntityCollection, emptySet()),
 		typeExpression().analyse(scope)

@@ -1,23 +1,23 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.util.Deferred
+import tinyscript.compiler.util.Lazy
+
+sealed class Signature
+
+class NameSignature(
+	val name: String,
+	val isImpure: Boolean,
+	val lazyParamsObjectType: Lazy<ObjectType>?
+) : Signature()
 
 sealed class Entity
 
-class NameEntity(
-	val name: String,
-	val isImpure: Boolean,
-	val deferredType: Deferred<Type>
-): Entity()
-
-class FunctionEntity(
-	val name: String,
-	val deferredParamsObjectType: Deferred<ObjectType>,
-	val isImpure: Boolean,
-	val deferredType: Deferred<Type>
+class ValueEntity(
+	val signature: Signature,
+	val lazyType: Lazy<Type>
 ): Entity()
 
 class TypeEntity(
 	val name: String,
-	val deferredType: Deferred<Type>
+	val lazyType: Lazy<Type>
 ): Entity()

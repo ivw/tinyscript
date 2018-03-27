@@ -1,5 +1,7 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.util.Lazy
+
 sealed class Type {
 	/**
 	 * @return true if `type` is equal to this, or if it is a subtype of this
@@ -18,78 +20,54 @@ object AnyType : Type() {
 }
 
 class ObjectType(
-	val entityCollection: EntityCollection,
-	val classes: Set<ClassType>
+	val fieldMap: Map<String, Type>
 ) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
 
 		if (type === this) return true
 
-		// type `[ &Foo, bar: Int, abc = 123, foo[d: Dog]: Dog ]`
-		// accepts `[ &Foo, bar = 1, foo[d: Animal]: SpecialDog, c = 2 ]`
-		// TODO make sure this is covered in tests
+//		if (!type.classes.containsAll(classes)) return false
 
-		if (!type.classes.containsAll(classes)) return false
-
-		return entityCollection.nameEntities.all { nameEntity ->
-			val subNameEntity = type.entityCollection.findNameEntity(
-				nameEntity.name,
-				nameEntity.isImpure
-			)
-			return subNameEntity != null && nameEntity.deferredType.get().accepts(subNameEntity.deferredType.get())
-		} && entityCollection.functionEntities.all { functionEntity ->
-			val subFunctionEntity = type.entityCollection.findFunctionEntity(
-				functionEntity.name,
-				functionEntity.deferredParamsObjectType.get(),
-				functionEntity.isImpure
-			)
-			return subFunctionEntity != null && functionEntity.deferredType.get().accepts(subFunctionEntity.deferredType.get())
+		return fieldMap.entries.all { entry ->
+			val subField = type.fieldMap.get(entry.key)
+			subField != null && entry.value.accepts(subField)
 		}
 	}
 
 	override fun toString(): String {
-		return "ObjectType<entityCollection = $entityCollection, classes.size = ${classes.size}>"
+		return "ObjectType<fieldMap = $fieldMap>"
 	}
 }
 
-class ClassType(val objectType: ObjectType? = null) : Type() {
-//	val simpleInstanceType: ObjectType = ObjectType().apply {
-//		inheritFromClass(this@ClassType)
-//	}
-
-	override fun accepts(type: Type): Boolean = false
-
-	override fun toString(): String {
-		return "ClassType"
-	}
-}
-
-class NullableType(val nonNullType: Type) : Type() {
-	override fun accepts(type: Type): Boolean {
-		if (type is NullableType) {
-			return nonNullType.accepts(type.nonNullType)
-		}
-
-		return nonNullType.accepts(type)
+class NullableType(val lazyNonNullType: Lazy<Type>) : Type() {
+	override fun accepts(type: Type): Boolean = if (type is NullableType) {
+		lazyNonNullType.get().accepts(type.lazyNonNullType.get())
+	} else {
+		lazyNonNullType.get().accepts(type)
 	}
 
 	override fun toString(): String {
-		return "NullableType<$nonNullType>"
+		return "NullableType"
 	}
 }
 
-// see the "FunctionType" rule in the grammar
-class FunctionType(val params: ObjectType, val returnType: Type) : Type() {
+class FunctionType(val lazyFunction: Lazy<Function>) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 
-		// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
-		return type.params.accepts(params) && returnType.accepts(type.returnType)
+		return lazyFunction.get().accepts(type.lazyFunction.get())
 	}
 
 	override fun toString(): String {
-		return "FunctionType<$params -> $returnType>"
+		return "FunctionType"
+	}
+
+	class Function(val params: ObjectType, val returnType: Type) {
+		fun accepts(function: Function): Boolean {
+			// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
+			return function.params.accepts(params) && returnType.accepts(function.returnType)
+		}
 	}
 }
 

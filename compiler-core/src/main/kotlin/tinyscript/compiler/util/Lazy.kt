@@ -1,7 +1,11 @@
 package tinyscript.compiler.util
 
+interface Lazy<out T> {
+	fun get(): T
+}
+
 // `isRoot` should be true only if not called from inside a `finalize` function
-class Deferred<out T>(private val finalize: (isRoot: Boolean) -> T) {
+class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T): Lazy<T> {
 	private var value: T? = null
 
 	val isFinalized: Boolean get() = value != null
@@ -9,7 +13,7 @@ class Deferred<out T>(private val finalize: (isRoot: Boolean) -> T) {
 	var isFinalizing: Boolean = false
 		private set
 
-	fun get(): T = get(false)
+	override fun get(): T = get(false)
 
 	private fun get(isRoot: Boolean): T =
 		value ?: run {
@@ -23,14 +27,14 @@ class Deferred<out T>(private val finalize: (isRoot: Boolean) -> T) {
 		}
 
 	private class CycleException : RuntimeException()
-
-	class Collection {
-		private val deferreds: MutableList<Deferred<*>> = ArrayList()
-
-		fun add(deferred: Deferred<*>) = deferreds.add(deferred)
-
-		fun finalizeAll() {
-			deferreds.forEach { it.get(true) }
-		}
-	}
 }
+
+//class MappedLazy<T, out R>(
+//	val lazy: Lazy<T>,
+//	val transform: (T) -> R
+//): Lazy<R> {
+//	override fun get(): R = transform(lazy.get())
+//}
+//
+//fun <T,R> Lazy<T>.map(transform: (T) -> R) =
+//	MappedLazy(this, transform)
