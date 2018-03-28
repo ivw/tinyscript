@@ -66,6 +66,11 @@ object RecursionSpec : Spek({
 			assertAnalysisFails("""
 				type Node = (Node)
 			""")
+			assertAnalysis("""
+				type Node = Node?
+				foo: Foo = <Foo>?
+				foo2: Foo = foo
+			""")
 			assertAnalysisFails("""
 				type Node = ([ parent: Node ])
 			""")
@@ -77,7 +82,7 @@ object RecursionSpec : Spek({
 //			""")
 			assertAnalysis("""
 				type Node = ([
-					foo[otherNode: Node]: ?
+					foo: [otherNode: Node] -> ?
 				])
 			""")
 			assertAnalysis("""

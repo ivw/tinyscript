@@ -6,15 +6,9 @@ class Scope(
 ) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
-	fun findNameEntity(name: String, isImpure: Boolean): NameEntity? =
-		entityCollection.findNameEntity(name, isImpure)
-			?: parentScope?.findNameEntity(name, isImpure)
-
-	fun findFunctionEntity(
-		name: String, paramsObjectType: ObjectType, isImpure: Boolean
-	): FunctionEntity? =
-		entityCollection.findFunctionEntity(name, paramsObjectType, isImpure)
-			?: parentScope?.findFunctionEntity(name, paramsObjectType, isImpure)
+	fun findValueEntity(signature: Signature): ValueEntity? =
+		entityCollection.findValueEntity(signature)
+			?: parentScope?.findValueEntity(signature)
 
 	fun findTypeEntity(name: String): TypeEntity? =
 		entityCollection.findTypeEntity(name)

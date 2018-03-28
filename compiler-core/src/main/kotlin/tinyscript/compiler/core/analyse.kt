@@ -1,6 +1,7 @@
 package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.util.Lazy
 import tinyscript.compiler.util.SafeLazy
 import java.util.*
 
@@ -25,6 +26,10 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, all
 		when (declarationCtx) {
 			is TinyScriptParser.ValueDeclarationContext -> {
 				val signature = declarationCtx.signature().analyse(scope)
+				val valueDeclaration = ValueDeclaration(signature, SafeLazy {
+					declarationCtx.expression().analyse(scope)
+				})
+				entityCollection.valueEntities.add(ValueEntity(signature, Lazy {  }))
 			}
 
 			is TinyScriptParser.NameDeclarationContext -> {

@@ -1,23 +1,17 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.util.Lazy
+
 sealed class Statement
 
-class NameDeclaration(
-	val name: String,
-	val isImpure: Boolean,
-	val expression: Expression
-) : Statement()
-
-class FunctionDeclaration(
-	val name: String,
-	val paramsObjectType: ObjectType,
-	val isImpure: Boolean,
-	val expression: Expression
+class ValueDeclaration(
+	val signature: Signature,
+	val lazyExpression: Lazy<Expression>
 ) : Statement()
 
 class TypeAliasDeclaration(
 	val name: String,
-	val type: Type
+	val lazyType: Lazy<Type>
 ) : Statement()
 
 class ExpressionStatement(
