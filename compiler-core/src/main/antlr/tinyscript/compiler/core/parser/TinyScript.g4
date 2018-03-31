@@ -17,7 +17,7 @@ statement
 
 signature
 	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
-	|	(lhs=typeExpression)? Operator Impure? rhs=typeExpression				# OperatorSignature
+	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
 	;
 
 expression
@@ -31,8 +31,8 @@ expression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
 	|	expression NL* '.' Name? Impure? object?								# DotReferenceExpression
-	|	Operator Impure? expression												# PrefixOperatorCallExpression
-	|	expression NL* Operator Impure? NL* expression							# InfixOperatorCallExpression
+	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
+	|	expression NL* OperatorSymbol Impure? NL* expression					# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
@@ -82,7 +82,7 @@ StringLiteral: '"' StringCharacter* '"';
 fragment
 StringCharacter: ~["\\];
 
-Operator: '+' | '-' | '*' | '/' | '^' | '%' | '==' | '!=';
+OperatorSymbol: '+' | '-' | '*' | '/' | '^' | '%' | '==' | '!=';
 
 Name: [a-zA-Z$_] [a-zA-Z$_0-9]*;
 

@@ -19,19 +19,29 @@ fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?, allowImpu
 fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
-	val orderedStatements: LinkedList<Statement> = LinkedList()
-
-	var hasImpureStatements = false
-	forEach { declarationCtx ->
+	val statements: List<Statement> = map { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.ValueDeclarationContext -> {
 				val signature = declarationCtx.signature().analyse(scope)
 				val valueDeclaration = ValueDeclaration(signature, SafeLazy {
-					declarationCtx.expression().analyse(scope)
-				})
-				entityCollection.valueEntities.add(ValueEntity(signature, Lazy {  }))
-			}
+					val expression = declarationCtx.expression().analyse(scope)
 
+					if (expression.isImpure && signature.isImpure) throw AnalysisException()
+
+					expression
+				})
+				entityCollection.valueEntities.add(ValueEntity(signature, {
+					valueDeclaration.lazyExpression.get().type
+				}))
+				valueDeclaration
+			}
+			else -> throw RuntimeException("unknown declaration class")
+		}
+	}
+
+	var hasImpureStatements = false
+	forEach { declarationCtx ->
+		when (declarationCtx) {
 			is TinyScriptParser.NameDeclarationContext -> {
 				val name: String = declarationCtx.Name().text
 				val isImpure: Boolean = declarationCtx.Impure() != null
@@ -134,6 +144,9 @@ fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (t
 			SafeLazy { objectTypeCtx.analyse(scope) }
 		}
 	)
+	is TinyScriptParser.OperatorSignatureContext -> OperatorSignature(
+		lhs?.let { typeExpressionCtx -> SafeLazy { typeExpressionCtx.analyse(scope) } },
+		)
 	else -> throw RuntimeException("unknown signature class")
 }
 
