@@ -1,43 +1,72 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.util.Lazy
+import tinyscript.compiler.util.SafeLazy
+
+sealed class SignatureExpression {
+	abstract val signature: Signature
+}
+
+class NameSignatureExpression(
+	val lazyLhsTypeExpression: SafeLazy<TypeExpression>?,
+	val name: String,
+	val isImpure: Boolean,
+	val lazyParamsObjectType: SafeLazy<ObjectType>?
+) : SignatureExpression() {
+	override val signature = NameSignature(
+		lazyLhsTypeExpression?.let {
+			{ lazyLhsTypeExpression.get().type }
+		},
+		name,
+		isImpure,
+		lazyParamsObjectType?.let {
+			{ lazyParamsObjectType.get() }
+		}
+	)
+}
 
 sealed class Signature {
 	abstract fun accepts(signature: Signature): Boolean
 }
 
 class NameSignature(
+	val getLhsType: (() -> Type)?,
 	val name: String,
 	val isImpure: Boolean,
-	val lazyParamsObjectType: Lazy<ObjectType>?
+	val getParamsObjectType: (() -> ObjectType)?
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
 		signature is NameSignature &&
+			if (getLhsType != null) {
+				signature.getLhsType != null
+					&& getLhsType.invoke().accepts(signature.getLhsType.invoke())
+			} else {
+				signature.getLhsType == null
+			} &&
 			name == signature.name &&
 			isImpure == signature.isImpure &&
-			if (lazyParamsObjectType != null) {
-				signature.lazyParamsObjectType != null
-					&& lazyParamsObjectType.get().accepts(signature.lazyParamsObjectType.get())
+			if (getParamsObjectType != null) {
+				signature.getParamsObjectType != null
+					&& getParamsObjectType.invoke().accepts(signature.getParamsObjectType.invoke())
 			} else {
-				signature.lazyParamsObjectType == null
+				signature.getParamsObjectType == null
 			}
 }
 
 class OperatorSignature(
-	val lhsType: Lazy<Type>?,
+	val getLhsType: (() -> Type)?,
 	val operatorSymbol: String,
 	val isImpure: Boolean,
-	val rhsType: Lazy<Type>
+	val getRhsType: () -> Type
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
 		signature is OperatorSignature &&
-			if (lhsType != null) {
-				signature.lhsType != null
-					&& lhsType.get().accepts(signature.lhsType.get())
+			if (getLhsType != null) {
+				signature.getLhsType != null
+					&& getLhsType.invoke().accepts(signature.getLhsType.invoke())
 			} else {
-				signature.lhsType == null
+				signature.getLhsType == null
 			} &&
 			operatorSymbol == signature.operatorSymbol &&
 			isImpure == signature.isImpure &&
-			rhsType.get().accepts(signature.rhsType.get())
+			getRhsType.invoke().accepts(signature.getRhsType.invoke())
 }

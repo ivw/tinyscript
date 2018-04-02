@@ -1,17 +1,17 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.util.Lazy
+import tinyscript.compiler.util.SafeLazy
 
 sealed class Statement
 
 class ValueDeclaration(
-	val signature: Signature,
-	val lazyExpression: Lazy<Expression>
+	val signatureExpression: SignatureExpression,
+	val lazyExpression: SafeLazy<Expression>
 ) : Statement()
 
 class TypeAliasDeclaration(
 	val name: String,
-	val lazyType: Lazy<Type>
+	val lazyTypeExpression: SafeLazy<TypeExpression>
 ) : Statement()
 
 class ExpressionStatement(

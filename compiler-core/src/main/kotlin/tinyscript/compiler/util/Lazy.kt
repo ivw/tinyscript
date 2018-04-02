@@ -1,11 +1,7 @@
 package tinyscript.compiler.util
 
-interface Lazy<out T> {
-	fun get(): T
-}
-
 // `isRoot` should be true only if not called from inside a `finalize` function
-class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T): Lazy<T> {
+class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T) {
 	private var value: T? = null
 
 	val isFinalized: Boolean get() = value != null
@@ -13,7 +9,7 @@ class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T): Lazy<T> {
 	var isFinalizing: Boolean = false
 		private set
 
-	override fun get(): T = get(false)
+	fun get(): T = get(false)
 
 	private fun get(isRoot: Boolean): T =
 		value ?: run {

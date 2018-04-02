@@ -1,7 +1,5 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.util.Lazy
-
 sealed class Type {
 	/**
 	 * @return true if `type` is equal to this, or if it is a subtype of this
@@ -40,11 +38,11 @@ class ObjectType(
 	}
 }
 
-class NullableType(val lazyNonNullType: Lazy<Type>) : Type() {
+class NullableType(val getNonNullType: () -> Type) : Type() {
 	override fun accepts(type: Type): Boolean = if (type is NullableType) {
-		lazyNonNullType.get().accepts(type.lazyNonNullType.get())
+		getNonNullType().accepts(type.getNonNullType())
 	} else {
-		lazyNonNullType.get().accepts(type)
+		getNonNullType().accepts(type)
 	}
 
 	override fun toString(): String {
@@ -52,11 +50,11 @@ class NullableType(val lazyNonNullType: Lazy<Type>) : Type() {
 	}
 }
 
-class FunctionType(val lazyFunction: Lazy<Function>) : Type() {
+class FunctionType(val getFunction:() -> Function) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 
-		return lazyFunction.get().accepts(type.lazyFunction.get())
+		return getFunction().accepts(type.getFunction())
 	}
 
 	override fun toString(): String {

@@ -1,7 +1,6 @@
 package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
-import tinyscript.compiler.util.Lazy
 import tinyscript.compiler.util.SafeLazy
 import java.util.*
 
@@ -22,15 +21,15 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, all
 	val statements: List<Statement> = map { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.ValueDeclarationContext -> {
-				val signature = declarationCtx.signature().analyse(scope)
-				val valueDeclaration = ValueDeclaration(signature, SafeLazy {
+				val signatureExpression = declarationCtx.signature().analyse(scope)
+				val valueDeclaration = ValueDeclaration(signatureExpression, SafeLazy {
 					val expression = declarationCtx.expression().analyse(scope)
 
-					if (expression.isImpure && signature.isImpure) throw AnalysisException()
+					if (expression.isImpure && signatureExpression.isImpure) throw AnalysisException()
 
 					expression
 				})
-				entityCollection.valueEntities.add(ValueEntity(signature, {
+				entityCollection.valueEntities.add(ValueEntity(signatureExpression.signature, {
 					valueDeclaration.lazyExpression.get().type
 				}))
 				valueDeclaration
@@ -136,8 +135,9 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, all
 	return StatementCollection(scope, orderedStatements, hasImpureStatements)
 }
 
-fun TinyScriptParser.SignatureContext.analyse(scope: Scope): Signature = when (this) {
-	is TinyScriptParser.NameSignatureContext -> NameSignature(
+fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
+	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
+		123,
 		Name().text,
 		Impure() != null,
 		objectType()?.let { objectTypeCtx ->
