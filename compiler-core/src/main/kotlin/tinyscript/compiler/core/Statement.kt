@@ -1,5 +1,6 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.scope.SignatureExpression
 import tinyscript.compiler.util.SafeLazy
 
 sealed class Statement

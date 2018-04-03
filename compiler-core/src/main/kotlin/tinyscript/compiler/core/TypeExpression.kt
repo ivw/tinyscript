@@ -1,5 +1,7 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.scope.Type
+
 sealed class TypeExpression {
 	abstract val type: Type
 }

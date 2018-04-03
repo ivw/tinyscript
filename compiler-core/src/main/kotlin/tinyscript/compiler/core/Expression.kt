@@ -1,5 +1,7 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.scope.*
+
 sealed class Expression {
 	abstract val type: Type
 

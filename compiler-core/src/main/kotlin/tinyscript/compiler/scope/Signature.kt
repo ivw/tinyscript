@@ -1,28 +1,4 @@
-package tinyscript.compiler.core
-
-import tinyscript.compiler.util.SafeLazy
-
-sealed class SignatureExpression {
-	abstract val signature: Signature
-}
-
-class NameSignatureExpression(
-	val lazyLhsTypeExpression: SafeLazy<TypeExpression>?,
-	val name: String,
-	val isImpure: Boolean,
-	val lazyParamsObjectType: SafeLazy<ObjectType>?
-) : SignatureExpression() {
-	override val signature = NameSignature(
-		lazyLhsTypeExpression?.let {
-			{ lazyLhsTypeExpression.get().type }
-		},
-		name,
-		isImpure,
-		lazyParamsObjectType?.let {
-			{ lazyParamsObjectType.get() }
-		}
-	)
-}
+package tinyscript.compiler.scope
 
 sealed class Signature {
 	abstract fun accepts(signature: Signature): Boolean

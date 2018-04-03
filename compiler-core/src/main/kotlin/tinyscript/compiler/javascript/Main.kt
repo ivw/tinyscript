@@ -2,9 +2,8 @@ package tinyscript.compiler.javascript
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import tinyscript.compiler.core.Scope
-import tinyscript.compiler.core.analyse
-import tinyscript.compiler.core.builtInEntities
+import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.builtInEntities
 import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
 import tinyscript.compiler.util.IndentedWriter

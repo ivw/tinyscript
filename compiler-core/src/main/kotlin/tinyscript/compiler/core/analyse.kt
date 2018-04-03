@@ -1,8 +1,8 @@
 package tinyscript.compiler.core
 
 import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.scope.*
 import tinyscript.compiler.util.SafeLazy
-import java.util.*
 
 class AnalysisException(message: String) : Throwable(message)
 
@@ -203,7 +203,8 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
 fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression = when (this) {
 	is TinyScriptParser.ParenTypeExpressionContext -> ParenTypeExpression(typeExpression().analyse(scope))
 	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionType(
-		objectType()?.analyse(scope) ?: ObjectType(EmptyEntityCollection, emptySet()),
+		objectType()?.analyse(scope)
+			?: ObjectType(EmptyEntityCollection, emptySet()),
 		typeExpression().analyse(scope)
 	)
 	is TinyScriptParser.NullTypeExpressionContext -> NullableType(AnyType)

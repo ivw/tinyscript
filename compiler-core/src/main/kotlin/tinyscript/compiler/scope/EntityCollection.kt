@@ -1,4 +1,4 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.scope
 
 interface EntityCollection {
 	val valueEntities: List<ValueEntity>
