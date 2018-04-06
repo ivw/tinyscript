@@ -4,6 +4,8 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import tinyscript.compiler.core.parser.TinyScriptLexer
 import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.builtInEntities
 import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {
