@@ -38,19 +38,7 @@ class ObjectType(
 	}
 }
 
-class NullableType(val getNonNullType: () -> Type) : Type() {
-	override fun accepts(type: Type): Boolean = if (type is NullableType) {
-		getNonNullType().accepts(type.getNonNullType())
-	} else {
-		getNonNullType().accepts(type)
-	}
-
-	override fun toString(): String {
-		return "NullableType"
-	}
-}
-
-class FunctionType(val getFunction:() -> Function) : Type() {
+class FunctionType(val getFunction: () -> Function) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 

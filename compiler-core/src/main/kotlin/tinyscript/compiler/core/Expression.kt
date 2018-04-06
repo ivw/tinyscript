@@ -28,11 +28,6 @@ class FloatExpression(val value: Double) : Expression() {
 	override val isImpure: Boolean get() = false
 }
 
-class NullExpression(val nonNullType: Type) : Expression() {
-	override val type: Type = NullableType(nonNullType)
-	override val isImpure: Boolean get() = false
-}
-
 class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expression() {
 	override val type = ObjectType(
 		if (declarationCollection != null)

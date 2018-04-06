@@ -25,8 +25,6 @@ expression
 	|	IntegerLiteral															# IntegerLiteralExpression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
-	|	BooleanLiteral															# BooleanLiteralExpression
-	|	('<' typeExpression '>')? '?'											# NullExpression
 	|	'this'																	# ThisExpression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
@@ -51,8 +49,6 @@ objectStatement
 typeExpression
 	:	'(' typeExpression ')'													# ParenTypeExpression
 	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
-	|	'?'																		# NullTypeExpression
-	|	typeExpression '?'														# NullableTypeExpression
 	|	objectType																# ObjectTypeExpression
 	|	Name																	# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
@@ -74,8 +70,6 @@ Impure: '!';
 IntegerLiteral: [0-9]+;
 
 FloatLiteral: [0-9]+ '.' [0-9]+;
-
-BooleanLiteral: 'true' | 'false';
 
 StringLiteral: '"' StringCharacter* '"';
 
