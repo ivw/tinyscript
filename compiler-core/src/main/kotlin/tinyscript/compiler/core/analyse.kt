@@ -137,16 +137,21 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, all
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
 	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
-		123,
+		typeExpression()?.let { typeExpressionCtx ->
+			SafeLazy { typeExpressionCtx.analyse(scope) }
+		},
 		Name().text,
 		Impure() != null,
 		objectType()?.let { objectTypeCtx ->
 			SafeLazy { objectTypeCtx.analyse(scope) }
 		}
 	)
-	is TinyScriptParser.OperatorSignatureContext -> OperatorSignature(
+	is TinyScriptParser.OperatorSignatureContext -> OperatorSignatureExpression(
 		lhs?.let { typeExpressionCtx -> SafeLazy { typeExpressionCtx.analyse(scope) } },
-		)
+		OperatorSymbol().text,
+		Impure() != null,
+		SafeLazy { rhs.analyse(scope) }
+	)
 	else -> throw RuntimeException("unknown signature class")
 }
 
