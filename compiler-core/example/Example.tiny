@@ -20,19 +20,9 @@ main![] = (
     myImpureParamlessAnonFunc.!
     myImpureAnonFunc.![n = 123]
 
-    myXName: Int = 123
-    myXNameButImpureStatement: ? = println![m = "Hello"]
-    myXPureFunc[n: Int]: n = n * 2
-    myXImpureFuncParamless!: ? = println![m = "Hello"]
-    myXImpureFunc![n: Int]: ? = println![m = n]
-    myXPureParamlessAnonFunc: -> Int = -> 3
-    myXPureAnonFunc: [n: Int] -> Int = [n: Int] -> n * 2
-    myXImpureParamlessAnonFunc: ! -> ? = ! -> println![m = "Hello"]
-    myXImpureAnonFunc: ![n: Int] -> ? = ![n: Int] -> println![m = n]
+    type Node = [ parent: Option<Node>, n: Int ]
 
-    type Node = [ parent: Node?, n: Int ]
-
-    rootNode: Node = [ parent = <Node>?, n = 123 ]
+    rootNode: Node = [ parent = none, n = 123 ]
 
     childNode: Node = [ parent = rootNode, n = 456 ]
 

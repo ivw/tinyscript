@@ -18,14 +18,14 @@ fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?, allowImpu
 fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
-	val statements: List<Statement> = map { declarationCtx ->
-		when (declarationCtx) {
+	val statements: List<Statement> = map { statementCtx ->
+		when (statementCtx) {
 			is TinyScriptParser.ValueDeclarationContext -> {
-				val signatureExpression = declarationCtx.signature().analyse(scope)
+				val signatureExpression = statementCtx.signature().analyse(scope)
 				val valueDeclaration = ValueDeclaration(signatureExpression, SafeLazy {
-					val expression = declarationCtx.expression().analyse(scope)
+					val expression = statementCtx.expression().analyse(scope)
 
-					if (expression.isImpure && signatureExpression.isImpure) throw AnalysisException()
+					if (expression.isImpure && signatureExpression.signature.isImpure) throw AnalysisException()
 
 					expression
 				})
@@ -34,101 +34,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, all
 				}))
 				valueDeclaration
 			}
-			else -> throw RuntimeException("unknown declaration class")
-		}
-	}
-
-	var hasImpureStatements = false
-	forEach { declarationCtx ->
-		when (declarationCtx) {
-			is TinyScriptParser.NameDeclarationContext -> {
-				val name: String = declarationCtx.Name().text
-				val isImpure: Boolean = declarationCtx.Impure() != null
-				val deferredType: Deferred<Type> = Deferred { isRoot: Boolean ->
-					val expression = declarationCtx.expression().analyse(scope)
-					if (!isImpure && expression.isImpure) {
-						if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
-						if (!isRoot) throw AnalysisException("can not forward reference an order-sensitive declaration")
-						hasImpureStatements = true
-					}
-
-					orderedDeclarations.add(NameDeclaration(
-						name,
-						isImpure,
-						initializer
-					))
-					initializer.type
-				}
-				entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
-				deferreds.add(deferredType)
-			}
-			is TinyScriptParser.FunctionDeclarationContext -> {
-				val name: String = declarationCtx.Name().text
-				val isImpure: Boolean = declarationCtx.Impure() != null
-				val deferredParamsObjectType = Deferred {
-					declarationCtx.objectType().analyse(scope)
-				}
-				val deferredType: Deferred<Type> = Deferred {
-					val paramsObjectType = deferredParamsObjectType.get()
-
-					val initializer = declarationCtx.initializer().analyse(
-						Scope(scope, paramsObjectType.entityCollection)
-					)
-
-					if (!isImpure && initializer.expression.isImpure)
-						throw AnalysisException("function expression must be pure if the signature is pure")
-
-					orderedDeclarations.add(FunctionDeclaration(
-						name,
-						paramsObjectType,
-						isImpure,
-						initializer
-					))
-					initializer.type
-				}
-				entityCollection.functionEntities.add(FunctionEntity(
-					name, deferredParamsObjectType, isImpure, deferredType
-				))
-				deferreds.add(deferredParamsObjectType)
-				deferreds.add(deferredType)
-			}
-			is TinyScriptParser.OperatorDeclarationContext -> {
-				// TODO
-			}
-			is TinyScriptParser.TypeAliasDeclarationContext -> {
-				val name = declarationCtx.Name().text
-				val deferredType = Deferred {
-					declarationCtx.typeExpression().analyse(scope)
-						.also { type ->
-							orderedDeclarations.add(TypeAliasDeclaration(name, type))
-						}
-				}
-				entityCollection.typeEntities.add(TypeEntity(name, deferredType))
-				deferreds.add(deferredType)
-			}
-			is TinyScriptParser.EnumTypeDeclarationContext -> {
-				// TODO
-			}
-			is TinyScriptParser.NonDeclarationContext -> {
-				val deferredExpression = Deferred { isRoot: Boolean ->
-					declarationCtx.expression().analyse(scope)
-						.also { expression ->
-							if (expression.isImpure) {
-								if (!allowImpure) throw AnalysisException("impure declaration in pure scope not allowed")
-								if (!isRoot) throw RuntimeException("this should be impossible")
-								hasImpureStatements = true
-							}
-							orderedDeclarations.add(NonDeclaration(
-								expression
-							))
-						}
-				}
-				deferreds.add(deferredExpression)
-			}
-			is TinyScriptParser.InheritDeclarationContext -> {
-				// TODO
-			}
-			else -> throw RuntimeException("unknown declaration class")
+			else -> throw RuntimeException("unknown statement class")
 		}
 	}
 
