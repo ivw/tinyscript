@@ -8,11 +8,11 @@ file: NL* statementList? NL* EOF;
 statementList: statement ((',' | NL+) statement)*;
 
 statement
-	:	signature '=' expression												# ValueDeclaration
+	:	(Name '=')? expression													# RunStatement
+	|	signature '=>' expression												# FunctionDeclaration
 	|	'native' signature ':' typeExpression									# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
-	|	expression																# ExpressionStatement
 	;
 
 signature
@@ -42,8 +42,8 @@ block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
 objectStatement
-	:	Name '=' expression														# FieldDeclaration
-	|	'&' expression															# InheritStatement
+	:	Name '=' expression														# ObjectFieldDeclaration
+	|	'&' expression															# ObjectInheritStatement
 	;
 
 typeExpression

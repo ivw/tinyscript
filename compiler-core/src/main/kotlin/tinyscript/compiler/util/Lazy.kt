@@ -9,9 +9,7 @@ class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T) {
 	var isFinalizing: Boolean = false
 		private set
 
-	fun get(): T = get(false)
-
-	private fun get(isRoot: Boolean): T =
+	fun get(isRoot: Boolean = false): T =
 		value ?: run {
 			if (isFinalizing) throw CycleException()
 

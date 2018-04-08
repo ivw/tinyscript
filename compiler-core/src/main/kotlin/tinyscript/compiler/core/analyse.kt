@@ -8,37 +8,68 @@ class AnalysisException(message: String) : Throwable(message)
 
 class StatementCollection(
 	val scope: Scope,
-	val orderedStatements: List<Statement>,
-	val hasImpureStatements: Boolean
-)
+	val orderedStatements: List<Statement>
+) {
+	val impureStatementsSeq: Sequence<RunStatement> = orderedStatements
+		.asSequence()
+		.mapNotNull { it as? RunStatement }
+		.filter { it.expression.get().isImpure }
+}
 
-fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection =
-	statement().analyse(parentScope, allowImpure)
+fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementCollection =
+	statement().analyse(parentScope)
 
-fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?, allowImpure: Boolean): StatementCollection {
+fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementCollection {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
+	val orderedStatements: MutableList<Statement> = ArrayList()
 	val statements: List<Statement> = map { statementCtx ->
 		when (statementCtx) {
-			is TinyScriptParser.ValueDeclarationContext -> {
-				val signatureExpression = statementCtx.signature().analyse(scope)
-				val valueDeclaration = ValueDeclaration(signatureExpression, SafeLazy {
+			is TinyScriptParser.RunStatementContext -> {
+				val name: String? = statementCtx.Name()?.text
+				val runStatement = RunStatement(name, SafeLazy { isRoot ->
 					val expression = statementCtx.expression().analyse(scope)
 
-					if (expression.isImpure && signatureExpression.signature.isImpure) throw AnalysisException()
+					if (!isRoot && expression.isImpure)
+						throw AnalysisException("can not forward reference an impure declaration")
 
 					expression
 				})
-				entityCollection.valueEntities.add(ValueEntity(signatureExpression.signature, {
-					valueDeclaration.lazyExpression.get().type
-				}))
-				valueDeclaration
+				if (name != null) {
+					entityCollection.valueEntities.add(ValueEntity(
+						NameSignature(null, name, false, null),
+						{ runStatement.expression.get().type }
+					))
+				}
+				runStatement
+			}
+			is TinyScriptParser.FunctionDeclarationContext -> {
+				val signatureExpression = statementCtx.signature().analyse(scope)
+				val functionDeclaration = FunctionDeclaration(signatureExpression, SafeLazy {
+					val expression = statementCtx.expression().analyse(scope)
+
+					if (expression.isImpure && !signatureExpression.signature.isImpure)
+						throw AnalysisException("function signature must be impure if its expression is impure")
+
+					expression
+				})
+				entityCollection.valueEntities.add(ValueEntity(
+					signatureExpression.signature,
+					{ functionDeclaration.lazyExpression.get().type }
+				))
+				functionDeclaration
 			}
 			else -> throw RuntimeException("unknown statement class")
 		}
 	}
 
-	return StatementCollection(scope, orderedStatements, hasImpureStatements)
+	statements.forEach { statement ->
+		if (statement is RunStatement) {
+			statement.expression.get(true)
+		}
+	}
+
+	return StatementCollection(scope, orderedStatements)
 }
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
