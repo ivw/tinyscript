@@ -1,9 +1,9 @@
-main![] = (
+main! => (
     myName = 123
     myNameButImpureStatement = println![m = "Hello"]
-    myPureFunc[n: Int] = n * 2
-    myImpureParamlessFunc! = println![m = "Hello"]
-    myImpureFunc![n: Int] = println![m = n]
+    myPureFunc[n: Int] => n * 2
+    myImpureParamlessFunc! => println![m = "Hello"]
+    myImpureFunc![n: Int] => println![m = n]
     myPureParamlessAnonFunc = -> 3
     myPureAnonFunc = [n: Int] -> n * 2
     myImpureParamlessAnonFunc = ! -> println![m = "Hello"]
@@ -20,11 +20,5 @@ main![] = (
     myImpureParamlessAnonFunc.!
     myImpureAnonFunc.![n = 123]
 
-    type Node = [ parent: Option<Node>, n: Int ]
-
-    rootNode: Node = [ parent = none, n = 123 ]
-
-    childNode: Node = [ parent = rootNode, n = 456 ]
-
-	childNode
+	123
 )

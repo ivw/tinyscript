@@ -4,7 +4,7 @@ import tinyscript.compiler.util.SafeLazy
 
 sealed class Statement
 
-class RunStatement(
+class ImperativeStatement(
 	val name: String?,
 	val expression: SafeLazy<Expression>
 ) : Statement()

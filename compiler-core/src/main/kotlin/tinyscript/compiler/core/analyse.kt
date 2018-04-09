@@ -10,9 +10,9 @@ class StatementCollection(
 	val scope: Scope,
 	val orderedStatements: List<Statement>
 ) {
-	val impureStatementsSeq: Sequence<RunStatement> = orderedStatements
+	fun impureStatementsSeq(): Sequence<ImperativeStatement> = orderedStatements
 		.asSequence()
-		.mapNotNull { it as? RunStatement }
+		.mapNotNull { it as? ImperativeStatement }
 		.filter { it.expression.get().isImpure }
 }
 
@@ -25,9 +25,9 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	val orderedStatements: MutableList<Statement> = ArrayList()
 	val statements: List<Statement> = map { statementCtx ->
 		when (statementCtx) {
-			is TinyScriptParser.RunStatementContext -> {
+			is TinyScriptParser.ImperativeStatementContext -> {
 				val name: String? = statementCtx.Name()?.text
-				val runStatement = RunStatement(name, SafeLazy { isRoot ->
+				val imperativeStatement = ImperativeStatement(name, SafeLazy { isRoot ->
 					val expression = statementCtx.expression().analyse(scope)
 
 					if (!isRoot && expression.isImpure)
@@ -38,10 +38,10 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				if (name != null) {
 					entityCollection.valueEntities.add(ValueEntity(
 						NameSignature(null, name, false, null),
-						{ runStatement.expression.get().type }
+						{ imperativeStatement.expression.get().type }
 					))
 				}
-				runStatement
+				imperativeStatement
 			}
 			is TinyScriptParser.FunctionDeclarationContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)
@@ -64,7 +64,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	}
 
 	statements.forEach { statement ->
-		if (statement is RunStatement) {
+		if (statement is ImperativeStatement) {
 			statement.expression.get(true)
 		}
 	}
@@ -100,35 +100,26 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.FloatLiteralExpressionContext ->
 		FloatExpression(text.toDouble())
 	is TinyScriptParser.StringLiteralExpressionContext -> TODO()
-	is TinyScriptParser.BooleanLiteralExpressionContext -> TODO()
-	is TinyScriptParser.NullExpressionContext ->
-		NullExpression(typeExpression()?.analyse(scope) ?: AnyType)
-	is TinyScriptParser.ReferenceExpressionContext -> {
+	is TinyScriptParser.NameReferenceExpressionContext -> {
 		val name: String = Name().text
-		val isImpure = Impure() != null
-		val nameEntity: NameEntity = scope.findNameEntity(name, isImpure)
-			?: throw AnalysisException("unresolved reference")
-		ReferenceExpression(
+		val isImpure: Boolean = Impure() != null
+		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
+		val valueEntity: ValueEntity = scope.findValueEntity(NameSignature(
+			null,
 			name,
 			isImpure,
-			nameEntity.deferredType.get()
+			argumentsObjectExpression?.let { { it.type } }
+		))
+			?: throw AnalysisException("unresolved reference")
+		NameReferenceExpression(
+			name,
+			isImpure,
+			argumentsObjectExpression,
+			valueEntity.getType()
 		)
 	}
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
-	is TinyScriptParser.FunctionCallExpressionContext -> {
-		val name: String = Name().text
-		val isImpure = Impure() != null
-		val argumentsObjectExpression = `object`().analyse(scope)
-		val functionEntity: FunctionEntity = scope.findFunctionEntity(name, argumentsObjectExpression.type, isImpure)
-			?: throw AnalysisException("unresolved reference")
-		FunctionCallExpression(
-			name,
-			argumentsObjectExpression,
-			isImpure,
-			functionEntity.deferredType.get()
-		)
-	}
 	else -> TODO()
 }
 
@@ -149,8 +140,6 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 			?: ObjectType(EmptyEntityCollection, emptySet()),
 		typeExpression().analyse(scope)
 	)
-	is TinyScriptParser.NullTypeExpressionContext -> NullableType(AnyType)
-	is TinyScriptParser.NullableTypeExpressionContext -> NullableType(typeExpression().analyse(scope))
 	is TinyScriptParser.ObjectTypeExpressionContext -> objectType().analyse(scope)
 	is TinyScriptParser.TypeReferenceExpressionContext -> {
 		val name: String = Name().text
@@ -161,40 +150,4 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 	else -> TODO()
 }
 
-fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType {
-	val entityCollection = MutableEntityCollection()
-	val scope = Scope(parentScope, entityCollection)
-
-	val deferreds = Deferred.Collection()
-	objectTypeField().forEach { objectTypeFieldCtx ->
-		when (objectTypeFieldCtx) {
-			is TinyScriptParser.NameObjectTypeFieldContext -> {
-				val name: String = objectTypeFieldCtx.Name().text
-				val isImpure: Boolean = objectTypeFieldCtx.Impure() != null
-				val deferredType: Deferred<Type> = Deferred {
-					objectTypeFieldCtx.typeExpression().analyse(scope)
-				}
-				entityCollection.nameEntities.add(NameEntity(name, isImpure, deferredType))
-				deferreds.add(deferredType)
-			}
-			is TinyScriptParser.FunctionObjectTypeFieldContext -> {
-				val name: String = objectTypeFieldCtx.Name().text
-				val isImpure: Boolean = objectTypeFieldCtx.Impure() != null
-				val deferredParamsObjectType = Deferred {
-					objectTypeFieldCtx.objectType().analyse(scope)
-				}
-				val deferredType: Deferred<Type> = Deferred {
-					objectTypeFieldCtx.typeExpression().analyse(scope)
-				}
-				entityCollection.functionEntities.add(FunctionEntity(
-					name, deferredParamsObjectType, isImpure, deferredType
-				))
-				deferreds.add(deferredParamsObjectType)
-				deferreds.add(deferredType)
-			}
-			else -> TODO()
-		}
-	}
-
-	return ObjectType(entityCollection, emptySet())
-}
+fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType = TODO()

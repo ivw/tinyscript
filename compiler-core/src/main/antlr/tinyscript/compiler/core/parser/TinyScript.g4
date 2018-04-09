@@ -8,7 +8,7 @@ file: NL* statementList? NL* EOF;
 statementList: statement ((',' | NL+) statement)*;
 
 statement
-	:	(Name '=')? expression													# RunStatement
+	:	(Name '=')? expression													# ImperativeStatement
 	|	signature '=>' expression												# FunctionDeclaration
 	|	'native' signature ':' typeExpression									# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
@@ -28,7 +28,7 @@ expression
 	|	'this'																	# ThisExpression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
-	|	expression NL* '.' Name? Impure? object?								# DotReferenceExpression
+	|	expression NL* '.' Name? Impure? object?								# DotNameReferenceExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
 	|	expression NL* OperatorSymbol Impure? NL* expression					# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression

@@ -40,9 +40,10 @@ class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expr
 		declarationCollection?.hasImpureDeclarations ?: false
 }
 
-class ReferenceExpression(
+class NameReferenceExpression(
 	val name: String,
 	override val isImpure: Boolean,
+	val argumentsObjectExpression: ObjectExpression?,
 	override val type: Type
 ) : Expression()
 
