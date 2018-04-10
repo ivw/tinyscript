@@ -7,44 +7,44 @@ sealed class Signature {
 }
 
 class NameSignature(
-	val getLhsType: (() -> Type)?,
+	val lhsType: Type?,
 	val name: String,
 	override val isImpure: Boolean,
-	val getParamsObjectType: (() -> ObjectType)?
+	val paramsObjectType: ObjectType?
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
 		signature is NameSignature &&
-			if (getLhsType != null) {
-				signature.getLhsType != null
-					&& getLhsType.invoke().accepts(signature.getLhsType.invoke())
+			if (lhsType != null) {
+				signature.lhsType != null
+					&& lhsType.accepts(signature.lhsType)
 			} else {
-				signature.getLhsType == null
+				signature.lhsType == null
 			} &&
 			name == signature.name &&
 			isImpure == signature.isImpure &&
-			if (getParamsObjectType != null) {
-				signature.getParamsObjectType != null
-					&& getParamsObjectType.invoke().accepts(signature.getParamsObjectType.invoke())
+			if (paramsObjectType != null) {
+				signature.paramsObjectType != null
+					&& paramsObjectType.accepts(signature.paramsObjectType)
 			} else {
-				signature.getParamsObjectType == null
+				signature.paramsObjectType == null
 			}
 }
 
 class OperatorSignature(
-	val getLhsType: (() -> Type)?,
+	val lhsType: Type?,
 	val operatorSymbol: String,
 	override val isImpure: Boolean,
-	val getRhsType: () -> Type
+	val rhsType: Type
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
 		signature is OperatorSignature &&
-			if (getLhsType != null) {
-				signature.getLhsType != null
-					&& getLhsType.invoke().accepts(signature.getLhsType.invoke())
+			if (lhsType != null) {
+				signature.lhsType != null
+					&& lhsType.accepts(signature.lhsType)
 			} else {
-				signature.getLhsType == null
+				signature.lhsType == null
 			} &&
 			operatorSymbol == signature.operatorSymbol &&
 			isImpure == signature.isImpure &&
-			getRhsType.invoke().accepts(signature.getRhsType.invoke())
+			rhsType.accepts(signature.rhsType)
 }

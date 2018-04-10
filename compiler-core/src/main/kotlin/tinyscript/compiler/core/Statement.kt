@@ -6,7 +6,7 @@ sealed class Statement
 
 class ImperativeStatement(
 	val name: String?,
-	val expression: SafeLazy<Expression>
+	val expression: Expression
 ) : Statement()
 
 class FunctionDeclaration(

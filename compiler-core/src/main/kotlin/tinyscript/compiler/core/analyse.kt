@@ -9,12 +9,7 @@ class AnalysisException(message: String) : Throwable(message)
 class StatementCollection(
 	val scope: Scope,
 	val orderedStatements: List<Statement>
-) {
-	fun impureStatementsSeq(): Sequence<ImperativeStatement> = orderedStatements
-		.asSequence()
-		.mapNotNull { it as? ImperativeStatement }
-		.filter { it.expression.get().isImpure }
-}
+)
 
 fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementCollection =
 	statement().analyse(parentScope)
@@ -23,25 +18,49 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
 	val orderedStatements: MutableList<Statement> = ArrayList()
-	val statements: List<Statement> = map { statementCtx ->
+
+	// first make sure all the type entities are in the scope
+	forEach { statementCtx ->
+		when (statementCtx) {
+			is TinyScriptParser.TypeAliasDeclarationContext -> {
+				val name = statementCtx.Name().text
+				val typeAliasDeclaration = TypeAliasDeclaration(
+					name,
+					SafeLazy { statementCtx.typeExpression().analyse(scope) }
+				)
+				entityCollection.typeEntities.add(TypeEntity(
+					name,
+					{ typeAliasDeclaration.lazyTypeExpression.get().type }
+				))
+				orderedStatements.add(typeAliasDeclaration)
+			}
+		}
+	}
+
+	// now add all the value entities to scope (some entity signatures need the type entities)
+	val lazyImperativeStatements: MutableList<SafeLazy<ImperativeStatement>> = ArrayList()
+	forEach { statementCtx ->
 		when (statementCtx) {
 			is TinyScriptParser.ImperativeStatementContext -> {
 				val name: String? = statementCtx.Name()?.text
-				val imperativeStatement = ImperativeStatement(name, SafeLazy { isRoot ->
-					val expression = statementCtx.expression().analyse(scope)
 
+				val lazyImperativeStatement = SafeLazy { isRoot ->
+					val expression = statementCtx.expression().analyse(scope)
 					if (!isRoot && expression.isImpure)
 						throw AnalysisException("can not forward reference an impure declaration")
 
-					expression
-				})
+					val imperativeStatement = ImperativeStatement(name, expression)
+					orderedStatements.add(imperativeStatement)
+					imperativeStatement
+				}
+
 				if (name != null) {
 					entityCollection.valueEntities.add(ValueEntity(
 						NameSignature(null, name, false, null),
-						{ imperativeStatement.expression.get().type }
+						{ lazyImperativeStatement.get().expression.type }
 					))
 				}
-				imperativeStatement
+				lazyImperativeStatements.add(lazyImperativeStatement)
 			}
 			is TinyScriptParser.FunctionDeclarationContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)
@@ -57,37 +76,30 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					signatureExpression.signature,
 					{ functionDeclaration.lazyExpression.get().type }
 				))
-				functionDeclaration
+				orderedStatements.add(functionDeclaration)
 			}
 			else -> throw RuntimeException("unknown statement class")
 		}
 	}
 
-	statements.forEach { statement ->
-		if (statement is ImperativeStatement) {
-			statement.expression.get(true)
-		}
-	}
+	// lastly, analyse all imperative statements
+	lazyImperativeStatements.forEach { it.get(true) }
 
 	return StatementCollection(scope, orderedStatements)
 }
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
 	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
-		typeExpression()?.let { typeExpressionCtx ->
-			SafeLazy { typeExpressionCtx.analyse(scope) }
-		},
+		typeExpression()?.analyse(scope),
 		Name().text,
 		Impure() != null,
-		objectType()?.let { objectTypeCtx ->
-			SafeLazy { objectTypeCtx.analyse(scope) }
-		}
+		objectType()?.analyse(scope)
 	)
 	is TinyScriptParser.OperatorSignatureContext -> OperatorSignatureExpression(
-		lhs?.let { typeExpressionCtx -> SafeLazy { typeExpressionCtx.analyse(scope) } },
+		lhs?.analyse(scope),
 		OperatorSymbol().text,
 		Impure() != null,
-		SafeLazy { rhs.analyse(scope) }
+		rhs.analyse(scope)
 	)
 	else -> throw RuntimeException("unknown signature class")
 }
@@ -108,7 +120,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			null,
 			name,
 			isImpure,
-			argumentsObjectExpression?.let { { it.type } }
+			argumentsObjectExpression?.type
 		))
 			?: throw AnalysisException("unresolved reference")
 		NameReferenceExpression(
