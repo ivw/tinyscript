@@ -38,22 +38,16 @@ class ObjectType(
 	}
 }
 
-class FunctionType(val getFunction: () -> Function) : Type() {
+class FunctionType(val params: ObjectType, val returnType: Type) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 
-		return getFunction().accepts(type.getFunction())
+		// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
+		return type.params.accepts(params) && returnType.accepts(type.returnType)
 	}
 
 	override fun toString(): String {
-		return "FunctionType"
-	}
-
-	class Function(val params: ObjectType, val returnType: Type) {
-		fun accepts(function: Function): Boolean {
-			// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
-			return function.params.accepts(params) && returnType.accepts(function.returnType)
-		}
+		return "FunctionType<$params -> $returnType>"
 	}
 }
 
