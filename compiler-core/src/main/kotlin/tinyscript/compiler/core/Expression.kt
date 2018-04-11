@@ -9,13 +9,13 @@ sealed class Expression {
 }
 
 class BlockExpression(
-	val declarationCollection: DeclarationCollection?,
+	val statementCollection: StatementCollection?,
 	val expression: Expression
 ) : Expression() {
 	override val type get() = expression.type
 
 	override val isImpure: Boolean =
-		(declarationCollection?.hasImpureDeclarations ?: false) || expression.isImpure
+		(statementCollection?.hasImpureDeclarations ?: false) || expression.isImpure
 }
 
 class IntExpression(val value: Int) : Expression() {

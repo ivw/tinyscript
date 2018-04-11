@@ -138,8 +138,11 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 }
 
 fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val declarationCollection = declarations()?.analyse(scope, true)
-	return BlockExpression(declarationCollection, expression().analyse(declarationCollection?.scope ?: scope))
+	val statementCollection = statementList()?.analyse(scope)
+	return BlockExpression(
+		statementCollection,
+		expression().analyse(statementCollection?.scope ?: scope)
+	)
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
