@@ -18,27 +18,29 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
 	val orderedStatements: MutableList<Statement> = ArrayList()
+	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
 
 	// first make sure all the type entities are in the scope
 	forEach { statementCtx ->
 		when (statementCtx) {
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = statementCtx.Name().text
-				val typeAliasDeclaration = TypeAliasDeclaration(
-					name,
-					SafeLazy { statementCtx.typeExpression().analyse(scope) }
-				)
+
+				val lazyTypeAliasDeclaration = SafeLazy {
+					val typeExpression = statementCtx.typeExpression().analyse(scope)
+					TypeAliasDeclaration(name, typeExpression)
+						.also { orderedStatements.add(it) }
+				}
 				entityCollection.typeEntities.add(TypeEntity(
 					name,
-					{ typeAliasDeclaration.lazyTypeExpression.get().type }
+					{ lazyTypeAliasDeclaration.get().typeExpression.type }
 				))
-				orderedStatements.add(typeAliasDeclaration)
+				lazyStatementList.add(lazyTypeAliasDeclaration)
 			}
 		}
 	}
 
 	// now add all the value entities to scope (some entity signatures need the type entities)
-	val lazyImperativeStatements: MutableList<SafeLazy<ImperativeStatement>> = ArrayList()
 	forEach { statementCtx ->
 		when (statementCtx) {
 			is TinyScriptParser.ImperativeStatementContext -> {
@@ -47,11 +49,10 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				val lazyImperativeStatement = SafeLazy { isRoot ->
 					val expression = statementCtx.expression().analyse(scope)
 					if (!isRoot && expression.isImpure)
-						throw AnalysisException("can not forward reference an impure declaration")
+						throw AnalysisException("can not forward reference an impure imperative declaration")
 
-					val imperativeStatement = ImperativeStatement(name, expression)
-					orderedStatements.add(imperativeStatement)
-					imperativeStatement
+					ImperativeStatement(name, expression)
+						.also { orderedStatements.add(it) }
 				}
 
 				if (name != null) {
@@ -60,30 +61,31 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 						{ lazyImperativeStatement.get().expression.type }
 					))
 				}
-				lazyImperativeStatements.add(lazyImperativeStatement)
+				lazyStatementList.add(lazyImperativeStatement)
 			}
 			is TinyScriptParser.FunctionDeclarationContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)
-				val functionDeclaration = FunctionDeclaration(signatureExpression, SafeLazy {
-					val expression = statementCtx.expression().analyse(scope)
 
+				val lazyFunctionDeclaration = SafeLazy {
+					val expression = statementCtx.expression().analyse(scope)
 					if (expression.isImpure && !signatureExpression.signature.isImpure)
 						throw AnalysisException("function signature must be impure if its expression is impure")
 
-					expression
-				})
+					FunctionDeclaration(signatureExpression, expression)
+						.also { orderedStatements.add(it) }
+				}
 				entityCollection.valueEntities.add(ValueEntity(
 					signatureExpression.signature,
-					{ functionDeclaration.lazyExpression.get().type }
+					{ lazyFunctionDeclaration.get().expression.type }
 				))
-				orderedStatements.add(functionDeclaration)
+				lazyStatementList.add(lazyFunctionDeclaration)
 			}
 			else -> throw RuntimeException("unknown statement class")
 		}
 	}
 
-	// lastly, analyse all imperative statements
-	lazyImperativeStatements.forEach { it.get(true) }
+	// analyse all statements now that everything is in the scope
+	lazyStatementList.forEach { it.get(true) }
 
 	return StatementCollection(scope, orderedStatements)
 }

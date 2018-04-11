@@ -1,7 +1,5 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.util.SafeLazy
-
 sealed class Statement
 
 class ImperativeStatement(
@@ -11,10 +9,10 @@ class ImperativeStatement(
 
 class FunctionDeclaration(
 	val signatureExpression: SignatureExpression,
-	val lazyExpression: SafeLazy<Expression>
+	val expression: Expression
 ) : Statement()
 
 class TypeAliasDeclaration(
 	val name: String,
-	val lazyTypeExpression: SafeLazy<TypeExpression>
+	val typeExpression: TypeExpression
 ) : Statement()
