@@ -8,7 +8,8 @@ class AnalysisException(message: String) : Throwable(message)
 
 class StatementCollection(
 	val scope: Scope,
-	val orderedStatements: List<Statement>
+	val orderedStatements: List<Statement>,
+	val hasImpureImperativeStatement: Boolean
 )
 
 fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementCollection =
@@ -19,6 +20,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	val scope = Scope(parentScope, entityCollection)
 	val orderedStatements: MutableList<Statement> = ArrayList()
 	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
+	var hasImpureImperativeStatement: Boolean = false
 
 	// first make sure all the type entities are in the scope
 	forEach { statementCtx ->
@@ -48,8 +50,12 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 
 				val lazyImperativeStatement = SafeLazy { isRoot ->
 					val expression = statementCtx.expression().analyse(scope)
-					if (!isRoot && expression.isImpure)
-						throw AnalysisException("can not forward reference an impure imperative declaration")
+					if (expression.isImpure) {
+						if (!isRoot)
+							throw AnalysisException("can not forward reference an impure imperative declaration")
+
+						hasImpureImperativeStatement = true
+					}
 
 					ImperativeStatement(name, expression)
 						.also { orderedStatements.add(it) }
@@ -86,8 +92,19 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 
 	// analyse all statements now that everything is in the scope
 	lazyStatementList.forEach { it.get(true) }
+	orderedStatements.forEach { it.finalize() }
+	// example:
+	/*
+		type Node = ([
+			parent: Option<Node>
 
-	return StatementCollection(scope, orderedStatements)
+			children: List<Node>
+		])
+	 */
+	// after `get(true)` we know the type of Node is an object with an Option<?> field and a List<?> field.
+	// `finalize()` will make sure all the contained types are analysed.
+
+	return StatementCollection(scope, orderedStatements, hasImpureImperativeStatement)
 }
 
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {

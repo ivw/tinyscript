@@ -1,6 +1,9 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.scope.*
+import tinyscript.compiler.scope.FloatType
+import tinyscript.compiler.scope.IntType
+import tinyscript.compiler.scope.ObjectType
+import tinyscript.compiler.scope.Type
 
 sealed class Expression {
 	abstract val type: Type
@@ -15,7 +18,7 @@ class BlockExpression(
 	override val type get() = expression.type
 
 	override val isImpure: Boolean =
-		(statementCollection?.hasImpureDeclarations ?: false) || expression.isImpure
+		(statementCollection?.hasImpureImperativeStatement ?: false) || expression.isImpure
 }
 
 class IntExpression(val value: Int) : Expression() {
@@ -28,16 +31,22 @@ class FloatExpression(val value: Double) : Expression() {
 	override val isImpure: Boolean get() = false
 }
 
-class ObjectExpression(val declarationCollection: DeclarationCollection?) : Expression() {
-	override val type = ObjectType(
-		if (declarationCollection != null)
-			declarationCollection.scope.entityCollection
-		else EmptyEntityCollection,
-		emptySet() // TODO
-	)
+class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression() {
+	override val type = ObjectType(mutableMapOf<String, Type>().also { mutableFieldMap ->
+		objectStatements.forEach { objectStatement ->
+			when (objectStatement) {
+				is ObjectFieldDeclaration -> {
+					mutableFieldMap[objectStatement.name] = objectStatement.expression.type
+				}
+				is ObjectInheritStatement -> {
+					TODO()
+				}
+			}
+		}
+	})
 
 	override val isImpure: Boolean =
-		declarationCollection?.hasImpureDeclarations ?: false
+		objectStatements.any { it.isImpure }
 }
 
 class NameReferenceExpression(
