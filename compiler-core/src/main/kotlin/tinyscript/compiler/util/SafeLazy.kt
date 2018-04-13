@@ -14,21 +14,11 @@ class SafeLazy<out T>(private val finalize: (isRoot: Boolean) -> T) {
 			if (isFinalizing) throw CycleException()
 
 			isFinalizing = true
-			return finalize(isRoot).also {
+			finalize(isRoot).also {
 				value = it
 				isFinalizing = false
 			}
 		}
 
-	private class CycleException : RuntimeException()
+	class CycleException : RuntimeException()
 }
-
-//class MappedLazy<T, out R>(
-//	val lazy: Lazy<T>,
-//	val transform: (T) -> R
-//): Lazy<R> {
-//	override fun get(): R = transform(lazy.get())
-//}
-//
-//fun <T,R> Lazy<T>.map(transform: (T) -> R) =
-//	MappedLazy(this, transform)

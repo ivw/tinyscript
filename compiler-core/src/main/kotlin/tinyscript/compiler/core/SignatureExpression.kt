@@ -1,9 +1,7 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.scope.NameSignature
-import tinyscript.compiler.scope.ObjectType
-import tinyscript.compiler.scope.OperatorSignature
-import tinyscript.compiler.scope.Signature
+import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.scope.*
 
 sealed class SignatureExpression {
 	abstract val signature: Signature
@@ -13,13 +11,13 @@ class NameSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val name: String,
 	val isImpure: Boolean,
-	val paramsObjectType: ObjectType?
+	val paramsObjectType: ObjectTypeExpression?
 ) : SignatureExpression() {
 	override val signature = NameSignature(
 		lhsTypeExpression?.type,
 		name,
 		isImpure,
-		paramsObjectType
+		paramsObjectType?.type
 	)
 }
 
@@ -35,4 +33,20 @@ class OperatorSignatureExpression(
 		isImpure,
 		rhsTypeExpression.type
 	)
+}
+
+fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
+	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
+		typeExpression()?.analyse(scope),
+		Name().text,
+		Impure() != null,
+		objectType()?.analyse(scope)
+	)
+	is TinyScriptParser.OperatorSignatureContext -> OperatorSignatureExpression(
+		lhs?.analyse(scope),
+		OperatorSymbol().text,
+		Impure() != null,
+		rhs.analyse(scope)
+	)
+	else -> throw RuntimeException("unknown signature class")
 }

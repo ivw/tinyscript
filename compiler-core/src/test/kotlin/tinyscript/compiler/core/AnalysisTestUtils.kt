@@ -16,7 +16,9 @@ fun assertAnalysis(codeString: String) {
 	if (parser.numberOfSyntaxErrors > 0)
 		throw RuntimeException("parsing failed")
 
-	fileCtx.declarations().declaration().analyse(Scope(null, builtInEntities), false)
+	val statementList = fileCtx.statementList().analyse(Scope(null, builtInEntities))
+	if (statementList.hasImpureImperativeStatement)
+		throw AnalysisException("file scope can not have impure imperative statements")
 }
 
 fun assertAnalysisFails(

@@ -38,12 +38,21 @@ class ObjectType(
 	}
 }
 
-class FunctionType(val params: ObjectType, val returnType: Type) : Type() {
+class FunctionType(
+	val isImpure: Boolean,
+	val params: ObjectType?,
+	val returnType: Type
+) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
 
 		// `[d: Dog] -> Dog` accepts `[d: Animal] -> SpecialDog`
-		return type.params.accepts(params) && returnType.accepts(type.returnType)
+		return if (params != null) {
+			type.params != null &&
+				type.params.accepts(params) && returnType.accepts(type.returnType)
+		} else {
+			type.params == null
+		}
 	}
 
 	override fun toString(): String {

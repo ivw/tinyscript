@@ -1,9 +1,7 @@
 package tinyscript.compiler.core
 
-import tinyscript.compiler.scope.FloatType
-import tinyscript.compiler.scope.IntType
-import tinyscript.compiler.scope.ObjectType
-import tinyscript.compiler.scope.Type
+import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.scope.*
 
 sealed class Expression {
 	abstract val type: Type
@@ -12,13 +10,13 @@ sealed class Expression {
 }
 
 class BlockExpression(
-	val statementCollection: StatementCollection?,
+	val statementList: StatementList?,
 	val expression: Expression
 ) : Expression() {
 	override val type get() = expression.type
 
 	override val isImpure: Boolean =
-		(statementCollection?.hasImpureImperativeStatement ?: false) || expression.isImpure
+		(statementList?.hasImpureImperativeStatement ?: false) || expression.isImpure
 }
 
 class IntExpression(val value: Int) : Expression() {
@@ -62,3 +60,46 @@ class FunctionCallExpression(
 	override val isImpure: Boolean,
 	override val type: Type
 ) : Expression()
+
+fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
+	is TinyScriptParser.BlockExpressionContext ->
+		block().analyse(scope)
+	is TinyScriptParser.IntegerLiteralExpressionContext ->
+		IntExpression(text.toInt())
+	is TinyScriptParser.FloatLiteralExpressionContext ->
+		FloatExpression(text.toDouble())
+	is TinyScriptParser.StringLiteralExpressionContext -> TODO()
+	is TinyScriptParser.NameReferenceExpressionContext -> {
+		val name: String = Name().text
+		val isImpure: Boolean = Impure() != null
+		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
+		val valueEntity: ValueEntity = scope.findValueEntity(NameSignature(
+			null,
+			name,
+			isImpure,
+			argumentsObjectExpression?.type
+		))
+			?: throw AnalysisException("unresolved reference")
+		NameReferenceExpression(
+			name,
+			isImpure,
+			argumentsObjectExpression,
+			valueEntity.getType()
+		)
+	}
+	is TinyScriptParser.ObjectExpressionContext ->
+		`object`().analyse(scope)
+	else -> TODO()
+}
+
+fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
+	val statementCollection = statementList()?.analyse(scope)
+	return BlockExpression(
+		statementCollection,
+		expression().analyse(statementCollection?.scope ?: scope)
+	)
+}
+
+fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
+	return ObjectExpression(objectStatement().map { it.analyse(scope) })
+}

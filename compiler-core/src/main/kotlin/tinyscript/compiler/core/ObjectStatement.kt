@@ -1,5 +1,8 @@
 package tinyscript.compiler.core
 
+import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.scope.Scope
+
 sealed class ObjectStatement {
 	abstract val isImpure: Boolean
 }
@@ -16,3 +19,14 @@ class ObjectInheritStatement(
 ) : ObjectStatement() {
 	override val isImpure: Boolean get() = expression.isImpure
 }
+
+fun TinyScriptParser.ObjectStatementContext.analyse(scope: Scope): ObjectStatement =
+	when (this) {
+		is TinyScriptParser.ObjectFieldDeclarationContext ->
+			ObjectFieldDeclaration(
+				Name().text,
+				expression().analyse(scope)
+			)
+		is TinyScriptParser.ObjectInheritStatementContext -> TODO()
+		else -> throw RuntimeException("unknown object statement class")
+	}

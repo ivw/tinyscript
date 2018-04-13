@@ -57,7 +57,7 @@ typeExpression
 objectType: '[' NL* (objectTypeStatement ((',' | NL+) objectTypeStatement)* NL*)? ']';
 
 objectTypeStatement
-	:	Name ':' typeExpression													# ObjectTypeField
+	:	Name ':' typeExpression													# ObjectTypeFieldDeclaration
 	|	'&' Name																# ObjectTypeInheritStatement
 	;
 

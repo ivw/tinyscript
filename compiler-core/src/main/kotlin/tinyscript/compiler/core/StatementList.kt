@@ -4,18 +4,16 @@ import tinyscript.compiler.core.parser.TinyScriptParser
 import tinyscript.compiler.scope.*
 import tinyscript.compiler.util.SafeLazy
 
-class AnalysisException(message: String) : Throwable(message)
-
-class StatementCollection(
+class StatementList(
 	val scope: Scope,
 	val orderedStatements: List<Statement>,
 	val hasImpureImperativeStatement: Boolean
 )
 
-fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementCollection =
+fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementList =
 	statement().analyse(parentScope)
 
-fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementCollection {
+fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementList {
 	val entityCollection = MutableEntityCollection()
 	val scope = Scope(parentScope, entityCollection)
 	val orderedStatements: MutableList<Statement> = ArrayList()
@@ -86,7 +84,6 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				))
 				lazyStatementList.add(lazyFunctionDeclaration)
 			}
-			else -> throw RuntimeException("unknown statement class")
 		}
 	}
 
@@ -104,84 +101,5 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	// after `get(true)` we know the type of Node is an object with an Option<?> field and a List<?> field.
 	// `finalize()` will make sure all the contained types are analysed.
 
-	return StatementCollection(scope, orderedStatements, hasImpureImperativeStatement)
+	return StatementList(scope, orderedStatements, hasImpureImperativeStatement)
 }
-
-fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
-	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
-		typeExpression()?.analyse(scope),
-		Name().text,
-		Impure() != null,
-		objectType()?.analyse(scope)
-	)
-	is TinyScriptParser.OperatorSignatureContext -> OperatorSignatureExpression(
-		lhs?.analyse(scope),
-		OperatorSymbol().text,
-		Impure() != null,
-		rhs.analyse(scope)
-	)
-	else -> throw RuntimeException("unknown signature class")
-}
-
-fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
-	is TinyScriptParser.BlockExpressionContext ->
-		block().analyse(scope)
-	is TinyScriptParser.IntegerLiteralExpressionContext ->
-		IntExpression(text.toInt())
-	is TinyScriptParser.FloatLiteralExpressionContext ->
-		FloatExpression(text.toDouble())
-	is TinyScriptParser.StringLiteralExpressionContext -> TODO()
-	is TinyScriptParser.NameReferenceExpressionContext -> {
-		val name: String = Name().text
-		val isImpure: Boolean = Impure() != null
-		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
-		val valueEntity: ValueEntity = scope.findValueEntity(NameSignature(
-			null,
-			name,
-			isImpure,
-			argumentsObjectExpression?.type
-		))
-			?: throw AnalysisException("unresolved reference")
-		NameReferenceExpression(
-			name,
-			isImpure,
-			argumentsObjectExpression,
-			valueEntity.getType()
-		)
-	}
-	is TinyScriptParser.ObjectExpressionContext ->
-		`object`().analyse(scope)
-	else -> TODO()
-}
-
-fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val statementCollection = statementList()?.analyse(scope)
-	return BlockExpression(
-		statementCollection,
-		expression().analyse(statementCollection?.scope ?: scope)
-	)
-}
-
-fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	val declarationCollection = declarations()?.analyse(scope, true)
-	return ObjectExpression(declarationCollection)
-}
-
-fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression = when (this) {
-	is TinyScriptParser.ParenTypeExpressionContext -> ParenTypeExpression(typeExpression().analyse(scope))
-	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionType(
-		objectType()?.analyse(scope)
-			?: ObjectType(EmptyEntityCollection, emptySet()),
-		typeExpression().analyse(scope)
-	)
-	is TinyScriptParser.ObjectTypeExpressionContext -> objectType().analyse(scope)
-	is TinyScriptParser.TypeReferenceExpressionContext -> {
-		val name: String = Name().text
-		val typeEntity: TypeEntity = scope.findTypeEntity(name)
-			?: throw AnalysisException("unresolved reference '$name'")
-		typeEntity.deferredType.get()
-	}
-	else -> TODO()
-}
-
-fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectType = TODO()

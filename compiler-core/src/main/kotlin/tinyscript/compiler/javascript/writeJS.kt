@@ -3,38 +3,28 @@ package tinyscript.compiler.javascript
 import tinyscript.compiler.core.*
 import tinyscript.compiler.util.IndentedWriter
 
-fun DeclarationCollection.writeJS(out: IndentedWriter) =
-	orderedDeclarations.forEach { it.writeJS(out) }
+fun StatementList.writeJS(out: IndentedWriter) =
+	orderedStatements.forEach { it.writeJS(out) }
 
-fun Declaration.writeJS(out: IndentedWriter): Unit = when (this) {
-	is NameDeclaration -> {
-		out.write("var ")
-		out.write(name)
-		out.write(" = ")
-		initializer.expression.writeJS(out)
-		out.write(";")
-		out.newLine()
-	}
-	is FunctionDeclaration -> {
-		out.write("var ")
-		out.write(name)
-		out.write(" = (TODO) => ")
-		initializer.expression.writeJS(out)
+fun Statement.writeJS(out: IndentedWriter): Unit = when (this) {
+	is ImperativeStatement -> {
+		if (name != null) {
+			out.write("var ")
+			out.write(name)
+			out.write(" = ")
+		}
+		expression.writeJS(out)
 		out.write(";")
 		out.newLine()
 	}
 	is TypeAliasDeclaration -> {
 	}
-	is NonDeclaration -> {
-		expression.writeJS(out)
-		out.write(";")
-		out.newLine()
-	}
+	else -> TODO()
 }
 
 fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is BlockExpression -> {
-		if (declarationCollection == null || declarationCollection.orderedDeclarations.isEmpty()) {
+		if (statementList == null || statementList.orderedStatements.isEmpty()) {
 			out.write("(")
 			expression.writeJS(out)
 			out.write(")")
@@ -42,7 +32,7 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 			out.write("(function () {")
 			out.indent++
 			out.newLine()
-			declarationCollection.orderedDeclarations.forEach { it.writeJS(out) }
+			statementList.orderedStatements.forEach { it.writeJS(out) }
 			out.write("return ")
 			expression.writeJS(out)
 			out.write(";")
@@ -57,15 +47,9 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is FloatExpression -> {
 		out.write(value.toString())
 	}
-	is NullExpression -> {
-		out.write("null")
-	}
 	is ObjectExpression -> {
 		out.write("[]")
 		// TODO
-	}
-	is ReferenceExpression -> {
-		out.write(name)
 	}
 	is FunctionCallExpression -> {
 		out.write(name)
@@ -73,4 +57,5 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 		argumentsObjectExpression.writeJS(out)
 		out.write(")")
 	}
+	else -> TODO()
 }

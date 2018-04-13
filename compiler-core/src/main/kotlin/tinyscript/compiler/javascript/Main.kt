@@ -2,6 +2,8 @@ package tinyscript.compiler.javascript
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import tinyscript.compiler.core.AnalysisException
+import tinyscript.compiler.core.analyse
 import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.scope.builtInEntities
 import tinyscript.compiler.core.parser.TinyScriptLexer
@@ -26,16 +28,16 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
-	val declarationCollection = fileCtx.declarations().declaration().analyse(
-		Scope(null, builtInEntities),
-		false
+	val statementList = fileCtx.statementList().analyse(
+		Scope(null, builtInEntities)
 	)
-	declarationCollection.deferreds.finalizeAll()
+	if (statementList.hasImpureImperativeStatement)
+		throw AnalysisException("file scope can not have impure imperative statements")
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
 		val indentedWriter = IndentedWriter(writer)
-		declarationCollection.writeJS(indentedWriter)
+		statementList.writeJS(indentedWriter)
 		println("Written to file '${writePath.fileName}'\n")
 	}
 }
