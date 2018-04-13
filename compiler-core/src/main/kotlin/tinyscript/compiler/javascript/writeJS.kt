@@ -57,5 +57,8 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 		argumentsObjectExpression.writeJS(out)
 		out.write(")")
 	}
+	is NameReferenceExpression -> {
+		out.write(name)
+	}
 	else -> TODO()
 }
