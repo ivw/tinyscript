@@ -1,4 +1,4 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.ast
 
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe

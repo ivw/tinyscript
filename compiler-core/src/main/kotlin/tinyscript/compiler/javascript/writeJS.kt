@@ -1,6 +1,6 @@
 package tinyscript.compiler.javascript
 
-import tinyscript.compiler.core.*
+import tinyscript.compiler.ast.*
 import tinyscript.compiler.util.IndentedWriter
 
 fun StatementList.writeJS(out: IndentedWriter) =

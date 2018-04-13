@@ -2,12 +2,12 @@ package tinyscript.compiler.javascript
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import tinyscript.compiler.core.AnalysisException
-import tinyscript.compiler.core.analyse
+import tinyscript.compiler.ast.AnalysisException
+import tinyscript.compiler.ast.analyse
 import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.scope.builtInEntities
-import tinyscript.compiler.core.parser.TinyScriptLexer
-import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.ast.parser.TinyScriptLexer
+import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.util.IndentedWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files

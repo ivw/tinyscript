@@ -1,3 +1,3 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.ast
 
 class AnalysisException(message: String) : Throwable(message)

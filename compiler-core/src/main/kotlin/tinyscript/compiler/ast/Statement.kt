@@ -1,4 +1,4 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.ast
 
 sealed class Statement {
 	abstract fun finalize()

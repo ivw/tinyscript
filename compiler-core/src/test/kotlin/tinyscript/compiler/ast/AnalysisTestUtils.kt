@@ -1,9 +1,9 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.ast
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import tinyscript.compiler.core.parser.TinyScriptLexer
-import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.ast.parser.TinyScriptLexer
+import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.scope.builtInEntities
 import kotlin.test.assertFailsWith

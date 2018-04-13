@@ -1,6 +1,6 @@
-package tinyscript.compiler.core
+package tinyscript.compiler.ast
 
-import tinyscript.compiler.core.parser.TinyScriptParser
+import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.scope.*
 import tinyscript.compiler.util.SafeLazy
 

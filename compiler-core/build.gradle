@@ -52,7 +52,7 @@ tasks.compileKotlin.dependsOn(generateGrammarSource)
 
 jar {
     manifest {
-        attributes 'Main-Class': 'tinyscript.compiler.core.MainKt'
+        attributes 'Main-Class': 'tinyscript.compiler.javascript.MainKt'
     }
 
     from {
