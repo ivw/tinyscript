@@ -3,6 +3,7 @@ package tinyscript.compiler.ast
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import tinyscript.compiler.util.SafeLazy
 
 object StatementListSpec : Spek({
 	describe("ImperativeStatement") {
@@ -36,6 +37,11 @@ object StatementListSpec : Spek({
 				)
 			""")
 		}
+		it("can not be recursive") {
+			assertAnalysisFails("""
+				a = a
+			""", SafeLazy.CycleException::class)
+		}
 	}
 
 	describe("FunctionDeclaration") {
@@ -62,6 +68,14 @@ object StatementListSpec : Spek({
 			assertAnalysis("""
 				printDouble![n: Int] => println![m = n * 2]
 			""")
+		}
+		it("can not be recursive") {
+			assertAnalysisFails("""
+				getOne => getOne
+			""", SafeLazy.CycleException::class)
+			assertAnalysisFails("""
+				double[n: Int] => double[n = n * 2]
+			""", SafeLazy.CycleException::class)
 		}
 	}
 })
