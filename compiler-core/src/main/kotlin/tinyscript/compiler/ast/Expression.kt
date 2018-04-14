@@ -100,6 +100,5 @@ fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
 	)
 }
 
-fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression {
-	return ObjectExpression(objectStatement().map { it.analyse(scope) })
-}
+fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
+	ObjectExpression(objectStatement().map { it.analyse(scope) })

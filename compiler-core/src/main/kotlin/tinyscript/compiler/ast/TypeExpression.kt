@@ -60,5 +60,6 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 	else -> TODO()
 }
 
-fun TinyScriptParser.ObjectTypeContext.analyse(parentScope: Scope): ObjectTypeExpression = TODO()
+fun TinyScriptParser.ObjectTypeContext.analyse(scope: Scope): ObjectTypeExpression =
+	ObjectTypeExpression(objectTypeStatement().map { it.analyse(scope) })
 
