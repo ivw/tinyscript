@@ -51,10 +51,16 @@ object StatementListSpec : Spek({
 			assertAnalysisFails("""
 				printEmptyLine => println![]
 			""")
-		}
-		it("can not declare a pure function with an impure expression") {
 			assertAnalysisFails("""
-				double[n: Int] => println![m = n * 2]
+				printDouble[n: Int] => println![m = n * 2]
+			""")
+		}
+		it("can declare an impure function with an impure expression") {
+			assertAnalysis("""
+				printEmptyLine! => println![]
+			""")
+			assertAnalysis("""
+				printDouble![n: Int] => println![m = n * 2]
 			""")
 		}
 	}
