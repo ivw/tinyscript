@@ -1,10 +1,10 @@
 package tinyscript.compiler.scope
 
 val builtInEntities: EntityCollection = MutableEntityCollection().apply {
-	valueEntities.add(ValueEntity(
+	valueEntities.add(BuiltInValueEntity(
 		NameSignature(null, "println", true, ObjectType(emptyMap())),
-		{ AnyType }
+		AnyType
 	))
 
-	typeEntities.add(TypeEntity("Int", { IntType() }))
+	typeEntities.add(BuiltInTypeEntity("Int", IntType()))
 }

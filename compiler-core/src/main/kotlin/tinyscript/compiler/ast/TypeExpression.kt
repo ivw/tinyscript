@@ -55,7 +55,7 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 		val name: String = Name().text
 		val typeEntity: TypeEntity = scope.findTypeEntity(name)
 			?: throw AnalysisException("unresolved type reference '$name'")
-		TypeReferenceExpression(name, typeEntity.getType())
+		TypeReferenceExpression(name, typeEntity.type)
 	}
 	else -> TODO()
 }

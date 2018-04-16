@@ -31,10 +31,9 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					TypeAliasDeclaration(name, typeExpression)
 						.also { orderedStatements.add(it) }
 				}
-				entityCollection.typeEntities.add(TypeEntity(
-					name,
-					{ lazyTypeAliasDeclaration.get().typeExpression.type }
-				))
+				entityCollection.typeEntities.add(object : TypeEntity(name) {
+					override val type: Type get() = lazyTypeAliasDeclaration.get().typeExpression.type
+				})
 				lazyStatementList.add(lazyTypeAliasDeclaration)
 			}
 		}
@@ -60,10 +59,11 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				}
 
 				if (name != null) {
-					entityCollection.valueEntities.add(ValueEntity(
-						NameSignature(null, name, false, null),
-						{ lazyImperativeStatement.get().expression.type }
-					))
+					entityCollection.valueEntities.add(object : ValueEntity(
+						NameSignature(null, name, false, null)
+					) {
+						override val type: Type get() = lazyImperativeStatement.get().expression.type
+					})
 				}
 				lazyStatementList.add(lazyImperativeStatement)
 			}
@@ -78,10 +78,11 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					FunctionDeclaration(signatureExpression, expression)
 						.also { orderedStatements.add(it) }
 				}
-				entityCollection.valueEntities.add(ValueEntity(
-					signatureExpression.signature,
-					{ lazyFunctionDeclaration.get().expression.type }
-				))
+				entityCollection.valueEntities.add(object : ValueEntity(
+					signatureExpression.signature
+				) {
+					override val type: Type get() = lazyFunctionDeclaration.get().expression.type
+				})
 				lazyStatementList.add(lazyFunctionDeclaration)
 			}
 		}

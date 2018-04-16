@@ -53,7 +53,7 @@ class NameReferenceExpression(
 	val argumentsObjectExpression: ObjectExpression?,
 	val valueEntity: ValueEntity
 ) : Expression() {
-	override val type: Type = valueEntity.getType()
+	override val type: Type = valueEntity.type
 }
 
 class FunctionCallExpression(
