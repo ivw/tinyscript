@@ -37,7 +37,7 @@ expression
 	|	Impure? objectType? '->' NL* expression									# FunctionExpression
 	;
 
-block: '(' NL* (statementList (',' | NL+))? expression NL* ')';
+block: '(' NL* ((statementList (',' | NL+))? expression NL*)? ')';
 
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
@@ -47,7 +47,7 @@ objectStatement
 	;
 
 typeExpression
-	:	'(' typeExpression ')'													# ParenTypeExpression
+	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
 	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
 	|	Name																	# TypeReferenceExpression

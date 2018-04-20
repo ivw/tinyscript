@@ -51,9 +51,9 @@ class NameReferenceExpression(
 	val name: String,
 	override val isImpure: Boolean,
 	val argumentsObjectExpression: ObjectExpression?,
-	val valueEntity: ValueEntity
+	val valueResult: ValueResult
 ) : Expression() {
-	override val type: Type = valueEntity.type
+	override val type: Type = valueResult.type
 }
 
 class FunctionCallExpression(
@@ -75,7 +75,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val name: String = Name().text
 		val isImpure: Boolean = Impure() != null
 		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
-		val valueEntity: ValueEntity = scope.findValueEntity(NameSignature(
+		val valueResult: ValueResult = scope.findValueEntity(NameSignature(
 			null,
 			name,
 			isImpure,
@@ -86,7 +86,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			name,
 			isImpure,
 			argumentsObjectExpression,
-			valueEntity
+			valueResult
 		)
 	}
 	is TinyScriptParser.ObjectExpressionContext ->

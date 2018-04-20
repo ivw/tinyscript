@@ -3,21 +3,16 @@ package tinyscript.compiler.scope
 sealed class Entity
 
 
-abstract class ValueEntity(
+abstract class FunctionEntity(
 	val signature: Signature
 ) : Entity() {
 	abstract val type: Type
 }
 
-class BuiltInValueEntity(
+class BuiltInFunctionEntity(
 	signature: Signature,
 	override val type: Type
-) : ValueEntity(signature)
-
-class ParameterValueEntity(
-	signature: Signature,
-	override val type: Type
-) : ValueEntity(signature)
+) : FunctionEntity(signature)
 
 
 abstract class TypeEntity(

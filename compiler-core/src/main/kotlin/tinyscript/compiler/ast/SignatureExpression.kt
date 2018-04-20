@@ -11,13 +11,13 @@ class NameSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val name: String,
 	val isImpure: Boolean,
-	val paramsObjectType: ObjectTypeExpression?
+	val paramsObjectTypeExpression: ObjectTypeExpression?
 ) : SignatureExpression() {
 	override val signature = NameSignature(
 		lhsTypeExpression?.type,
 		name,
 		isImpure,
-		paramsObjectType?.type
+		paramsObjectTypeExpression?.type
 	)
 }
 

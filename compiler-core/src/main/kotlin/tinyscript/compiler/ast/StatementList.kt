@@ -15,7 +15,7 @@ fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): Statemen
 
 fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementList {
 	val entityCollection = MutableEntityCollection()
-	val scope = Scope(parentScope, entityCollection)
+	val scope = DeclarationScope(parentScope, entityCollection)
 	val orderedStatements: MutableList<Statement> = ArrayList()
 	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
 	var hasImpureImperativeStatement: Boolean = false
