@@ -36,7 +36,7 @@ class DeclarationScope(
 
 	override fun findType(name: String): TypeResult? =
 		lazyTypeMap[name]?.let { lazyType -> TypeResult(this, lazyType()) }
-			?: parentScope?.findType(name)
+			?: super.findType(name)
 }
 
 class FunctionScope(
