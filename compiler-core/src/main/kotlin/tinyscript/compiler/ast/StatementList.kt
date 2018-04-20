@@ -1,7 +1,10 @@
 package tinyscript.compiler.ast
 
 import tinyscript.compiler.ast.parser.TinyScriptParser
-import tinyscript.compiler.scope.*
+import tinyscript.compiler.scope.DeclarationScope
+import tinyscript.compiler.scope.NameSignature
+import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.Type
 import tinyscript.compiler.util.SafeLazy
 
 class StatementList(
@@ -14,8 +17,7 @@ fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): Statemen
 	statement().analyse(parentScope)
 
 fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementList {
-	val entityCollection = MutableEntityCollection()
-	val scope = DeclarationScope(parentScope, entityCollection)
+	val scope = DeclarationScope(parentScope)
 	val orderedStatements: MutableList<Statement> = ArrayList()
 	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
 	var hasImpureImperativeStatement: Boolean = false
@@ -31,9 +33,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					TypeAliasDeclaration(name, typeExpression)
 						.also { orderedStatements.add(it) }
 				}
-				entityCollection.typeEntities.add(object : TypeEntity(name) {
-					override val type: Type get() = lazyTypeAliasDeclaration.get().typeExpression.type
-				})
+				scope.lazyTypeMap[name] = { lazyTypeAliasDeclaration.get().typeExpression.type }
 				lazyStatementList.add(lazyTypeAliasDeclaration)
 			}
 		}

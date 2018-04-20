@@ -1,5 +1,7 @@
 package tinyscript.compiler.scope
 
+import tinyscript.compiler.ast.AnalysisException
+
 sealed class ScopeResult(val scope: Scope)
 
 sealed class ValueResult(scope: Scope, val type: Type) : ScopeResult(scope)
@@ -15,7 +17,7 @@ class FunctionValueResult(
 
 class ParameterValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
 
-class TypeResult(scope: Scope) : ScopeResult(scope)
+class TypeResult(scope: Scope, val type: Type) : ScopeResult(scope)
 
 //
 //
@@ -29,7 +31,7 @@ fun NameSignature.couldBeField() = !isImpure && paramsObjectType == null
 //
 //
 
-sealed class Scope(val parentScope: Scope?) {
+abstract class Scope(val parentScope: Scope?) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
 	open fun findValueEntity(signature: Signature): ValueResult? =
@@ -41,24 +43,38 @@ sealed class Scope(val parentScope: Scope?) {
 
 class DeclarationScope(
 	parentScope: Scope?,
-	val lazyFieldMap: Map<String, () -> Type>,
-	val lazyFunctionMap: List<SignatureEntry<() -> Type>>,
-	val lazyTypeMap: Map<String, () -> Type>
+	val lazyFieldMap: MutableMap<String, () -> Type> = HashMap(),
+	val lazyFunctionMap: MutableList<SignatureEntry<() -> Type>> = ArrayList(),
+	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findValueEntity(signature: Signature): ValueResult? {
-		if (signature is NameSignature && !signature.couldBeField()) {
-			lazyFieldMap[signature.name]?.let {lazyFieldType ->
+		if (signature is NameSignature && signature.couldBeField()) {
+			lazyFieldMap[signature.name]?.let { lazyFieldType ->
 				return LocalFieldValueResult(this, lazyFieldType())
 			}
 		}
 
-		// TODO
+		// TODO store functions by name for efficiency
+		val functionResults: List<FunctionValueResult> = lazyFunctionMap.mapIndexedNotNull { index, signatureEntry ->
+			if (signatureEntry.signature.accepts(signature))
+				FunctionValueResult(
+					this,
+					signatureEntry.value(),
+					signatureEntry.signature,
+					index
+				)
+			else null
+		}
+		if (functionResults.size > 1)
+			throw AnalysisException("ambiguous function signatures")
+		if (functionResults.size == 1)
+			return functionResults[0]
 
 		return super.findValueEntity(signature)
 	}
 
 	override fun findTypeEntity(name: String): TypeResult? =
-		entityCollection.findTypeEntity(name)
+		lazyTypeMap[name]?.let { lazyType -> TypeResult(this, lazyType()) }
 			?: parentScope?.findTypeEntity(name)
 }
 
@@ -67,7 +83,7 @@ class FunctionScope(
 	val paramsObjectType: ObjectType
 ) : Scope(parentScope) {
 	override fun findValueEntity(signature: Signature): ValueResult? {
-		if (signature is NameSignature && !signature.couldBeField()) {
+		if (signature is NameSignature && signature.couldBeField()) {
 			paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
 				return ParameterValueResult(this, fieldType)
 			}
