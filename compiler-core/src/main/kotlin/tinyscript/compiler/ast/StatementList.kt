@@ -2,6 +2,8 @@ package tinyscript.compiler.ast
 
 import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.scope.DeclarationScope
+import tinyscript.compiler.scope.FunctionScope
+import tinyscript.compiler.scope.NameSignature
 import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.util.SafeLazy
 
@@ -63,9 +65,13 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 			}
 			is TinyScriptParser.FunctionDeclarationContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)
+				val signature = signatureExpression.signature
 
 				val lazyFunctionDeclaration = SafeLazy {
-					val expression = statementCtx.expression().analyse(scope)
+					val functionScope: Scope = if (signature is NameSignature && signature.paramsObjectType != null) {
+						FunctionScope(scope, signature.paramsObjectType)
+					} else scope
+					val expression = statementCtx.expression().analyse(functionScope)
 					if (expression.isImpure && !signatureExpression.signature.isImpure)
 						throw AnalysisException("function signature must be impure if its expression is impure")
 
