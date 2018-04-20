@@ -2,9 +2,7 @@ package tinyscript.compiler.ast
 
 import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.scope.DeclarationScope
-import tinyscript.compiler.scope.NameSignature
 import tinyscript.compiler.scope.Scope
-import tinyscript.compiler.scope.Type
 import tinyscript.compiler.util.SafeLazy
 
 class StatementList(
@@ -22,7 +20,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
 	var hasImpureImperativeStatement: Boolean = false
 
-	// first make sure all the type entities are in the scope
+	// first make sure all the types are in the scope
 	forEach { statementCtx ->
 		when (statementCtx) {
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
@@ -39,7 +37,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 		}
 	}
 
-	// now add all the value entities to scope (some entity signatures need the type entities)
+	// now add all the values to scope (signatures might need the types)
 	forEach { statementCtx ->
 		when (statementCtx) {
 			is TinyScriptParser.ImperativeStatementContext -> {
@@ -59,11 +57,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				}
 
 				if (name != null) {
-					entityCollection.valueEntities.add(object : ValueEntity(
-						NameSignature(null, name, false, null)
-					) {
-						override val type: Type get() = lazyImperativeStatement.get().expression.type
-					})
+					scope.lazyFieldMap[name] = { lazyImperativeStatement.get().expression.type }
 				}
 				lazyStatementList.add(lazyImperativeStatement)
 			}
@@ -78,10 +72,8 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					FunctionDeclaration(signatureExpression, expression)
 						.also { orderedStatements.add(it) }
 				}
-				entityCollection.valueEntities.add(object : ValueEntity(
-					signatureExpression.signature
-				) {
-					override val type: Type get() = lazyFunctionDeclaration.get().expression.type
+				scope.lazyFunctionMap.add(signatureExpression.signature, {
+					lazyFunctionDeclaration.get().expression.type
 				})
 				lazyStatementList.add(lazyFunctionDeclaration)
 			}

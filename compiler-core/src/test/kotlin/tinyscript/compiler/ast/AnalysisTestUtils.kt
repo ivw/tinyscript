@@ -4,8 +4,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import tinyscript.compiler.ast.parser.TinyScriptLexer
 import tinyscript.compiler.ast.parser.TinyScriptParser
-import tinyscript.compiler.scope.Scope
-import tinyscript.compiler.scope.builtInEntities
 import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {
@@ -16,7 +14,7 @@ fun assertAnalysis(codeString: String) {
 	if (parser.numberOfSyntaxErrors > 0)
 		throw RuntimeException("parsing failed")
 
-	val statementList = fileCtx.statementList().analyse(Scope(null, builtInEntities))
+	val statementList = fileCtx.statementList().analyse(null)
 	if (statementList.hasImpureImperativeStatement)
 		throw AnalysisException("file scope can not have impure imperative statements")
 }

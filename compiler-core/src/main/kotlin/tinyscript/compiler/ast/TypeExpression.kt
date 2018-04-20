@@ -13,8 +13,10 @@ class ParenTypeExpression(val typeExpression: TypeExpression) : TypeExpression()
 
 class TypeReferenceExpression(
 	val name: String,
-	override val type: Type
-) : TypeExpression()
+	val typeResult: TypeResult
+) : TypeExpression() {
+	override val type: Type = typeResult.type
+}
 
 class FunctionTypeExpression(
 	val isImpure: Boolean,
@@ -53,9 +55,9 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 	is TinyScriptParser.ObjectTypeExpressionContext -> objectType().analyse(scope)
 	is TinyScriptParser.TypeReferenceExpressionContext -> {
 		val name: String = Name().text
-		val typeEntity: TypeEntity = scope.findTypeEntity(name)
+		val typeResult: TypeResult = scope.findType(name)
 			?: throw AnalysisException("unresolved type reference '$name'")
-		TypeReferenceExpression(name, typeEntity.type)
+		TypeReferenceExpression(name, typeResult)
 	}
 	else -> TODO()
 }

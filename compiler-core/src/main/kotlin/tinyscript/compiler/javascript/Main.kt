@@ -4,8 +4,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import tinyscript.compiler.ast.AnalysisException
 import tinyscript.compiler.ast.analyse
-import tinyscript.compiler.scope.Scope
-import tinyscript.compiler.scope.builtInEntities
 import tinyscript.compiler.ast.parser.TinyScriptLexer
 import tinyscript.compiler.ast.parser.TinyScriptParser
 import tinyscript.compiler.util.IndentedWriter
@@ -28,9 +26,7 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 		throw RuntimeException("parsing failed")
 
 	println("Starting analysis")
-	val statementList = fileCtx.statementList().analyse(
-		Scope(null, builtInEntities)
-	)
+	val statementList = fileCtx.statementList().analyse(null)
 	if (statementList.hasImpureImperativeStatement)
 		throw AnalysisException("file scope can not have impure imperative statements")
 	println("Analysis done\n")

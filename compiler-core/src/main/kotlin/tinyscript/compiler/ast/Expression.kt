@@ -75,7 +75,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val name: String = Name().text
 		val isImpure: Boolean = Impure() != null
 		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
-		val valueResult: ValueResult = scope.findValueEntity(NameSignature(
+		val valueResult: ValueResult = scope.findValue(NameSignature(
 			null,
 			name,
 			isImpure,
