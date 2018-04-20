@@ -52,6 +52,4 @@ class FunctionScope(
 
 		return super.findValue(signature)
 	}
-
-	override fun findType(name: String): TypeResult? = null
 }
