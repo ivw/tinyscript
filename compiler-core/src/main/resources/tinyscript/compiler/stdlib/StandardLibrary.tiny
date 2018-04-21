@@ -1,0 +1,3 @@
+native println![]: ()
+
+type Int = () // TODO

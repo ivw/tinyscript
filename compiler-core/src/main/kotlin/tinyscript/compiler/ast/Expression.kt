@@ -86,7 +86,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			isImpure,
 			argumentsObjectExpression?.type
 		))
-			?: throw AnalysisException("unresolved reference")
+			?: throw AnalysisException("unresolved reference '$name'")
 		NameReferenceExpression(
 			name,
 			isImpure,

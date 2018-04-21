@@ -16,7 +16,7 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Parsing done\n")
 
 	println("Starting analysis")
-	val statementList = fileCtx.statementList().statement().analysePure(null)
+	val statementList = fileCtx.statementList().statement().analysePure(StandardLibrary.scope)
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
