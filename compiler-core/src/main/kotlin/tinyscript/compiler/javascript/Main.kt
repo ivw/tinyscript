@@ -11,9 +11,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
-	StandardLibrary.scope // FIXME
-
-	println("Reading and parsing file '${readPath.fileName}'\n")
+	println("Reading and parsing file '${readPath.fileName}'")
 	val fileCtx = parseFile(CharStreams.fromPath(readPath))
 	println("Parsing done\n")
 
