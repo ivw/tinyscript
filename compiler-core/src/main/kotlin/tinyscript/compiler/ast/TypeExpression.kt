@@ -7,8 +7,8 @@ sealed class TypeExpression {
 	abstract val type: Type
 }
 
-class ParenTypeExpression(val typeExpression: TypeExpression) : TypeExpression() {
-	override val type get() = typeExpression.type
+class AnyTypeExpression: TypeExpression() {
+	override val type = AnyType
 }
 
 class TypeReferenceExpression(
@@ -46,7 +46,8 @@ class ObjectTypeExpression(val objectTypeStatements: List<ObjectTypeStatement>) 
 }
 
 fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression = when (this) {
-	is TinyScriptParser.ParenTypeExpressionContext -> ParenTypeExpression(typeExpression().analyse(scope))
+	is TinyScriptParser.ParenTypeExpressionContext ->
+		typeExpression()?.analyse(scope) ?: AnyTypeExpression()
 	is TinyScriptParser.FunctionTypeExpressionContext -> FunctionTypeExpression(
 		Impure() != null,
 		objectType()?.analyse(scope),

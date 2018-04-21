@@ -9,14 +9,19 @@ sealed class Expression {
 	abstract val isImpure: Boolean
 }
 
+class AnyExpression : Expression() {
+	override val type = AnyType
+	override val isImpure = false
+}
+
 class BlockExpression(
-	val statementList: StatementList?,
+	val statementList: StatementList,
 	val expression: Expression
 ) : Expression() {
 	override val type get() = expression.type
 
 	override val isImpure: Boolean =
-		(statementList?.hasImpureImperativeStatement ?: false) || expression.isImpure
+		statementList.hasImpureImperativeStatement || expression.isImpure
 }
 
 class IntExpression(val value: Int) : Expression() {
@@ -94,11 +99,17 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	else -> TODO()
 }
 
-fun TinyScriptParser.BlockContext.analyse(scope: Scope): BlockExpression {
-	val statementCollection = statementList()?.analyse(scope)
+fun TinyScriptParser.BlockContext.analyse(scope: Scope): Expression {
+	val expressionCtx = expression()
+		?: return AnyExpression()
+
+	val statementListCtx = statementList()
+		?: return expressionCtx.analyse(scope)
+
+	val statementCollection = statementListCtx.analyse(scope)
 	return BlockExpression(
 		statementCollection,
-		expression().analyse(statementCollection?.scope ?: scope)
+		expressionCtx.analyse(statementCollection.scope)
 	)
 }
 
