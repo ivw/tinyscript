@@ -1,6 +1,6 @@
 package tinyscript.compiler.ast
 
-import tinyscript.compiler.ast.parser.TinyScriptParser
+import tinyscript.compiler.parser.TinyScriptParser
 import tinyscript.compiler.scope.*
 
 sealed class SignatureExpression {

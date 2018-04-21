@@ -1,6 +1,6 @@
 grammar TinyScript;
 
-@header {package tinyscript.compiler.ast.parser;}
+@header {package tinyscript.compiler.parser;}
 
 // start
 file: NL* statementList? NL* EOF;

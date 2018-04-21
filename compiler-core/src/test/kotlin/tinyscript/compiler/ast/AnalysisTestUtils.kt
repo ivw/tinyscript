@@ -2,8 +2,8 @@ package tinyscript.compiler.ast
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import tinyscript.compiler.ast.parser.TinyScriptLexer
-import tinyscript.compiler.ast.parser.TinyScriptParser
+import tinyscript.compiler.parser.TinyScriptLexer
+import tinyscript.compiler.parser.TinyScriptParser
 import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {

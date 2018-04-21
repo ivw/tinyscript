@@ -4,8 +4,8 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import tinyscript.compiler.ast.AnalysisException
 import tinyscript.compiler.ast.analyse
-import tinyscript.compiler.ast.parser.TinyScriptLexer
-import tinyscript.compiler.ast.parser.TinyScriptParser
+import tinyscript.compiler.parser.TinyScriptLexer
+import tinyscript.compiler.parser.TinyScriptParser
 import tinyscript.compiler.util.IndentedWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
