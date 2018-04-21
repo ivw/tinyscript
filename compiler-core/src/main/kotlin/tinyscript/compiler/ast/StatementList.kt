@@ -102,3 +102,9 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 
 	return StatementList(scope, orderedStatements, hasImpureImperativeStatement)
 }
+
+fun Iterable<TinyScriptParser.StatementContext>.analysePure(parentScope: Scope?): StatementList =
+	analyse(parentScope).also {
+		if (it.hasImpureImperativeStatement)
+			throw AnalysisException("file scope can not have impure imperative statements")
+	}

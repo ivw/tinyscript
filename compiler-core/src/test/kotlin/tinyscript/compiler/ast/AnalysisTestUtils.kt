@@ -1,22 +1,13 @@
 package tinyscript.compiler.ast
 
 import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
-import tinyscript.compiler.parser.TinyScriptLexer
-import tinyscript.compiler.parser.TinyScriptParser
+import tinyscript.compiler.parser.parseFile
 import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {
-	val lexer = TinyScriptLexer(CharStreams.fromString(codeString.trimIndent()))
-	val parser = TinyScriptParser(CommonTokenStream(lexer))
-	val fileCtx = parser.file()
+	val fileCtx = parseFile(CharStreams.fromString(codeString.trimIndent()))
 
-	if (parser.numberOfSyntaxErrors > 0)
-		throw RuntimeException("parsing failed")
-
-	val statementList = fileCtx.statementList().analyse(null)
-	if (statementList.hasImpureImperativeStatement)
-		throw AnalysisException("file scope can not have impure imperative statements")
+	fileCtx.statementList().statement().analysePure(null)
 }
 
 fun assertAnalysisFails(
