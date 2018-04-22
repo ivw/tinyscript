@@ -13,7 +13,7 @@ fun assertAnalysis(codeString: String) {
 
 fun assertAnalysisFails(
 	codeString: String,
-	exceptionClass: kotlin.reflect.KClass<out Throwable> = AnalysisException::class
+	exceptionClass: kotlin.reflect.KClass<out Throwable>
 ) {
 	assertFailsWith(exceptionClass) { assertAnalysis(codeString) }
 }

@@ -1,6 +1,8 @@
 package tinyscript.compiler.scope
 
-import tinyscript.compiler.ast.AnalysisException
+class AmbiguousSignatureException : RuntimeException(
+	"ambiguous signatures"
+)
 
 class SignatureMap<V> {
 	private val entries: MutableList<Entry<V>> = arrayListOf()
@@ -8,7 +10,7 @@ class SignatureMap<V> {
 	fun get(signature: Signature): Entry<V>? {
 		val hits = entries.filter { it.signature.accepts(signature) }
 		if (hits.size > 1)
-			throw AnalysisException("ambiguous signatures")
+			throw AmbiguousSignatureException()
 		return if (hits.size == 1) hits[0] else null
 	}
 

@@ -45,6 +45,10 @@ class ObjectTypeExpression(val objectTypeStatements: List<ObjectTypeStatement>) 
 	})
 }
 
+class TypeAliasNotFoundException(val name: String) : RuntimeException(
+	"unresolved type reference '$name'"
+)
+
 fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression = when (this) {
 	is TinyScriptParser.ParenTypeExpressionContext ->
 		typeExpression()?.analyse(scope) ?: AnyTypeExpression()
@@ -57,7 +61,7 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 	is TinyScriptParser.TypeReferenceExpressionContext -> {
 		val name: String = Name().text
 		val typeResult: TypeResult = scope.findType(name)
-			?: throw AnalysisException("unresolved type reference '$name'")
+			?: throw TypeAliasNotFoundException(name)
 		TypeReferenceExpression(name, typeResult)
 	}
 	else -> TODO()

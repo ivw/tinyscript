@@ -13,6 +13,18 @@ class StatementList(
 	val hasImpureImperativeStatement: Boolean
 )
 
+class ImpureForwardReferenceException(val fieldName: String) : RuntimeException(
+	"can not forward reference an impure imperative declaration ($fieldName)"
+)
+
+class PureFunctionWithImpureExpressionException(val signatureExpression: SignatureExpression) : RuntimeException(
+	"function signature must be impure if its expression is impure"
+)
+
+class DisallowedImpureStatementException : RuntimeException(
+	"impure imperative statements not allowed here"
+)
+
 fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): StatementList =
 	statement().analyse(parentScope)
 
@@ -49,7 +61,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 					val expression = statementCtx.expression().analyse(scope)
 					if (expression.isImpure) {
 						if (!isRoot)
-							throw AnalysisException("can not forward reference an impure imperative declaration")
+							throw ImpureForwardReferenceException(name!!)
 
 						hasImpureImperativeStatement = true
 					}
@@ -72,8 +84,8 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 						FunctionScope(scope, signature.paramsObjectType)
 					} else scope
 					val expression = statementCtx.expression().analyse(functionScope)
-					if (expression.isImpure && !signatureExpression.signature.isImpure)
-						throw AnalysisException("function signature must be impure if its expression is impure")
+					if (!signatureExpression.signature.isImpure && expression.isImpure)
+						throw PureFunctionWithImpureExpressionException(signatureExpression)
 
 					FunctionDeclaration(signatureExpression, expression)
 						.also { orderedStatements.add(it) }
@@ -120,5 +132,5 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 fun Iterable<TinyScriptParser.StatementContext>.analysePure(parentScope: Scope?): StatementList =
 	analyse(parentScope).also {
 		if (it.hasImpureImperativeStatement)
-			throw AnalysisException("file scope can not have impure imperative statements")
+			throw DisallowedImpureStatementException()
 	}

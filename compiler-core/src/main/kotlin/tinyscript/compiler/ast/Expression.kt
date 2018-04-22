@@ -71,6 +71,14 @@ class OperatorCallExpression(
 	override val type: Type = valueResult.type
 }
 
+class NameSignatureNotFoundException(val nameSignature: NameSignature) : RuntimeException(
+	"unresolved reference '${nameSignature.name}'"
+)
+
+class OperatorSignatureNotFoundException(val operatorSignature: OperatorSignature) : RuntimeException(
+	"unresolved reference '${operatorSignature.operatorSymbol}'"
+)
+
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
 	is TinyScriptParser.BlockExpressionContext ->
 		block().analyse(scope)
@@ -84,13 +92,14 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val isImpure: Boolean = Impure() != null
 		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
 
-		val valueResult = scope.findValue(NameSignature(
+		val nameSignature = NameSignature(
 			null,
 			name,
 			isImpure,
 			argumentsObjectExpression?.type
-		))
-			?: throw AnalysisException("unresolved reference '$name'")
+		)
+		val valueResult = scope.findValue(nameSignature)
+			?: throw NameSignatureNotFoundException(nameSignature)
 
 		NameReferenceExpression(
 			name,
@@ -105,13 +114,14 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val isImpure: Boolean = Impure() != null
 		val rhsExpression = rhs.analyse(scope)
 
-		val valueResult = scope.findValue(OperatorSignature(
+		val operatorSignature = OperatorSignature(
 			lhsExpression.type,
 			operatorSymbol,
 			isImpure,
 			rhsExpression.type
-		))
-			?: throw AnalysisException("unresolved reference '$operatorSymbol'")
+		)
+		val valueResult = scope.findValue(operatorSignature)
+			?: throw OperatorSignatureNotFoundException(operatorSignature)
 
 		OperatorCallExpression(
 			lhsExpression,

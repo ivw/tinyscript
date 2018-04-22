@@ -18,10 +18,10 @@ object StatementListSpec : Spek({
 		it("can not state an impure expression in file scope") {
 			assertAnalysisFails("""
 				println![]
-			""")
+			""", DisallowedImpureStatementException::class)
 			assertAnalysisFails("""
 				result = println![]
-			""")
+			""", DisallowedImpureStatementException::class)
 		}
 		it("can state an impure expression in impure scope") {
 			assertAnalysis("""
@@ -56,10 +56,10 @@ object StatementListSpec : Spek({
 		it("can not declare a pure function with an impure expression") {
 			assertAnalysisFails("""
 				printEmptyLine => println![]
-			""")
+			""", PureFunctionWithImpureExpressionException::class)
 			assertAnalysisFails("""
 				printDouble[n: Int] => println![m = n * 2]
-			""")
+			""", PureFunctionWithImpureExpressionException::class)
 		}
 		it("can declare an impure function with an impure expression") {
 			assertAnalysis("""
