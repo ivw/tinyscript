@@ -46,19 +46,41 @@ object ExpressionSpec : Spek({
 					foo = (((((3))) * (2)))
 				""")
 			}
+			it("is impure if the inner expression is impure") {
+				assertAnalysisFails("""
+					foo = (println![])
+				""", DisallowedImpureStatementException::class)
+			}
 		}
 
 		describe("with statements") {
 			it("returns the final expression type") {
 				assertAnalysis("""
 					total = (
-						n = 2
+						getN[] => 2
+						n = getN[]
 						n * n
 					) * 2
 				""")
 				assertAnalysis("""
 					total = ( n = 2, n * n ) * 2
 				""")
+			}
+			it("is impure if the inner expression is impure or one of the statements is impure") {
+				assertAnalysisFails("""
+					foo = (
+						println![]
+						1
+					)
+					foo = (
+						a = 1
+						println![]
+					)
+					foo = (
+						println![]
+						println![]
+					)
+				""", DisallowedImpureStatementException::class)
 			}
 		}
 	}
