@@ -1,3 +1,5 @@
 native println![]: ()
 
 type Int = () // TODO
+
+native Int * Int: Int

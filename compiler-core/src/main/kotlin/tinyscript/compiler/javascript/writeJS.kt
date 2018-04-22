@@ -24,22 +24,16 @@ fun Statement.writeJS(out: IndentedWriter): Unit = when (this) {
 
 fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is BlockExpression -> {
-		if (statementList == null || statementList.orderedStatements.isEmpty()) {
-			out.write("(")
-			expression.writeJS(out)
-			out.write(")")
-		} else {
-			out.write("(function () {")
-			out.indent++
-			out.newLine()
-			statementList.orderedStatements.forEach { it.writeJS(out) }
-			out.write("return ")
-			expression.writeJS(out)
-			out.write(";")
-			out.newLine()
-			out.indent--
-			out.write("})()")
-		}
+		out.write("(function () {")
+		out.indent++
+		out.newLine()
+		statementList.orderedStatements.forEach { it.writeJS(out) }
+		out.write("return ")
+		expression.writeJS(out)
+		out.write(";")
+		out.newLine()
+		out.indent--
+		out.write("})()")
 	}
 	is IntExpression -> {
 		out.write(value.toString())
@@ -50,12 +44,6 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 	is ObjectExpression -> {
 		out.write("[]")
 		// TODO
-	}
-	is FunctionCallExpression -> {
-		out.write(name)
-		out.write("(")
-		argumentsObjectExpression.writeJS(out)
-		out.write(")")
 	}
 	is NameReferenceExpression -> {
 		out.write(name)

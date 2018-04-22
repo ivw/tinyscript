@@ -22,6 +22,15 @@ class FunctionDeclaration(
 	}
 }
 
+class NativeDeclaration(
+	val signatureExpression: SignatureExpression,
+	val typeExpression: TypeExpression
+) : Statement() {
+	override fun finalize() {
+		// TODO
+	}
+}
+
 class TypeAliasDeclaration(
 	val name: String,
 	val typeExpression: TypeExpression

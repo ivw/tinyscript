@@ -83,6 +83,20 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				})
 				lazyStatementList.add(lazyFunctionDeclaration)
 			}
+			is TinyScriptParser.NativeDeclarationContext -> {
+				val signatureExpression = statementCtx.signature().analyse(scope)
+
+				val lazyNativeDeclaration = SafeLazy {
+					val typeExpression = statementCtx.typeExpression().analyse(scope)
+
+					NativeDeclaration(signatureExpression, typeExpression)
+						.also { orderedStatements.add(it) }
+				}
+				scope.lazyFunctionMap.add(signatureExpression.signature, {
+					lazyNativeDeclaration.get().typeExpression.type
+				})
+				lazyStatementList.add(lazyNativeDeclaration)
+			}
 		}
 	}
 

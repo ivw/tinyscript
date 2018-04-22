@@ -30,7 +30,7 @@ expression
 	|	Name Impure? object?													# NameReferenceExpression
 	|	expression NL* '.' Name? Impure? object?								# DotNameReferenceExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
-	|	expression NL* OperatorSymbol Impure? NL* expression					# InfixOperatorCallExpression
+	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
