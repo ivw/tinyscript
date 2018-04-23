@@ -84,4 +84,16 @@ object ExpressionSpec : Spek({
 			}
 		}
 	}
+
+	describe("ObjectExpression") {
+		it("works") {
+			assertAnalysis("""
+				foo = []
+			""")
+			assertAnalysis("""
+				foo = [ a = 1 ]
+			""")
+		}
+		// TODO
+	}
 })
