@@ -25,7 +25,6 @@ expression
 	|	IntegerLiteral															# IntegerLiteralExpression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
-	|	'this'																	# ThisExpression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
 	|	expression NL* '.' Name? Impure? object?								# DotNameReferenceExpression

@@ -25,7 +25,7 @@ object ExpressionSpec : Spek({
 			}
 		}
 
-		describe("without statements") {
+		describe("block without statements") {
 			it("works") {
 				assertAnalysis("""
 					foo = (3) * 2
@@ -53,7 +53,7 @@ object ExpressionSpec : Spek({
 			}
 		}
 
-		describe("with statements") {
+		describe("block with statements") {
 			it("returns the final expression type") {
 				assertAnalysis("""
 					total = (
