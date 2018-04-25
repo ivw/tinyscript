@@ -41,12 +41,30 @@ class DeclarationScope(
 
 class FunctionScope(
 	parentScope: Scope?,
-	val paramsObjectType: ObjectType
+	val functionSignature: Signature
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
 		if (signature is NameSignature && signature.couldBeField()) {
-			paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
-				return ParameterValueResult(this, fieldType)
+			if (functionSignature is NameSignature) {
+				if (signature.name == "this" && functionSignature.lhsType != null) {
+					return ThisValueResult(this, functionSignature.lhsType)
+				}
+
+				if (functionSignature.paramsObjectType != null) {
+					functionSignature.paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
+						return ParameterValueResult(this, fieldType)
+					}
+				}
+			}
+
+			if (functionSignature is OperatorSignature) {
+				if (signature.name == "left" && functionSignature.lhsType != null) {
+					return OperatorLhsValueResult(this, functionSignature.lhsType)
+				}
+
+				if (signature.name == "right") {
+					return OperatorRhsValueResult(this, functionSignature.rhsType)
+				}
 			}
 		}
 

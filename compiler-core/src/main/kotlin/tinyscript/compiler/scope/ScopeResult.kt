@@ -15,4 +15,11 @@ class FunctionValueResult(
 
 class ParameterValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
 
+class ThisValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
+
+class OperatorLhsValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
+
+class OperatorRhsValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
+
+
 class TypeResult(scope: Scope, val type: Type) : ScopeResult(scope)

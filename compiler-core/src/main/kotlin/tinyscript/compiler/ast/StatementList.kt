@@ -80,9 +80,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				val signature = signatureExpression.signature
 
 				val lazyFunctionDeclaration = SafeLazy {
-					val functionScope: Scope = if (signature is NameSignature && signature.paramsObjectType != null) {
-						FunctionScope(scope, signature.paramsObjectType)
-					} else scope
+					val functionScope = FunctionScope(scope, signature)
 					val expression = statementCtx.expression().analyse(functionScope)
 					if (!signatureExpression.signature.isImpure && expression.isImpure)
 						throw PureFunctionWithImpureExpressionException(signatureExpression)
