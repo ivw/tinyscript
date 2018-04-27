@@ -52,6 +52,9 @@ object StatementListSpec : Spek({
 			assertAnalysis("""
 				double[n: Int] => n * 2
 			""")
+			assertAnalysis("""
+				[] + [] => left
+			""")
 		}
 		it("can not declare a pure function with an impure expression") {
 			assertAnalysisFails("""
@@ -59,6 +62,9 @@ object StatementListSpec : Spek({
 			""", PureFunctionWithImpureExpressionException::class)
 			assertAnalysisFails("""
 				printDouble[n: Int] => println![m = n * 2]
+			""", PureFunctionWithImpureExpressionException::class)
+			assertAnalysisFails("""
+				[] + [] => println![m = left]
 			""", PureFunctionWithImpureExpressionException::class)
 		}
 		it("can declare an impure function with an impure expression") {
@@ -68,6 +74,9 @@ object StatementListSpec : Spek({
 			assertAnalysis("""
 				printDouble![n: Int] => println![m = n * 2]
 			""")
+			assertAnalysis("""
+				[] +! [] => println![m = left]
+			""")
 		}
 		it("can not be recursive") {
 			assertAnalysisFails("""
@@ -75,6 +84,9 @@ object StatementListSpec : Spek({
 			""", SafeLazy.CycleException::class)
 			assertAnalysisFails("""
 				double[n: Int] => double[n = n * 2]
+			""", SafeLazy.CycleException::class)
+			assertAnalysisFails("""
+				[] + [] => left + right
 			""", SafeLazy.CycleException::class)
 		}
 	}
