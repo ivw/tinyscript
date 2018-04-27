@@ -11,7 +11,7 @@ statement
 	:	(Name '=')? expression													# ImperativeStatement
 	|	signature '=>' expression												# FunctionDeclaration
 	|	'native' signature ':' typeExpression									# NativeDeclaration
-	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
+	|	'private'? 'type' Name '=' typeExpression								# TypeAliasDeclaration
 	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
 	;
 

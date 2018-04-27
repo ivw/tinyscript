@@ -28,7 +28,7 @@ class ObjectType(
 //		if (!type.classes.containsAll(classes)) return false
 
 		return fieldMap.entries.all { entry ->
-			val subField = type.fieldMap.get(entry.key)
+			val subField = type.fieldMap[entry.key]
 			subField != null && entry.value.accepts(subField)
 		}
 	}
@@ -57,27 +57,5 @@ class FunctionType(
 
 	override fun toString(): String {
 		return "FunctionType<$params -> $returnType>"
-	}
-}
-
-class IntType(
-	val minValue: Int = Int.MIN_VALUE,
-	val maxValue: Int = Int.MAX_VALUE
-) : Type() {
-	override fun accepts(type: Type): Boolean {
-		if (type !is IntType) return false
-
-		return type.minValue >= minValue && type.maxValue <= maxValue
-	}
-}
-
-class FloatType(
-	val minValue: Double = Double.MIN_VALUE,
-	val maxValue: Double = Double.MAX_VALUE
-) : Type() {
-	override fun accepts(type: Type): Boolean {
-		if (type !is FloatType) return false
-
-		return type.minValue >= minValue && type.maxValue <= maxValue
 	}
 }

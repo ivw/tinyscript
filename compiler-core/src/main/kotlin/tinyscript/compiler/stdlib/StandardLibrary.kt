@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.CharStreams
 import tinyscript.compiler.ast.analysePure
 import tinyscript.compiler.parser.parseFile
 import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.Type
 
 object StandardLibrary {
 	val scope: Scope = run {
@@ -22,4 +23,8 @@ object StandardLibrary {
 
 		statementList.scope
 	}
+
+	val intType: Type = scope.findType("Int")!!.type
+
+	val floatType: Type = scope.findType("Float")!!.type
 }

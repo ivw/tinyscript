@@ -1,5 +1,7 @@
-native println![]: ()
+private type Int = ()
 
-type Int = () // TODO
+private type Float = ()
 
 native Int * Int: Int
+
+native println![]: ()

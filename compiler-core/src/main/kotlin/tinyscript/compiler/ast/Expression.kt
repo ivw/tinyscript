@@ -2,6 +2,7 @@ package tinyscript.compiler.ast
 
 import tinyscript.compiler.parser.TinyScriptParser
 import tinyscript.compiler.scope.*
+import tinyscript.compiler.stdlib.StandardLibrary
 
 sealed class Expression {
 	abstract val type: Type
@@ -25,12 +26,12 @@ class BlockExpression(
 }
 
 class IntExpression(val value: Int) : Expression() {
-	override val type = IntType(value, value)
+	override val type = StandardLibrary.intType
 	override val isImpure: Boolean get() = false
 }
 
 class FloatExpression(val value: Double) : Expression() {
-	override val type = FloatType(value, value)
+	override val type = StandardLibrary.floatType
 	override val isImpure: Boolean get() = false
 }
 
