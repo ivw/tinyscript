@@ -11,8 +11,9 @@ statement
 	:	(Name '=')? expression													# ImperativeStatement
 	|	signature '=>' expression												# FunctionDeclaration
 	|	'native' signature ':' typeExpression									# NativeDeclaration
-	|	'private'? 'type' Name '=' typeExpression								# TypeAliasDeclaration
-	|	'enum' Name '{' NL* Name ((',' | NL+) Name)* NL* '}'					# EnumTypeDeclaration
+	|	Private? 'type' Name '=' typeExpression								# TypeAliasDeclaration
+	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDeclaration
+	|	'{' NL* statementList NL* '}'												# StatementBlock
 	;
 
 signature
@@ -63,7 +64,6 @@ objectTypeStatement
 // LEXER TOKENS
 
 Private: 'private';
-Override: 'override';
 Impure: '!';
 
 IntegerLiteral: [0-9]+;

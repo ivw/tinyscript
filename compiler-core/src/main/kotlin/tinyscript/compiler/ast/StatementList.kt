@@ -39,6 +39,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 		when (statementCtx) {
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = statementCtx.Name().text
+				val isPrivate = statementCtx.Private() != null
 
 				val lazyTypeAliasDeclaration = SafeLazy {
 					val typeExpression = statementCtx.typeExpression().analyse(scope)

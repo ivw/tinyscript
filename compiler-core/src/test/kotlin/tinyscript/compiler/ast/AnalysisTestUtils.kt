@@ -6,7 +6,7 @@ import tinyscript.compiler.stdlib.StandardLibrary
 import kotlin.test.assertFailsWith
 
 fun assertAnalysis(codeString: String) {
-	val fileCtx = parseFile(CharStreams.fromString(codeString.trimIndent()))
+	val fileCtx = parseFile(CharStreams.fromString(codeString))
 
 	fileCtx.statementList().statement().analysePure(StandardLibrary.scope)
 }

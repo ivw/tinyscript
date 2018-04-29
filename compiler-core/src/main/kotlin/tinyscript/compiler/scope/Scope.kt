@@ -30,8 +30,7 @@ class DeclarationScope(
 				it.signature,
 				it.index
 			)
-		}
-			?: super.findValue(signature)
+		} ?: super.findValue(signature)
 	}
 
 	override fun findType(name: String): TypeResult? =
