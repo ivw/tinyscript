@@ -1,10 +1,7 @@
 package tinyscript.compiler.ast
 
 import tinyscript.compiler.parser.TinyScriptParser
-import tinyscript.compiler.scope.DeclarationScope
-import tinyscript.compiler.scope.FunctionScope
-import tinyscript.compiler.scope.NameSignature
-import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.*
 import tinyscript.compiler.util.SafeLazy
 
 class StatementList(
@@ -39,7 +36,6 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 		when (statementCtx) {
 			is TinyScriptParser.TypeAliasDeclarationContext -> {
 				val name = statementCtx.Name().text
-				val isPrivate = statementCtx.Private() != null
 
 				val lazyTypeAliasDeclaration = SafeLazy {
 					val typeExpression = statementCtx.typeExpression().analyse(scope)
@@ -48,6 +44,13 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				}
 				scope.lazyTypeMap[name] = { lazyTypeAliasDeclaration.get().typeExpression.type }
 				lazyStatementList.add(lazyTypeAliasDeclaration)
+			}
+			is TinyScriptParser.NativeTypeDeclarationContext -> {
+				val name = statementCtx.Name().text
+
+				val nativeTypeDeclaration = NativeTypeDeclaration(name, NativeType())
+					.also { orderedStatements.add(it) }
+				scope.lazyTypeMap[name] = { nativeTypeDeclaration.nativeType }
 			}
 		}
 	}

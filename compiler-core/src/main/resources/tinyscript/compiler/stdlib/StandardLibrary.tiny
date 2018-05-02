@@ -1,6 +1,6 @@
-private type Int = ()
+native type Int
 
-private type Float = ()
+native type Float
 
 native Int * Int: Int
 

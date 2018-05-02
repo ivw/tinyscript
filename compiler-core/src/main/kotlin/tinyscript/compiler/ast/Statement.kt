@@ -1,5 +1,7 @@
 package tinyscript.compiler.ast
 
+import tinyscript.compiler.scope.NativeType
+
 sealed class Statement {
 	abstract fun finalize()
 }
@@ -38,4 +40,8 @@ class TypeAliasDeclaration(
 	override fun finalize() {
 		// TODO
 	}
+}
+
+class NativeTypeDeclaration(val name: String, val nativeType: NativeType) : Statement() {
+	override fun finalize() = Unit
 }

@@ -10,10 +10,10 @@ statementList: statement ((',' | NL+) statement)*;
 statement
 	:	(Name '=')? expression													# ImperativeStatement
 	|	signature '=>' expression												# FunctionDeclaration
-	|	'native' signature ':' typeExpression									# NativeDeclaration
-	|	Private? 'type' Name '=' typeExpression								# TypeAliasDeclaration
+	|	Native signature ':' typeExpression										# NativeDeclaration
+	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
+	|	Native 'type' Name														# NativeTypeDeclaration
 	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDeclaration
-	|	'{' NL* statementList NL* '}'												# StatementBlock
 	;
 
 signature
@@ -64,6 +64,7 @@ objectTypeStatement
 // LEXER TOKENS
 
 Private: 'private';
+Native: 'native';
 Impure: '!';
 
 IntegerLiteral: [0-9]+;

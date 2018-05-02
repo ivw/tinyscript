@@ -12,9 +12,11 @@ sealed class Type {
 object AnyType : Type() {
 	override fun accepts(type: Type): Boolean = true
 
-	override fun toString(): String {
-		return "AnyType"
-	}
+	override fun toString(): String = "AnyType"
+}
+
+class NativeType : Type() {
+	override fun accepts(type: Type): Boolean = type === this
 }
 
 class ObjectType(
@@ -33,9 +35,7 @@ class ObjectType(
 		}
 	}
 
-	override fun toString(): String {
-		return "ObjectType<fieldMap = $fieldMap>"
-	}
+	override fun toString(): String = "ObjectType<fieldMap = $fieldMap>"
 }
 
 class FunctionType(
@@ -55,7 +55,5 @@ class FunctionType(
 		}
 	}
 
-	override fun toString(): String {
-		return "FunctionType<$params -> $returnType>"
-	}
+	override fun toString(): String = "FunctionType<$params -> $returnType>"
 }
