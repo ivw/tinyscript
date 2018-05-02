@@ -48,6 +48,9 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 
+generateGrammarSource {
+    arguments += ["-no-listener", "-no-visitor"]
+}
 tasks.compileKotlin.dependsOn(generateGrammarSource)
 
 jar {
