@@ -34,16 +34,16 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 	// first make sure all the types are in the scope
 	forEach { statementCtx ->
 		when (statementCtx) {
-			is TinyScriptParser.TypeAliasDeclarationContext -> {
+			is TinyScriptParser.TypeAliasDefinitionContext -> {
 				val name = statementCtx.Name().text
 
-				val lazyTypeAliasDeclaration = SafeLazy {
+				val lazyTypeAliasDefinition = SafeLazy {
 					val typeExpression = statementCtx.typeExpression().analyse(scope)
-					TypeAliasDeclaration(name, typeExpression)
+					TypeAliasDefinition(name, typeExpression)
 						.also { orderedStatements.add(it) }
 				}
-				scope.lazyTypeMap[name] = { lazyTypeAliasDeclaration.get().typeExpression.type }
-				lazyStatementList.add(lazyTypeAliasDeclaration)
+				scope.lazyTypeMap[name] = { lazyTypeAliasDefinition.get().typeExpression.type }
+				lazyStatementList.add(lazyTypeAliasDefinition)
 			}
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
 				val name = statementCtx.Name().text
@@ -79,23 +79,23 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 				}
 				lazyStatementList.add(lazyImperativeStatement)
 			}
-			is TinyScriptParser.FunctionDeclarationContext -> {
+			is TinyScriptParser.FunctionDefinitionContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)
 				val signature = signatureExpression.signature
 
-				val lazyFunctionDeclaration = SafeLazy {
+				val lazyFunctionDefinition = SafeLazy {
 					val functionScope = FunctionScope(scope, signature)
 					val expression = statementCtx.expression().analyse(functionScope)
 					if (!signatureExpression.signature.isImpure && expression.isImpure)
 						throw PureFunctionWithImpureExpressionException(signatureExpression)
 
-					FunctionDeclaration(signatureExpression, expression)
+					FunctionDefinition(signatureExpression, expression)
 						.also { orderedStatements.add(it) }
 				}
 				scope.lazyFunctionMap.add(signatureExpression.signature, {
-					lazyFunctionDeclaration.get().expression.type
+					lazyFunctionDefinition.get().expression.type
 				})
-				lazyStatementList.add(lazyFunctionDeclaration)
+				lazyStatementList.add(lazyFunctionDefinition)
 			}
 			is TinyScriptParser.NativeDeclarationContext -> {
 				val signatureExpression = statementCtx.signature().analyse(scope)

@@ -15,7 +15,7 @@ class ImperativeStatement(
 	}
 }
 
-class FunctionDeclaration(
+class FunctionDefinition(
 	val signatureExpression: SignatureExpression,
 	val expression: Expression
 ) : Statement() {
@@ -33,7 +33,7 @@ class NativeDeclaration(
 	}
 }
 
-class TypeAliasDeclaration(
+class TypeAliasDefinition(
 	val name: String,
 	val typeExpression: TypeExpression
 ) : Statement() {

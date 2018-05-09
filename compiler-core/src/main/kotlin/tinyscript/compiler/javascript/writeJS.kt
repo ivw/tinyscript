@@ -17,7 +17,7 @@ fun Statement.writeJS(out: IndentedWriter): Unit = when (this) {
 		out.write(";")
 		out.newLine()
 	}
-	is TypeAliasDeclaration -> {
+	is TypeAliasDefinition -> {
 	}
 	else -> TODO()
 }

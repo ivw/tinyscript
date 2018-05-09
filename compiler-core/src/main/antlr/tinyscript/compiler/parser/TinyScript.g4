@@ -2,18 +2,17 @@ grammar TinyScript;
 
 @header {package tinyscript.compiler.parser;}
 
-// start
 file: NL* statementList? NL* EOF;
 
 statementList: statement ((',' | NL+) statement)*;
 
 statement
 	:	(Name '=')? expression													# ImperativeStatement
-	|	signature '=>' expression												# FunctionDeclaration
+	|	signature '=>' expression												# FunctionDefinition
 	|	Native signature ':' typeExpression										# NativeDeclaration
-	|	'type' Name '=' typeExpression											# TypeAliasDeclaration
+	|	'type' Name '=' typeExpression											# TypeAliasDefinition
 	|	Native 'type' Name														# NativeTypeDeclaration
-	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDeclaration
+	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDefinition
 	;
 
 signature
