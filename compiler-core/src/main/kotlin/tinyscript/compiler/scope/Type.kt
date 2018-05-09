@@ -15,7 +15,7 @@ object AnyType : Type() {
 	override fun toString(): String = "AnyType"
 }
 
-class NativeType : Type() {
+class AtomicType : Type() {
 	override fun accepts(type: Type): Boolean = type === this
 }
 
@@ -56,4 +56,26 @@ class FunctionType(
 	}
 
 	override fun toString(): String = "FunctionType<$params -> $returnType>"
+}
+
+class IntType(
+	val minValue: Int = Int.MIN_VALUE,
+	val maxValue: Int = Int.MAX_VALUE
+) : Type() {
+	override fun accepts(type: Type): Boolean {
+		if (type !is IntType) return false
+
+		return type.minValue >= minValue && type.maxValue <= maxValue
+	}
+}
+
+class FloatType(
+	val minValue: Double = Double.MIN_VALUE,
+	val maxValue: Double = Double.MAX_VALUE
+) : Type() {
+	override fun accepts(type: Type): Boolean {
+		if (type !is FloatType) return false
+
+		return type.minValue >= minValue && type.maxValue <= maxValue
+	}
 }

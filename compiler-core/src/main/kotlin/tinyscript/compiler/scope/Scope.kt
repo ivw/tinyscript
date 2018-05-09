@@ -10,7 +10,35 @@ abstract class Scope(val parentScope: Scope?) {
 		parentScope?.findType(name)
 }
 
-class DeclarationScope(
+class SimpleScope(
+	parentScope: Scope?,
+	val fieldMap: MutableMap<String, Type> = HashMap(),
+	val functionMap: SignatureMap<(Signature) -> Type> = SignatureMap(),
+	val typeMap: MutableMap<String, Type> = HashMap()
+) : Scope(parentScope) {
+	override fun findValue(signature: Signature): ValueResult? {
+		if (signature is NameSignature && signature.couldBeField()) {
+			fieldMap[signature.name]?.let { fieldType ->
+				return LocalFieldValueResult(this, fieldType)
+			}
+		}
+
+		return functionMap.get(signature)?.let {
+			FunctionValueResult(
+				this,
+				it.value(signature),
+				it.signature,
+				it.index
+			)
+		} ?: super.findValue(signature)
+	}
+
+	override fun findType(name: String): TypeResult? =
+		typeMap[name]?.let { type -> TypeResult(this, type) }
+			?: super.findType(name)
+}
+
+class LazyScope(
 	parentScope: Scope?,
 	val lazyFieldMap: MutableMap<String, () -> Type> = HashMap(),
 	val lazyFunctionMap: SignatureMap<() -> Type> = SignatureMap(),

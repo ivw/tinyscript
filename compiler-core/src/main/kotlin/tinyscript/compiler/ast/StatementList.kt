@@ -26,7 +26,7 @@ fun TinyScriptParser.StatementListContext.analyse(parentScope: Scope?): Statemen
 	statement().analyse(parentScope)
 
 fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): StatementList {
-	val scope = DeclarationScope(parentScope)
+	val scope = LazyScope(parentScope)
 	val orderedStatements: MutableList<Statement> = ArrayList()
 	val lazyStatementList: MutableList<SafeLazy<Statement>> = ArrayList()
 	var hasImpureImperativeStatement: Boolean = false
@@ -48,9 +48,9 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
 				val name = statementCtx.Name().text
 
-				val nativeTypeDeclaration = NativeTypeDeclaration(name, NativeType())
+				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType())
 					.also { orderedStatements.add(it) }
-				scope.lazyTypeMap[name] = { nativeTypeDeclaration.nativeType }
+				scope.lazyTypeMap[name] = { nativeTypeDeclaration.atomicType }
 			}
 		}
 	}
