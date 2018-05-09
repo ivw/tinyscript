@@ -4,12 +4,15 @@ val intType = IntType()
 
 val floatType = FloatType()
 
+val stringType = AtomicType()
+
 val intTimesIntSignature = OperatorSignature(intType, "*", false, intType)
 
 val intrinsicsScope: Scope = SimpleScope(null)
 	.apply {
 		typeMap["Int"] = intType
 		typeMap["Float"] = floatType
+		typeMap["String"] = stringType
 
 		functionMap.add(intTimesIntSignature, { signature ->
 			if (signature is OperatorSignature && signature.lhsType is IntType && signature.rhsType is IntType) {

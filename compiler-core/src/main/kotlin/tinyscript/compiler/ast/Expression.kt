@@ -34,6 +34,11 @@ class FloatExpression(val value: Double) : Expression() {
 	override val isImpure: Boolean get() = false
 }
 
+class StringExpression(val value: String) : Expression() {
+	override val type = stringType
+	override val isImpure: Boolean get() = false
+}
+
 class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression() {
 	override val type = ObjectType(mutableMapOf<String, Type>().also { mutableFieldMap ->
 		objectStatements.forEach { objectStatement ->
@@ -86,7 +91,8 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		IntExpression(text.toInt())
 	is TinyScriptParser.FloatLiteralExpressionContext ->
 		FloatExpression(text.toDouble())
-	is TinyScriptParser.StringLiteralExpressionContext -> TODO()
+	is TinyScriptParser.StringLiteralExpressionContext ->
+		StringExpression(text)
 	is TinyScriptParser.NameReferenceExpressionContext -> {
 		val name: String = Name().text
 		val isImpure: Boolean = Impure() != null
