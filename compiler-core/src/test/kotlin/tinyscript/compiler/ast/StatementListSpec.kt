@@ -16,12 +16,12 @@ object StatementListSpec : Spek({
 			""")
 		}
 		it("can not state an impure expression in file scope") {
-			assertAnalysisFails("""
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
 				println![]
-			""", DisallowedImpureStatementException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
 				result = println![]
-			""", DisallowedImpureStatementException::class)
+			""")
 		}
 		it("can state an impure expression in impure scope") {
 			assertAnalysis("""
@@ -38,9 +38,9 @@ object StatementListSpec : Spek({
 			""")
 		}
 		it("can not be recursive") {
-			assertAnalysisFails("""
+			assertAnalysisFails(SafeLazy.CycleException::class, """
 				a = a
-			""", SafeLazy.CycleException::class)
+			""")
 		}
 	}
 
@@ -57,15 +57,15 @@ object StatementListSpec : Spek({
 			""")
 		}
 		it("can not declare a pure function with an impure expression") {
-			assertAnalysisFails("""
+			assertAnalysisFails(PureFunctionWithImpureExpressionException::class, """
 				printEmptyLine => println![]
-			""", PureFunctionWithImpureExpressionException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(PureFunctionWithImpureExpressionException::class, """
 				printDouble[n: Int] => println![m = n * 2]
-			""", PureFunctionWithImpureExpressionException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(PureFunctionWithImpureExpressionException::class, """
 				[] + [] => println![m = left]
-			""", PureFunctionWithImpureExpressionException::class)
+			""")
 		}
 		it("can declare an impure function with an impure expression") {
 			assertAnalysis("""
@@ -79,15 +79,15 @@ object StatementListSpec : Spek({
 			""")
 		}
 		it("can not be recursive") {
-			assertAnalysisFails("""
+			assertAnalysisFails(SafeLazy.CycleException::class, """
 				getOne => getOne
-			""", SafeLazy.CycleException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(SafeLazy.CycleException::class, """
 				double[n: Int] => double[n = n * 2]
-			""", SafeLazy.CycleException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(SafeLazy.CycleException::class, """
 				[] + [] => left + right
-			""", SafeLazy.CycleException::class)
+			""")
 		}
 	}
 })

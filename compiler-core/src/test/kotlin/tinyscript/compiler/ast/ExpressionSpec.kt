@@ -19,9 +19,9 @@ object ExpressionSpec : Spek({
 			}
 
 			it("can not be used for anything") {
-				assertAnalysisFails("""
+				assertAnalysisFails(OperatorSignatureNotFoundException::class, """
 					foo = 2 * ()
-				""", OperatorSignatureNotFoundException::class)
+				""")
 			}
 		}
 
@@ -37,9 +37,9 @@ object ExpressionSpec : Spek({
 
 					) * 2
 				""")
-				assertAnalysisFails("""
+				assertAnalysisFails(OperatorSignatureNotFoundException::class, """
 					foo = (()) * 2
-				""", OperatorSignatureNotFoundException::class)
+				""")
 			}
 			it("can be nested") {
 				assertAnalysis("""
@@ -47,9 +47,9 @@ object ExpressionSpec : Spek({
 				""")
 			}
 			it("is impure if the inner expression is impure") {
-				assertAnalysisFails("""
+				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (println![])
-				""", DisallowedImpureStatementException::class)
+				""")
 			}
 		}
 
@@ -67,7 +67,7 @@ object ExpressionSpec : Spek({
 				""")
 			}
 			it("is impure if the inner expression is impure or one of the statements is impure") {
-				assertAnalysisFails("""
+				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
 						println![]
 						1
@@ -80,7 +80,7 @@ object ExpressionSpec : Spek({
 						println![]
 						println![]
 					)
-				""", DisallowedImpureStatementException::class)
+				""")
 			}
 		}
 	}
@@ -130,10 +130,10 @@ object ExpressionSpec : Spek({
 				a
 				a = 1
 			""")
-			assertAnalysisFails("""
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				a = 1
 				b
-			""", NameSignatureNotFoundException::class)
+			""")
 		}
 		it("can refer to pure functions without parameters") {
 			assertAnalysis("""
@@ -144,14 +144,14 @@ object ExpressionSpec : Spek({
 				a
 				a => 1
 			""")
-			assertAnalysisFails("""
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				a => 1
 				b
-			""", NameSignatureNotFoundException::class)
-			assertAnalysisFails("""
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				a! => 1
 				a
-			""", NameSignatureNotFoundException::class)
+			""")
 		}
 		it("can refer to impure functions without parameters") {
 			assertAnalysis("""
@@ -162,14 +162,14 @@ object ExpressionSpec : Spek({
 				a!
 				a! => 1
 			""", true)
-			assertAnalysisFails("""
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				a! => 1
 				b!
-			""", NameSignatureNotFoundException::class, true)
-			assertAnalysisFails("""
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				a => 1
 				a!
-			""", NameSignatureNotFoundException::class, true)
+			""", true)
 		}
 	}
 })
