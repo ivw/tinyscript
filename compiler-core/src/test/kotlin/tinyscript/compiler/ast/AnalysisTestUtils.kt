@@ -5,15 +5,21 @@ import tinyscript.compiler.parser.parseFile
 import tinyscript.compiler.stdlib.StandardLibrary
 import kotlin.test.assertFailsWith
 
-fun assertAnalysis(codeString: String) {
+fun assertAnalysis(codeString: String, allowImpure: Boolean = false) {
 	val fileCtx = parseFile(CharStreams.fromString(codeString))
 
-	fileCtx.statementList().statement().analysePure(StandardLibrary.scope)
+	val statements = fileCtx.statementList().statement()
+	if (allowImpure) {
+		statements.analyse(StandardLibrary.scope)
+	} else {
+		statements.analysePure(StandardLibrary.scope)
+	}
 }
 
 fun assertAnalysisFails(
 	codeString: String,
-	exceptionClass: kotlin.reflect.KClass<out Throwable>
+	exceptionClass: kotlin.reflect.KClass<out Throwable>,
+	allowImpure: Boolean = false
 ) {
-	assertFailsWith(exceptionClass) { assertAnalysis(codeString) }
+	assertFailsWith(exceptionClass) { assertAnalysis(codeString, allowImpure) }
 }

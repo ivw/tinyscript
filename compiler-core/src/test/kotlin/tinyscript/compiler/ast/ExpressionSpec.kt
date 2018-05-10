@@ -85,6 +85,30 @@ object ExpressionSpec : Spek({
 		}
 	}
 
+	describe("IntegerLiteralExpression") {
+		it("works") {
+			assertAnalysis("""
+				a = 1
+			""")
+		}
+	}
+
+	describe("FloatLiteralExpression") {
+		it("works") {
+			assertAnalysis("""
+				a = 1.0
+			""")
+		}
+	}
+
+	describe("StringLiteralExpression") {
+		it("works") {
+			assertAnalysis("""
+				foo = "bar"
+			""")
+		}
+	}
+
 	describe("ObjectExpression") {
 		it("works") {
 			assertAnalysis("""
@@ -94,6 +118,58 @@ object ExpressionSpec : Spek({
 				foo = [ a = 1 ]
 			""")
 		}
-		// TODO
+	}
+
+	describe("NameReferenceExpression") {
+		it("can refer to fields") {
+			assertAnalysis("""
+				a = 1
+				a
+			""")
+			assertAnalysis("""
+				a
+				a = 1
+			""")
+			assertAnalysisFails("""
+				a = 1
+				b
+			""", NameSignatureNotFoundException::class)
+		}
+		it("can refer to pure functions without parameters") {
+			assertAnalysis("""
+				a => 1
+				a
+			""")
+			assertAnalysis("""
+				a
+				a => 1
+			""")
+			assertAnalysisFails("""
+				a => 1
+				b
+			""", NameSignatureNotFoundException::class)
+			assertAnalysisFails("""
+				a! => 1
+				a
+			""", NameSignatureNotFoundException::class)
+		}
+		it("can refer to impure functions without parameters") {
+			assertAnalysis("""
+				a! => 1
+				a!
+			""", true)
+			assertAnalysis("""
+				a!
+				a! => 1
+			""", true)
+			assertAnalysisFails("""
+				a! => 1
+				b!
+			""", NameSignatureNotFoundException::class, true)
+			assertAnalysisFails("""
+				a => 1
+				a!
+			""", NameSignatureNotFoundException::class, true)
+		}
 	}
 })
