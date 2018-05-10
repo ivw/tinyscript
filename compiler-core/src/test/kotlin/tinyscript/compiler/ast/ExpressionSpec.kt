@@ -171,5 +171,81 @@ object ExpressionSpec : Spek({
 				a!
 			""", true)
 		}
+		it("can refer to pure functions with parameters") {
+			assertAnalysis("""
+				a[] => 1
+				a[]
+			""")
+			assertAnalysis("""
+				a[]
+				a[] => 1
+			""")
+			assertAnalysis("""
+				a[x: Int] => 1
+				a[x = 1]
+			""")
+			assertAnalysis("""
+				a[x: Int] => 1
+				a[x = 1, y = 2]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a[x: Int] => 1
+				a[]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a[x: Int] => 1
+				a[x = "foo"]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a[] => 1
+				b[]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a![] => 1
+				a[]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a => 1
+				a[]
+			""")
+		}
+		it("can refer to impure functions with parameters") {
+			assertAnalysis("""
+				a![] => 1
+				a![]
+			""", true)
+			assertAnalysis("""
+				a![]
+				a![] => 1
+			""", true)
+			assertAnalysis("""
+				a![x: Int] => 1
+				a![x = 1]
+			""", true)
+			assertAnalysis("""
+				a![x: Int] => 1
+				a![x = 1, y = 2]
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a![x: Int] => 1
+				a![]
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a![x: Int] => 1
+				a![x = "foo"]
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a![] => 1
+				b![]
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a[] => 1
+				a![]
+			""", true)
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a! => 1
+				a![]
+			""")
+		}
 	}
 })
