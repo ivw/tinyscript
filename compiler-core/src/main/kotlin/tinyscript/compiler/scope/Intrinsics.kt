@@ -1,8 +1,8 @@
 package tinyscript.compiler.scope
 
-val intType = IntType()
+val intType = IntType(Int.MIN_VALUE, Int.MAX_VALUE)
 
-val floatType = FloatType()
+val floatType = FloatType(Double.MIN_VALUE, Double.MAX_VALUE)
 
 val stringType = AtomicType()
 

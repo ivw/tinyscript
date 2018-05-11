@@ -58,10 +58,7 @@ class FunctionType(
 	override fun toString(): String = "FunctionType<$params -> $returnType>"
 }
 
-class IntType(
-	val minValue: Int = Int.MIN_VALUE,
-	val maxValue: Int = Int.MAX_VALUE
-) : Type() {
+class IntType(val minValue: Int, val maxValue: Int) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is IntType) return false
 
@@ -69,10 +66,7 @@ class IntType(
 	}
 }
 
-class FloatType(
-	val minValue: Double = Double.MIN_VALUE,
-	val maxValue: Double = Double.MAX_VALUE
-) : Type() {
+class FloatType(val minValue: Double, val maxValue: Double) : Type() {
 	override fun accepts(type: Type): Boolean {
 		if (type !is FloatType) return false
 
