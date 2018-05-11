@@ -17,7 +17,7 @@ class SimpleScope(
 	val typeMap: MutableMap<String, Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeField()) {
+		if (signature is NameSignature && signature.couldBeLocalField()) {
 			fieldMap[signature.name]?.let { fieldType ->
 				return LocalFieldValueResult(this, fieldType)
 			}
@@ -45,7 +45,7 @@ class LazyScope(
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeField()) {
+		if (signature is NameSignature && signature.couldBeLocalField()) {
 			lazyFieldMap[signature.name]?.let { lazyFieldType ->
 				return LocalFieldValueResult(this, lazyFieldType())
 			}
@@ -71,7 +71,7 @@ class FunctionScope(
 	val functionSignature: Signature
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeField()) {
+		if (signature is NameSignature && signature.couldBeLocalField()) {
 			if (functionSignature is NameSignature) {
 				if (signature.name == "this" && functionSignature.lhsType != null) {
 					return ThisValueResult(this, functionSignature.lhsType)

@@ -58,12 +58,21 @@ class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression
 }
 
 class NameReferenceExpression(
+	val expression: Expression?,
 	val name: String,
 	override val isImpure: Boolean,
 	val argumentsObjectExpression: ObjectExpression?,
 	val valueResult: ValueResult
 ) : Expression() {
 	override val type: Type = valueResult.type
+}
+
+class ObjectFieldReference(
+	val expression: Expression,
+	val name: String,
+	override val type: Type
+) : Expression() {
+	override val isImpure: Boolean get() = false
 }
 
 class OperatorCallExpression(
@@ -93,27 +102,22 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		FloatExpression(text.toDouble())
 	is TinyScriptParser.StringLiteralExpressionContext ->
 		StringExpression(text)
-	is TinyScriptParser.NameReferenceExpressionContext -> {
-		val name: String = Name().text
-		val isImpure: Boolean = Impure() != null
-		val argumentsObjectExpression: ObjectExpression? = `object`()?.analyse(scope)
-
-		val nameSignature = NameSignature(
+	is TinyScriptParser.NameReferenceExpressionContext ->
+		analyseNameReferenceExpression(
+			scope,
 			null,
-			name,
-			isImpure,
-			argumentsObjectExpression?.type
+			Name().text,
+			Impure() != null,
+			`object`()?.analyse(scope)
 		)
-		val valueResult = scope.findValue(nameSignature)
-			?: throw NameSignatureNotFoundException(nameSignature)
-
-		NameReferenceExpression(
-			name,
-			isImpure,
-			argumentsObjectExpression,
-			valueResult
+	is TinyScriptParser.DotNameReferenceExpressionContext ->
+		analyseNameReferenceExpression(
+			scope,
+			expression().analyse(scope),
+			Name().text,
+			Impure() != null,
+			`object`()?.analyse(scope)
 		)
-	}
 	is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 		val lhsExpression = lhs.analyse(scope)
 		val operatorSymbol: String = OperatorSymbol().text
@@ -158,3 +162,39 @@ fun TinyScriptParser.BlockContext.analyse(scope: Scope): Expression {
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
 	ObjectExpression(objectStatement().map { it.analyse(scope) })
+
+fun analyseNameReferenceExpression(
+	scope: Scope,
+	expression: Expression?,
+	name: String,
+	isImpure: Boolean,
+	argumentsObjectExpression: ObjectExpression?
+): Expression {
+	val nameSignature = NameSignature(
+		expression?.type,
+		name,
+		isImpure,
+		argumentsObjectExpression?.type
+	)
+
+	if (expression != null && nameSignature.couldBeField()) {
+		val type = expression.type
+		if (type is ObjectType) {
+			val fieldType = type.fieldMap[name]
+			if (fieldType != null) {
+				return ObjectFieldReference(expression, name, type)
+			}
+		}
+	}
+
+	val valueResult = scope.findValue(nameSignature)
+		?: throw NameSignatureNotFoundException(nameSignature)
+
+	return NameReferenceExpression(
+		expression,
+		name,
+		isImpure,
+		argumentsObjectExpression,
+		valueResult
+	)
+}

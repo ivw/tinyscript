@@ -32,6 +32,8 @@ class NameSignature(
 
 fun NameSignature.couldBeField() = !isImpure && paramsObjectType == null
 
+fun NameSignature.couldBeLocalField() = lhsType == null && couldBeField()
+
 class OperatorSignature(
 	val lhsType: Type?,
 	val operatorSymbol: String,
