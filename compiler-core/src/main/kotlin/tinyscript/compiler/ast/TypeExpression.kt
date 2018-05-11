@@ -7,7 +7,7 @@ sealed class TypeExpression {
 	abstract val type: Type
 }
 
-class AnyTypeExpression: TypeExpression() {
+class AnyTypeExpression : TypeExpression() {
 	override val type = AnyType
 }
 
@@ -69,4 +69,3 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 
 fun TinyScriptParser.ObjectTypeContext.analyse(scope: Scope): ObjectTypeExpression =
 	ObjectTypeExpression(objectTypeStatement().map { it.analyse(scope) })
-

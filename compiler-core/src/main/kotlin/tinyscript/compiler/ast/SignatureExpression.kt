@@ -1,7 +1,10 @@
 package tinyscript.compiler.ast
 
 import tinyscript.compiler.parser.TinyScriptParser
-import tinyscript.compiler.scope.*
+import tinyscript.compiler.scope.NameSignature
+import tinyscript.compiler.scope.OperatorSignature
+import tinyscript.compiler.scope.Scope
+import tinyscript.compiler.scope.Signature
 
 sealed class SignatureExpression {
 	abstract val signature: Signature

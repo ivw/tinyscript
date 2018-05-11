@@ -1,7 +1,10 @@
 package tinyscript.compiler.ast
 
 import tinyscript.compiler.parser.TinyScriptParser
-import tinyscript.compiler.scope.*
+import tinyscript.compiler.scope.AtomicType
+import tinyscript.compiler.scope.FunctionScope
+import tinyscript.compiler.scope.LazyScope
+import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.util.SafeLazy
 
 class StatementList(
