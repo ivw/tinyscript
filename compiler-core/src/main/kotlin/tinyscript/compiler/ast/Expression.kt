@@ -85,6 +85,16 @@ class OperatorCallExpression(
 	override val type: Type = valueResult.type
 }
 
+class AnonymousFunctionExpression(
+	val isFunctionImpure: Boolean,
+	val paramsObjectTypeExpression: ObjectTypeExpression?,
+	val returnExpression: Expression
+) : Expression() {
+	override val type: Type = FunctionType(isImpure, paramsObjectTypeExpression?.type, returnExpression.type)
+
+	override val isImpure: Boolean get() = false
+}
+
 class NameSignatureNotFoundException(val nameSignature: NameSignature) : RuntimeException(
 	"unresolved reference '${nameSignature.name}'"
 )
@@ -143,6 +153,18 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	}
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
+	is TinyScriptParser.AnonymousFunctionExpressionContext -> {
+		val paramsObjectTypeExpression = objectType()?.analyse(scope)
+		val functionScope = if (paramsObjectTypeExpression != null) {
+			FunctionParamsScope(scope, paramsObjectTypeExpression.type)
+		} else scope
+
+		AnonymousFunctionExpression(
+			Impure() != null,
+			paramsObjectTypeExpression,
+			expression().analyse(functionScope)
+		)
+	}
 	else -> TODO()
 }
 

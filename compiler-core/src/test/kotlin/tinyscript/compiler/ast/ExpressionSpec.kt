@@ -285,6 +285,14 @@ object ExpressionSpec : Spek({
 					3.a * 2
 				)
 			""")
+			assertAnalysis("""
+				[foo: Int].a => foo
+				[foo = 123].a
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				[foo: Int].a => bar
+				[foo = 123].a
+			""")
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				Int.square => this * this
 				().square
@@ -343,6 +351,16 @@ object ExpressionSpec : Spek({
 				Int.printTimes![n: Int] => println![m = this * n]
 				2.printTimes![n = ()]
 			""", true)
+		}
+	}
+
+	describe("AnonymousFunctionExpression") {
+		it("works") {
+			assertAnalysis("""
+				multiplyByTwo = [n: Int] -> n * 2
+
+				printTwo = ! -> println![m = 2]
+			""")
 		}
 	}
 })

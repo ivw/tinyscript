@@ -34,7 +34,7 @@ expression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	Impure? objectType? '->' NL* expression									# FunctionExpression
+	|	Impure? objectType? '->' NL* expression									# AnonymousFunctionExpression
 	;
 
 block: '(' NL* ((statementList (',' | NL+))? expression NL*)? ')';

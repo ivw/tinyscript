@@ -66,32 +66,49 @@ class LazyScope(
 			?: super.findType(name)
 }
 
-class FunctionScope(
-	parentScope: Scope?,
-	val functionSignature: Signature
-) : Scope(parentScope) {
+class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
 		if (signature is NameSignature && signature.couldBeLocalField()) {
-			if (functionSignature is NameSignature) {
-				if (signature.name == "this" && functionSignature.lhsType != null) {
-					return ThisValueResult(this, functionSignature.lhsType)
-				}
-
-				if (functionSignature.paramsObjectType != null) {
-					functionSignature.paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
-						return ParameterValueResult(this, fieldType)
-					}
+			if (thisType is ObjectType) {
+				thisType.fieldMap[signature.name]?.let { fieldType ->
+					return ThisFieldValueResult(this, fieldType)
 				}
 			}
 
-			if (functionSignature is OperatorSignature) {
-				if (signature.name == "left" && functionSignature.lhsType != null) {
-					return OperatorLhsValueResult(this, functionSignature.lhsType)
-				}
+			if (signature.name == "this") {
+				return ThisValueResult(this, thisType)
+			}
+		}
 
-				if (signature.name == "right") {
-					return OperatorRhsValueResult(this, functionSignature.rhsType)
-				}
+		return super.findValue(signature)
+	}
+}
+
+class FunctionParamsScope(parentScope: Scope?, val paramsObjectType: ObjectType) : Scope(parentScope) {
+	override fun findValue(signature: Signature): ValueResult? {
+		if (signature is NameSignature && signature.couldBeLocalField()) {
+			paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
+				return ParameterValueResult(this, fieldType)
+			}
+		}
+
+		return super.findValue(signature)
+	}
+}
+
+class OperatorFunctionScope(
+	parentScope: Scope?,
+	val lhsType: Type?,
+	val rhsType: Type
+) : Scope(parentScope) {
+	override fun findValue(signature: Signature): ValueResult? {
+		if (signature is NameSignature && signature.couldBeLocalField()) {
+			if (signature.name == "left" && lhsType != null) {
+				return OperatorLhsValueResult(this, lhsType)
+			}
+
+			if (signature.name == "right") {
+				return OperatorRhsValueResult(this, rhsType)
 			}
 		}
 
