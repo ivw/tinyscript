@@ -75,6 +75,13 @@ class ObjectFieldReference(
 	override val isImpure: Boolean get() = false
 }
 
+class AnonymousFunctionCallExpression(
+	val expression: Expression,
+	override val isImpure: Boolean,
+	val argumentsObjectExpression: ObjectExpression?,
+	override val type: Type
+) : Expression()
+
 class OperatorCallExpression(
 	val lhsExpression: Expression?,
 	val operatorSymbol: String,
@@ -90,7 +97,7 @@ class AnonymousFunctionExpression(
 	val paramsObjectTypeExpression: ObjectTypeExpression?,
 	val returnExpression: Expression
 ) : Expression() {
-	override val type: Type = FunctionType(isImpure, paramsObjectTypeExpression?.type, returnExpression.type)
+	override val type: Type = FunctionType(isFunctionImpure, paramsObjectTypeExpression?.type, returnExpression.type)
 
 	override val isImpure: Boolean get() = false
 }
@@ -101,6 +108,10 @@ class NameSignatureNotFoundException(val nameSignature: NameSignature) : Runtime
 
 class OperatorSignatureNotFoundException(val operatorSignature: OperatorSignature) : RuntimeException(
 	"unresolved reference '${operatorSignature.operatorSymbol}'"
+)
+
+class InvalidAnonymousFunctionCallException : RuntimeException(
+	"invalid anonymous function call"
 )
 
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
@@ -128,6 +139,30 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			Impure() != null,
 			`object`()?.analyse(scope)
 		)
+	is TinyScriptParser.AnonymousFunctionCallExpressionContext -> {
+		val expression = expression().analyse(scope)
+		val isImpure = Impure() != null
+		val argumentsObjectExpression = `object`()?.analyse(scope)
+		val argumentsObject = argumentsObjectExpression?.type
+
+		val functionType = expression.type
+		if (!(functionType is FunctionType &&
+				functionType.isImpure == isImpure &&
+				if (functionType.params != null) {
+					argumentsObject != null
+						&& functionType.params.accepts(argumentsObject)
+				} else {
+					argumentsObject == null
+				}))
+			throw InvalidAnonymousFunctionCallException()
+
+		AnonymousFunctionCallExpression(
+			expression,
+			isImpure,
+			argumentsObjectExpression,
+			functionType.returnType
+		)
+	}
 	is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 		val lhsExpression = lhs.analyse(scope)
 		val operatorSymbol: String = OperatorSymbol().text
@@ -154,15 +189,20 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
 	is TinyScriptParser.AnonymousFunctionExpressionContext -> {
+		val isImpure = Impure() != null
 		val paramsObjectTypeExpression = objectType()?.analyse(scope)
 		val functionScope = if (paramsObjectTypeExpression != null) {
 			FunctionParamsScope(scope, paramsObjectTypeExpression.type)
 		} else scope
 
+		val returnExpression = expression().analyse(functionScope)
+		if (!isImpure && returnExpression.isImpure)
+			throw PureFunctionWithImpureExpressionException()
+
 		AnonymousFunctionExpression(
-			Impure() != null,
+			isImpure,
 			paramsObjectTypeExpression,
-			expression().analyse(functionScope)
+			returnExpression
 		)
 	}
 	else -> TODO()

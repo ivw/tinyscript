@@ -14,7 +14,7 @@ class ImpureForwardReferenceException(val fieldName: String) : RuntimeException(
 	"can not forward reference an impure imperative declaration ($fieldName)"
 )
 
-class PureFunctionWithImpureExpressionException(val signatureExpression: SignatureExpression) : RuntimeException(
+class PureFunctionWithImpureExpressionException() : RuntimeException(
 	"function signature must be impure if its expression is impure"
 )
 
@@ -102,7 +102,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 
 					val expression = statementCtx.expression().analyse(functionScope)
 					if (!signatureExpression.signature.isImpure && expression.isImpure)
-						throw PureFunctionWithImpureExpressionException(signatureExpression)
+						throw PureFunctionWithImpureExpressionException()
 
 					FunctionDefinition(signatureExpression, expression)
 						.also { orderedStatements.add(it) }

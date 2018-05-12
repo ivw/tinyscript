@@ -28,7 +28,7 @@ expression
 	|	object																	# ObjectExpression
 	|	Name Impure? object?													# NameReferenceExpression
 	|	expression NL* '.' Name Impure? object?								# DotNameReferenceExpression
-	|	expression NL* '.' Impure? object?										# AnonymousFunctionCall
+	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
 	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
