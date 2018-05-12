@@ -48,7 +48,7 @@ object ExpressionSpec : Spek({
 			}
 			it("is impure if the inner expression is impure") {
 				assertAnalysisFails(DisallowedImpureStatementException::class, """
-					foo = (println![])
+					foo = (println!)
 				""")
 			}
 		}
@@ -69,20 +69,20 @@ object ExpressionSpec : Spek({
 			it("is impure if the inner expression is impure or one of the statements is impure") {
 				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
-						println![]
+						println!
 						1
 					)
 				""")
 				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
 						a = 1
-						println![]
+						println!
 					)
 				""")
 				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
-						println![]
-						println![]
+						println!
+						println!
 					)
 				""")
 			}
@@ -120,6 +120,15 @@ object ExpressionSpec : Spek({
 			""")
 			assertAnalysis("""
 				foo = [ a = 1 ]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				foo = [ a = 1, b = a ]
+			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				foo = [ a = println! ]
+			""")
+			assertAnalysis("""
+				foo! => [ a = println! ]
 			""")
 		}
 	}
@@ -220,6 +229,10 @@ object ExpressionSpec : Spek({
 				a => 1
 				a[]
 			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				a[x: ()] => 1
+				a[x = println!]
+			""")
 		}
 		it("can refer to an impure function with parameters") {
 			assertAnalysis("""
@@ -308,15 +321,15 @@ object ExpressionSpec : Spek({
 		}
 		it("can refer to an impure function without parameters") {
 			assertAnalysis("""
-				Int.print! => println![]
+				Int.print! => println!
 				2.print!
 			""", true)
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
-				Int.print! => println![]
+				Int.print! => println!
 				().print!
 			""", true)
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
-				Int.print! => println![]
+				Int.print! => println!
 				2.print
 			""", true)
 		}
@@ -336,6 +349,10 @@ object ExpressionSpec : Spek({
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
 				Int.times[n: Int] => this * n
 				2.times[n = ()]
+			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				Int.a[x: ()] => 1
+				3.a[x = println!]
 			""")
 		}
 		it("can refer to an impure function with parameters") {
@@ -380,6 +397,13 @@ object ExpressionSpec : Spek({
 				returnOne = -> 1
 				returnOne.[]
 			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				printSomethingAndReturnPureAnonymousFunc! => (
+					println!
+					-> 1
+				)
+				(printSomethingAndReturnPureAnonymousFunc!).
+			""")
 		}
 		it("can call an impure anonymous function without parameters") {
 			assertAnalysis("""
@@ -411,6 +435,17 @@ object ExpressionSpec : Spek({
 			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
 				multiplyByTwo = [n: Int] -> n * 2
 				multiplyByTwo.
+			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				printSomethingAndReturnPureAnonymousFunc! => (
+					println!
+					[] -> 1
+				)
+				(printSomethingAndReturnPureAnonymousFunc!).[]
+			""")
+			assertAnalysisFails(DisallowedImpureStatementException::class, """
+				foo = [n: ()] -> 123
+				foo.[n = println!]
 			""")
 		}
 		it("can call an impure anonymous function with parameters") {

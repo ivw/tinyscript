@@ -1,1 +1,4 @@
-native println![]: ()
+native println!: ()
+
+native println![m: ()]: ()
+

@@ -60,11 +60,15 @@ class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression
 class NameReferenceExpression(
 	val expression: Expression?,
 	val name: String,
-	override val isImpure: Boolean,
+	val signatureIsImpure: Boolean,
 	val argumentsObjectExpression: ObjectExpression?,
 	val valueResult: ValueResult
 ) : Expression() {
 	override val type: Type = valueResult.type
+
+	override val isImpure: Boolean = signatureIsImpure
+		|| (expression != null && expression.isImpure)
+		|| (argumentsObjectExpression != null && argumentsObjectExpression.isImpure)
 }
 
 class ObjectFieldReference(
@@ -77,19 +81,27 @@ class ObjectFieldReference(
 
 class AnonymousFunctionCallExpression(
 	val expression: Expression,
-	override val isImpure: Boolean,
+	val signatureIsImpure: Boolean,
 	val argumentsObjectExpression: ObjectExpression?,
 	override val type: Type
-) : Expression()
+) : Expression() {
+	override val isImpure: Boolean = signatureIsImpure
+		|| expression.isImpure
+		|| (argumentsObjectExpression != null && argumentsObjectExpression.isImpure)
+}
 
 class OperatorCallExpression(
 	val lhsExpression: Expression?,
 	val operatorSymbol: String,
-	override val isImpure: Boolean,
+	val operatorIsImpure: Boolean,
 	val rhsExpression: Expression,
 	val valueResult: ValueResult
 ) : Expression() {
 	override val type: Type = valueResult.type
+
+	override val isImpure: Boolean = operatorIsImpure
+		|| (lhsExpression != null && lhsExpression.isImpure)
+		|| rhsExpression.isImpure
 }
 
 class AnonymousFunctionExpression(
@@ -141,13 +153,13 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		)
 	is TinyScriptParser.AnonymousFunctionCallExpressionContext -> {
 		val expression = expression().analyse(scope)
-		val isImpure = Impure() != null
+		val signatureIsImpure = Impure() != null
 		val argumentsObjectExpression = `object`()?.analyse(scope)
 		val argumentsObject = argumentsObjectExpression?.type
 
 		val functionType = expression.type
 		if (!(functionType is FunctionType &&
-				functionType.isImpure == isImpure &&
+				functionType.isImpure == signatureIsImpure &&
 				if (functionType.params != null) {
 					argumentsObject != null
 						&& functionType.params.accepts(argumentsObject)
@@ -158,7 +170,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 
 		AnonymousFunctionCallExpression(
 			expression,
-			isImpure,
+			signatureIsImpure,
 			argumentsObjectExpression,
 			functionType.returnType
 		)
@@ -166,13 +178,13 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.InfixOperatorCallExpressionContext -> {
 		val lhsExpression = lhs.analyse(scope)
 		val operatorSymbol: String = OperatorSymbol().text
-		val isImpure: Boolean = Impure() != null
+		val operatorIsImpure = Impure() != null
 		val rhsExpression = rhs.analyse(scope)
 
 		val operatorSignature = OperatorSignature(
 			lhsExpression.type,
 			operatorSymbol,
-			isImpure,
+			operatorIsImpure,
 			rhsExpression.type
 		)
 		val valueResult = scope.findValue(operatorSignature)
@@ -181,7 +193,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		OperatorCallExpression(
 			lhsExpression,
 			operatorSymbol,
-			isImpure,
+			operatorIsImpure,
 			rhsExpression,
 			valueResult
 		)
@@ -227,24 +239,24 @@ fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
 
 fun analyseNameReferenceExpression(
 	scope: Scope,
-	expression: Expression?,
+	lhsExpression: Expression?,
 	name: String,
-	isImpure: Boolean,
+	signatureIsImpure: Boolean,
 	argumentsObjectExpression: ObjectExpression?
 ): Expression {
 	val nameSignature = NameSignature(
-		expression?.type,
+		lhsExpression?.type,
 		name,
-		isImpure,
+		signatureIsImpure,
 		argumentsObjectExpression?.type
 	)
 
-	if (expression != null && nameSignature.couldBeField()) {
-		val type = expression.type
+	if (lhsExpression != null && nameSignature.couldBeField()) {
+		val type = lhsExpression.type
 		if (type is ObjectType) {
 			val fieldType = type.fieldMap[name]
 			if (fieldType != null) {
-				return ObjectFieldReference(expression, name, type)
+				return ObjectFieldReference(lhsExpression, name, type)
 			}
 		}
 	}
@@ -253,9 +265,9 @@ fun analyseNameReferenceExpression(
 		?: throw NameSignatureNotFoundException(nameSignature)
 
 	return NameReferenceExpression(
-		expression,
+		lhsExpression,
 		name,
-		isImpure,
+		signatureIsImpure,
 		argumentsObjectExpression,
 		valueResult
 	)
