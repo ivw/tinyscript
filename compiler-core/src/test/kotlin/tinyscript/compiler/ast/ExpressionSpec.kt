@@ -72,10 +72,14 @@ object ExpressionSpec : Spek({
 						println![]
 						1
 					)
+				""")
+				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
 						a = 1
 						println![]
 					)
+				""")
+				assertAnalysisFails(DisallowedImpureStatementException::class, """
 					foo = (
 						println![]
 						println![]
