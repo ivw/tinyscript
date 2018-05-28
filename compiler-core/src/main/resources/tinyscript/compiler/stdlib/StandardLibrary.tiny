@@ -1,4 +1,14 @@
-native println!: ()
+native type System
 
-native println![m: ()]: ()
+native System.println: ()
 
+native System.println[m: ()]: ()
+
+
+type Point = [ x: Int, y: Int ]
+
+Point.area => x * y
+
+pointZero = [ x = 0, y = 0 ]
+
+Point < Point => left.x < right.x && left.y < right.y
