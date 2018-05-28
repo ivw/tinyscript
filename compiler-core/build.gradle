@@ -49,7 +49,7 @@ compileTestKotlin {
 }
 
 generateGrammarSource {
-    arguments += ["-no-listener", "-no-visitor"]
+    arguments += ["-no-listener", "-no-visitor", "-package", "tinyscript.compiler.parser"]
 }
 tasks.compileKotlin.dependsOn(generateGrammarSource)
 

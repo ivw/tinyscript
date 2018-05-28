@@ -1,7 +1,5 @@
 grammar TinyScript;
 
-@header {package tinyscript.compiler.parser;}
-
 file: NL* statementList? NL* EOF;
 
 statementList: statement ((',' | NL+) statement)*;
