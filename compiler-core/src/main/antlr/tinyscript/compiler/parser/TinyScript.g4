@@ -1,12 +1,9 @@
 grammar TinyScript;
 
-file: NL* statementList? NL* EOF;
+file: NL* (fileDeclaration ((',' | NL+) fileDeclaration)*)? NL* EOF;
 
-statementList: statement ((',' | NL+) statement)*;
-
-statement
-	:	(Name '=')? expression													# ImperativeStatement
-	|	signature '=>' expression												# FunctionDefinition
+fileDeclaration
+	:	signature '=' expression												# FunctionDefinition
 	|	Native signature ':' typeExpression										# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDefinition
 	|	Native 'type' Name														# NativeTypeDeclaration
@@ -14,8 +11,17 @@ statement
 	;
 
 signature
-	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
-	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
+	:	Name Mutable?													# FieldSignature
+	|	(typeExpression '.')? Name objectType							# FunctionSignature
+	|	(lhs=typeExpression)? OperatorSymbol rhs=typeExpression			# OperatorSignature
+	;
+
+callSignature
+	:	Name Mutable?														# FieldCallSignature
+	|	Name object														# FunctionCallSignature
+	|	expression NL* '.' Name object									# DotFunctionCallSignature
+	|	OperatorSymbol NL* rhs=expression								# PrefixOperatorCallSignature
+	|	lhs=expression NL* OperatorSymbol NL* rhs=expression			# InfixOperatorCallSignature
 	;
 
 expression
@@ -24,18 +30,17 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name Impure? object?													# NameReferenceExpression
-	|	expression NL* '.' Name Impure? object?								# DotNameReferenceExpression
-	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
-	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
-	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
+	|	callSignature													# ReferenceExpression
+	|	expression NL* '.' Name										# ObjectFieldReferenceExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	Impure? objectType? '->' NL* expression									# AnonymousFunctionExpression
+	|	objectType? '->' NL* expression									# AnonymousFunctionExpression
 	;
 
-block: '(' NL* ((statementList (',' | NL+))? expression NL*)? ')';
+block: '(' NL* ((blockStatement (',' | NL+))* expression NL*)? ')';
+
+blockStatement: (Name '=')? expression;
 
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
@@ -46,7 +51,7 @@ objectStatement
 
 typeExpression
 	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
-	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
+	|	objectType? '->' typeExpression									# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
 	|	Name																	# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
@@ -63,7 +68,7 @@ objectTypeStatement
 
 Private: 'private';
 Native: 'native';
-Impure: '!';
+Mutable: '!';
 
 IntegerLiteral: [0-9]+;
 

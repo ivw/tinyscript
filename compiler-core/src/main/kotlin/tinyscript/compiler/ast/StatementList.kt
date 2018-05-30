@@ -14,8 +14,12 @@ class ImpureForwardReferenceException(val fieldName: String) : RuntimeException(
 	"can not forward reference an impure imperative declaration ($fieldName)"
 )
 
-class PureFunctionWithImpureExpressionException() : RuntimeException(
+class PureFunctionWithImpureExpressionException : RuntimeException(
 	"function signature must be impure if its expression is impure"
+)
+
+class PureFieldWithMutableTypeException : RuntimeException(
+	"field signature must be impure if its type is mutable"
 )
 
 class DisallowedImpureStatementException : RuntimeException(
@@ -48,7 +52,7 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
 				val name = statementCtx.Name().text
 
-				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType())
+				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(false /* TODO */))
 					.also { orderedStatements.add(it) }
 				scope.lazyTypeMap[name] = { nativeTypeDeclaration.atomicType }
 			}
@@ -68,6 +72,11 @@ fun Iterable<TinyScriptParser.StatementContext>.analyse(parentScope: Scope?): St
 							throw ImpureForwardReferenceException(name!!)
 
 						hasImpureImperativeStatement = true
+					}
+					if (name != null) {
+						val isImpure = statementCtx.Impure() != null
+						if (expression.type.hasMutableState && !isImpure)
+							throw PureFieldWithMutableTypeException()
 					}
 
 					ImperativeStatement(name, expression)

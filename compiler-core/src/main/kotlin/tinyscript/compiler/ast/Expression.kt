@@ -6,12 +6,12 @@ import tinyscript.compiler.scope.*
 sealed class Expression {
 	abstract val type: Type
 
-	abstract val isImpure: Boolean
+	abstract val mutatesScope: Scope?
 }
 
 class AnyExpression : Expression() {
 	override val type = AnyType
-	override val isImpure = false
+	override val mutatesScope: Scope? = null
 }
 
 class BlockExpression(
@@ -26,32 +26,31 @@ class BlockExpression(
 
 class IntExpression(val value: Int) : Expression() {
 	override val type = IntType(value, value)
-	override val isImpure: Boolean get() = false
+	override val mutatesScope: Scope? get() = null
 }
 
 class FloatExpression(val value: Double) : Expression() {
 	override val type = FloatType(value, value)
-	override val isImpure: Boolean get() = false
+	override val mutatesScope: Scope? get() = null
 }
 
 class StringExpression(val value: String) : Expression() {
 	override val type = stringType
-	override val isImpure: Boolean get() = false
+	override val mutatesScope: Scope? get() = null
 }
 
 class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression() {
-	override val type = ObjectType(mutableMapOf<String, Type>().also { mutableFieldMap ->
-		objectStatements.forEach { objectStatement ->
-			when (objectStatement) {
-				is ObjectFieldDeclaration -> {
-					mutableFieldMap[objectStatement.name] = objectStatement.expression.type
-				}
-				is ObjectInheritStatement -> {
-					TODO()
-				}
+	override val type = ObjectType(objectStatements.fold(mutableMapOf(), { mutableFieldMap, objectStatement ->
+		when (objectStatement) {
+			is ObjectFieldDeclaration -> {
+				mutableFieldMap[objectStatement.name] = objectStatement.expression.type
+			}
+			is ObjectInheritStatement -> {
+				TODO()
 			}
 		}
-	})
+		mutableFieldMap
+	}))
 
 	override val isImpure: Boolean =
 		objectStatements.any { it.isImpure }
@@ -66,9 +65,9 @@ class NameReferenceExpression(
 ) : Expression() {
 	override val type: Type = valueResult.type
 
-	override val isImpure: Boolean = signatureIsImpure
-		|| (expression != null && expression.isImpure)
-		|| (argumentsObjectExpression != null && argumentsObjectExpression.isImpure)
+	override val mutatesScope: Scope? =
+		if (valueResult.type.hasMutableState && valueResult is LocalFieldValueResult)
+			valueResult.scope else null
 }
 
 class ObjectFieldReference(
@@ -85,9 +84,10 @@ class AnonymousFunctionCallExpression(
 	val argumentsObjectExpression: ObjectExpression?,
 	override val type: Type
 ) : Expression() {
-	override val isImpure: Boolean = signatureIsImpure
-		|| expression.isImpure
-		|| (argumentsObjectExpression != null && argumentsObjectExpression.isImpure)
+	override val mutatesScope: Scope? = getOutermostScope(
+		expression.mutatesScope,
+		argumentsObjectExpression?.mutatesScope
+	)
 }
 
 class OperatorCallExpression(
@@ -99,9 +99,10 @@ class OperatorCallExpression(
 ) : Expression() {
 	override val type: Type = valueResult.type
 
-	override val isImpure: Boolean = operatorIsImpure
-		|| (lhsExpression != null && lhsExpression.isImpure)
-		|| rhsExpression.isImpure
+	override val mutatesScope: Scope? = getOutermostScope(
+		lhsExpression?.mutatesScope,
+		rhsExpression.mutatesScope
+	)
 }
 
 class AnonymousFunctionExpression(
@@ -111,7 +112,7 @@ class AnonymousFunctionExpression(
 ) : Expression() {
 	override val type: Type = FunctionType(isFunctionImpure, paramsObjectTypeExpression?.type, returnExpression.type)
 
-	override val isImpure: Boolean get() = false
+	override val mutatesScope: Scope? get() = null
 }
 
 class NameSignatureNotFoundException(val nameSignature: NameSignature) : RuntimeException(

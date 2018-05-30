@@ -1,6 +1,8 @@
 package tinyscript.compiler.scope
 
 sealed class Type {
+	open val hasMutableState: Boolean = false
+
 	/**
 	 * @return true if `type` is equal to this, or if it is a subtype of this
 	 */
@@ -15,7 +17,7 @@ object AnyType : Type() {
 	override fun toString(): String = "AnyType"
 }
 
-class AtomicType : Type() {
+class AtomicType(override val hasMutableState: Boolean) : Type() {
 	override fun accepts(type: Type): Boolean = type === this
 }
 
