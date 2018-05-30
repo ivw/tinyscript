@@ -115,6 +115,3 @@ class OperatorFunctionScope(
 		return super.findValue(signature)
 	}
 }
-
-fun getOutermostScope(vararg scopes: Scope?): Scope? =
-	scopes.asSequence().filterNotNull().minBy { it.depth }
