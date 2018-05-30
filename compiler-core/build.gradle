@@ -38,7 +38,7 @@ dependencies {
     testCompile 'org.jetbrains.spek:spek-api:1.1.5'
     testRuntime 'org.jetbrains.spek:spek-junit-platform-engine:1.1.5'
     testCompile "org.jetbrains.kotlin:kotlin-test"
-    antlr "org.antlr:antlr4:4.7"
+    antlr "org.antlr:antlr4:4.7.1"
 }
 
 compileKotlin {
