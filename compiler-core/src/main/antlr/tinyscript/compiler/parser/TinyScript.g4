@@ -16,22 +16,18 @@ signature
 	|	(lhs=typeExpression)? OperatorSymbol rhs=typeExpression			# OperatorSignature
 	;
 
-callSignature
-	:	Name Mutable?														# FieldCallSignature
-	|	Name object														# FunctionCallSignature
-	|	expression NL* '.' Name object									# DotFunctionCallSignature
-	|	OperatorSymbol NL* rhs=expression								# PrefixOperatorCallSignature
-	|	lhs=expression NL* OperatorSymbol NL* rhs=expression			# InfixOperatorCallSignature
-	;
-
 expression
 	:	block																	# BlockExpression
 	|	IntegerLiteral															# IntegerLiteralExpression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	callSignature													# ReferenceExpression
-	|	expression NL* '.' Name										# ObjectFieldReferenceExpression
+	|	Name Mutable?														# FieldRefExpression
+	|	Name object														# FunctionCallExpression
+	|	expression NL* '.' Name object									# DotFunctionCallExpression
+	|	OperatorSymbol NL* rhs=expression								# PrefixOperatorCallExpression
+	|	lhs=expression NL* OperatorSymbol NL* rhs=expression			# InfixOperatorCallExpression
+	|	expression NL* '.' Name											# ObjectFieldRefExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression

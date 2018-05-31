@@ -1,19 +1,26 @@
 package tinyscript.compiler.scope
 
 sealed class Signature {
-	abstract val isImpure: Boolean
-
 	abstract fun accepts(signature: Signature): Boolean
 }
 
-class NameSignature(
-	val lhsType: Type?,
+class FieldSignature(
 	val name: String,
-	override val isImpure: Boolean,
-	val paramsObjectType: ObjectType?
+	val isMutable: Boolean
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
-		signature is NameSignature &&
+		signature is FieldSignature &&
+			name == signature.name &&
+			isMutable == signature.isMutable
+}
+
+class FunctionSignature(
+	val lhsType: Type?,
+	val name: String,
+	val paramsObjectType: ObjectType
+) : Signature() {
+	override fun accepts(signature: Signature): Boolean =
+		signature is FunctionSignature &&
 			if (lhsType != null) {
 				signature.lhsType != null
 					&& lhsType.accepts(signature.lhsType)
@@ -21,23 +28,12 @@ class NameSignature(
 				signature.lhsType == null
 			} &&
 			name == signature.name &&
-			isImpure == signature.isImpure &&
-			if (paramsObjectType != null) {
-				signature.paramsObjectType != null
-					&& paramsObjectType.accepts(signature.paramsObjectType)
-			} else {
-				signature.paramsObjectType == null
-			}
+			paramsObjectType.accepts(signature.paramsObjectType)
 }
-
-fun NameSignature.couldBeField() = !isImpure && paramsObjectType == null
-
-fun NameSignature.couldBeLocalField() = lhsType == null && couldBeField()
 
 class OperatorSignature(
 	val lhsType: Type?,
 	val operatorSymbol: String,
-	override val isImpure: Boolean,
 	val rhsType: Type
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
@@ -49,6 +45,5 @@ class OperatorSignature(
 				signature.lhsType == null
 			} &&
 			operatorSymbol == signature.operatorSymbol &&
-			isImpure == signature.isImpure &&
 			rhsType.accepts(signature.rhsType)
 }

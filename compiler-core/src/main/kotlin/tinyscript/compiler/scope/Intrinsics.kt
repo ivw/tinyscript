@@ -8,28 +8,25 @@ val stringType = AtomicType(false)
 
 val intBoxType = AtomicType(true)
 
-val intBoxFunctionSignature = NameSignature(
+val intBoxFunctionSignature = FunctionSignature(
 	null,
 	"intBox",
-	false,
 	ObjectType(mapOf("value" to intType))
 )
 
-val intBoxSetFunctionSignature = NameSignature(
+val intBoxSetFunctionSignature = FunctionSignature(
 	intBoxType,
 	"set",
-	false,
 	ObjectType(mapOf("value" to intType))
 )
 
-val intBoxGetFunctionSignature = NameSignature(
+val intBoxGetFunctionSignature = FunctionSignature(
 	intBoxType,
 	"get",
-	false,
-	null
+	ObjectType(emptyMap())
 )
 
-val intTimesIntSignature = OperatorSignature(intType, "*", false, intType)
+val intTimesIntSignature = OperatorSignature(intType, "*", intType)
 
 val intrinsicsScope: Scope = SimpleScope(null)
 	.apply {

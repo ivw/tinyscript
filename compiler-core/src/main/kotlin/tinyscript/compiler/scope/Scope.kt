@@ -17,7 +17,7 @@ class SimpleScope(
 	val typeMap: MutableMap<String, Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeLocalField()) {
+		if (signature is FieldSignature) {
 			fieldMap[signature.name]?.let { fieldType ->
 				return LocalFieldValueResult(this, fieldType)
 			}
@@ -45,7 +45,7 @@ class LazyScope(
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeLocalField()) {
+		if (signature is FieldSignature) {
 			lazyFieldMap[signature.name]?.let { lazyFieldType ->
 				return LocalFieldValueResult(this, lazyFieldType())
 			}
@@ -68,7 +68,7 @@ class LazyScope(
 
 class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeLocalField()) {
+		if (signature is FieldSignature) {
 			if (thisType is ObjectType) {
 				thisType.fieldMap[signature.name]?.let { fieldType ->
 					return ThisFieldValueResult(this, fieldType)
@@ -86,7 +86,7 @@ class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
 
 class FunctionParamsScope(parentScope: Scope?, val paramsObjectType: ObjectType) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeLocalField()) {
+		if (signature is FieldSignature) {
 			paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
 				return ParameterValueResult(this, fieldType)
 			}
@@ -102,7 +102,7 @@ class OperatorFunctionScope(
 	val rhsType: Type
 ) : Scope(parentScope) {
 	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is NameSignature && signature.couldBeLocalField()) {
+		if (signature is FieldSignature) {
 			if (signature.name == "left" && lhsType != null) {
 				return OperatorLhsValueResult(this, lhsType)
 			}

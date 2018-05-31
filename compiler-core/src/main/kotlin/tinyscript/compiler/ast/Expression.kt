@@ -44,11 +44,8 @@ class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression
 	}))
 }
 
-class NameReferenceExpression(
-	val expression: Expression?,
-	val name: String,
-	val signatureIsImpure: Boolean,
-	val argumentsObjectExpression: ObjectExpression?,
+class ReferenceExpression(
+	val callSignatureExpression: Signature, // TODO CallSignatureExpression
 	val valueResult: ValueResult
 ) : Expression() {
 	override val type: Type = valueResult.type
@@ -85,8 +82,8 @@ class AnonymousFunctionExpression(
 	override val type: Type = FunctionType(isFunctionImpure, paramsObjectTypeExpression?.type, returnExpression.type)
 }
 
-class NameSignatureNotFoundException(val nameSignature: NameSignature) : RuntimeException(
-	"unresolved reference '${nameSignature.name}'"
+class SignatureNotFoundException(val signature: Signature) : RuntimeException(
+	"unresolved reference '$signature'"
 )
 
 class OperatorSignatureNotFoundException(val operatorSignature: OperatorSignature) : RuntimeException(
@@ -208,38 +205,15 @@ fun TinyScriptParser.BlockContext.analyse(scope: Scope): Expression {
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
 	ObjectExpression(objectStatement().map { it.analyse(scope) })
 
-fun analyseNameReferenceExpression(
+fun analyseReferenceExpression(
 	scope: Scope,
-	lhsExpression: Expression?,
-	name: String,
-	signatureIsImpure: Boolean,
-	argumentsObjectExpression: ObjectExpression?
+	callSignatureExpression: Signature // TODO CallSignatureExpression
 ): Expression {
-	val nameSignature = NameSignature(
-		lhsExpression?.type,
-		name,
-		signatureIsImpure,
-		argumentsObjectExpression?.type
-	)
+	val valueResult = scope.findValue(callSignatureExpression)
+		?: throw SignatureNotFoundException(callSignatureExpression)
 
-	if (lhsExpression != null && nameSignature.couldBeField()) {
-		val type = lhsExpression.type
-		if (type is ObjectType) {
-			val fieldType = type.fieldMap[name]
-			if (fieldType != null) {
-				return ObjectFieldReference(lhsExpression, name, type)
-			}
-		}
-	}
-
-	val valueResult = scope.findValue(nameSignature)
-		?: throw NameSignatureNotFoundException(nameSignature)
-
-	return NameReferenceExpression(
-		lhsExpression,
-		name,
-		signatureIsImpure,
-		argumentsObjectExpression,
+	return ReferenceExpression(
+		callSignatureExpression,
 		valueResult
 	)
 }
