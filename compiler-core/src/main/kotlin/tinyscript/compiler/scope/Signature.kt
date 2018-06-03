@@ -4,14 +4,10 @@ sealed class Signature {
 	abstract fun accepts(signature: Signature): Boolean
 }
 
-class FieldSignature(
-	val name: String,
-	val isMutable: Boolean
-) : Signature() {
+class FieldSignature(val name: String) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
 		signature is FieldSignature &&
-			name == signature.name &&
-			isMutable == signature.isMutable
+			name == signature.name
 }
 
 class FunctionSignature(

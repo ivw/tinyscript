@@ -1,39 +1,38 @@
 package tinyscript.compiler.ast
 
 import tinyscript.compiler.parser.TinyScriptParser
-import tinyscript.compiler.scope.NameSignature
-import tinyscript.compiler.scope.OperatorSignature
-import tinyscript.compiler.scope.Scope
-import tinyscript.compiler.scope.Signature
+import tinyscript.compiler.scope.*
 
 sealed class SignatureExpression {
 	abstract val signature: Signature
 }
 
-class NameSignatureExpression(
+class FieldSignatureExpression(
+	val name: String,
+) : SignatureExpression() {
+	override val signature = FieldSignature(name)
+}
+
+class FunctionSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val name: String,
-	val isImpure: Boolean,
-	val paramsObjectTypeExpression: ObjectTypeExpression?
+	val paramsObjectTypeExpression: ObjectTypeExpression
 ) : SignatureExpression() {
-	override val signature = NameSignature(
+	override val signature = FunctionSignature(
 		lhsTypeExpression?.type,
 		name,
-		isImpure,
-		paramsObjectTypeExpression?.type
+		paramsObjectTypeExpression.type
 	)
 }
 
 class OperatorSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val operatorSymbol: String,
-	val isImpure: Boolean,
 	val rhsTypeExpression: TypeExpression
 ) : SignatureExpression() {
 	override val signature = OperatorSignature(
 		lhsTypeExpression?.type,
 		operatorSymbol,
-		isImpure,
 		rhsTypeExpression.type
 	)
 }

@@ -51,43 +51,60 @@ class ReferenceExpression(
 	override val type: Type = valueResult.type
 }
 
-class ObjectFieldReference(
+class FieldRefExpression(
+	val name: String,
+	val valueResult: ValueResult
+) : Expression() {
+	override val type: Type = valueResult.type
+}
+
+class ObjectFieldRefExpression(
 	val expression: Expression,
 	val name: String,
 	override val type: Type
 ) : Expression()
 
-class AnonymousFunctionCallExpression(
-	val expression: Expression,
-	val signatureIsImpure: Boolean,
-	val argumentsObjectExpression: ObjectExpression?,
-	override val type: Type
-) : Expression()
+class FunctionCallExpression(
+	val lhsExpression: Expression?,
+	val name: String,
+	val argumentsObjectExpression: ObjectExpression,
+	val valueResult: ValueResult
+) : Expression() {
+	override val type: Type = valueResult.type
+}
 
 class OperatorCallExpression(
 	val lhsExpression: Expression?,
 	val operatorSymbol: String,
-	val operatorIsImpure: Boolean,
 	val rhsExpression: Expression,
 	val valueResult: ValueResult
 ) : Expression() {
 	override val type: Type = valueResult.type
 }
 
+class AnonymousFunctionCallExpression(
+	val expression: Expression,
+	val argumentsObjectExpression: ObjectExpression?,
+	override val type: Type
+) : Expression()
+
 class AnonymousFunctionExpression(
-	val isFunctionImpure: Boolean,
 	val paramsObjectTypeExpression: ObjectTypeExpression?,
 	val returnExpression: Expression
 ) : Expression() {
-	override val type: Type = FunctionType(isFunctionImpure, paramsObjectTypeExpression?.type, returnExpression.type)
+	override val type: Type = FunctionType(paramsObjectTypeExpression?.type, returnExpression.type)
 }
+
+class FieldNotFoundException(val name: String) : RuntimeException(
+	"unresolved reference '$name'"
+)
+
+class ObjectFieldNotFoundException(val name: String) : RuntimeException(
+	"unresolved reference '$name'"
+)
 
 class SignatureNotFoundException(val signature: Signature) : RuntimeException(
 	"unresolved reference '$signature'"
-)
-
-class OperatorSignatureNotFoundException(val operatorSignature: OperatorSignature) : RuntimeException(
-	"unresolved reference '${operatorSignature.operatorSymbol}'"
 )
 
 class InvalidAnonymousFunctionCallException : RuntimeException(
@@ -103,31 +120,59 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		FloatExpression(text.toDouble())
 	is TinyScriptParser.StringLiteralExpressionContext ->
 		StringExpression(text)
-	is TinyScriptParser.NameReferenceExpressionContext ->
-		analyseNameReferenceExpression(
-			scope,
-			null,
-			Name().text,
-			Impure() != null,
-			`object`()?.analyse(scope)
+	is TinyScriptParser.FieldRefExpressionContext -> {
+		val name = Name().text
+		val result = scope.findField(name)
+			?: throw FieldNotFoundException(name)
+		FieldRefExpression(name, result)
+	}
+	is TinyScriptParser.ObjectFieldRefExpressionContext -> {
+		val expression = expression().analyse(scope)
+		val name = Name().text
+
+		val objectType = expression.type as? ObjectType
+			?: throw ObjectFieldNotFoundException(name)
+
+		val fieldType = objectType.fieldMap[name]
+			?: throw ObjectFieldNotFoundException(name)
+
+		ObjectFieldRefExpression(expression, name, fieldType)
+	}
+	is TinyScriptParser.FunctionCallExpressionContext -> analyseFunctionCallExpression(
+		scope,
+		null,
+		Name().text,
+		`object`().analyse(scope)
+	)
+	is TinyScriptParser.DotFunctionCallExpressionContext -> analyseFunctionCallExpression(
+		scope,
+		expression().analyse(scope),
+		Name().text,
+		`object`().analyse(scope)
+	)
+	is TinyScriptParser.InfixOperatorCallExpressionContext -> {
+		val lhsExpression = lhs.analyse(scope)
+		val operatorSymbol: String = OperatorSymbol().text
+		val rhsExpression = rhs.analyse(scope)
+
+		val operatorSignature = OperatorSignature(lhsExpression.type, operatorSymbol, rhsExpression.type)
+		val valueResult = scope.findFunction(operatorSignature)
+			?: throw SignatureNotFoundException(operatorSignature)
+
+		OperatorCallExpression(
+			lhsExpression,
+			operatorSymbol,
+			rhsExpression,
+			valueResult
 		)
-	is TinyScriptParser.DotNameReferenceExpressionContext ->
-		analyseNameReferenceExpression(
-			scope,
-			expression().analyse(scope),
-			Name().text,
-			Impure() != null,
-			`object`()?.analyse(scope)
-		)
+	}
 	is TinyScriptParser.AnonymousFunctionCallExpressionContext -> {
 		val expression = expression().analyse(scope)
-		val signatureIsImpure = Impure() != null
 		val argumentsObjectExpression = `object`()?.analyse(scope)
 		val argumentsObject = argumentsObjectExpression?.type
 
 		val functionType = expression.type
 		if (!(functionType is FunctionType &&
-				functionType.isImpure == signatureIsImpure &&
 				if (functionType.params != null) {
 					argumentsObject != null
 						&& functionType.params.accepts(argumentsObject)
@@ -138,52 +183,21 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 
 		AnonymousFunctionCallExpression(
 			expression,
-			signatureIsImpure,
 			argumentsObjectExpression,
 			functionType.returnType
-		)
-	}
-	is TinyScriptParser.InfixOperatorCallExpressionContext -> {
-		val lhsExpression = lhs.analyse(scope)
-		val operatorSymbol: String = OperatorSymbol().text
-		val operatorIsImpure = Impure() != null
-		val rhsExpression = rhs.analyse(scope)
-
-		val operatorSignature = OperatorSignature(
-			lhsExpression.type,
-			operatorSymbol,
-			operatorIsImpure,
-			rhsExpression.type
-		)
-		val valueResult = scope.findValue(operatorSignature)
-			?: throw OperatorSignatureNotFoundException(operatorSignature)
-
-		OperatorCallExpression(
-			lhsExpression,
-			operatorSymbol,
-			operatorIsImpure,
-			rhsExpression,
-			valueResult
 		)
 	}
 	is TinyScriptParser.ObjectExpressionContext ->
 		`object`().analyse(scope)
 	is TinyScriptParser.AnonymousFunctionExpressionContext -> {
-		val isImpure = Impure() != null
 		val paramsObjectTypeExpression = objectType()?.analyse(scope)
 		val functionScope = if (paramsObjectTypeExpression != null) {
 			FunctionParamsScope(scope, paramsObjectTypeExpression.type)
 		} else scope
 
 		val returnExpression = expression().analyse(functionScope)
-		if (!isImpure && returnExpression.isImpure)
-			throw PureFunctionWithImpureExpressionException()
 
-		AnonymousFunctionExpression(
-			isImpure,
-			paramsObjectTypeExpression,
-			returnExpression
-		)
+		AnonymousFunctionExpression(paramsObjectTypeExpression, returnExpression)
 	}
 	else -> TODO()
 }
@@ -205,15 +219,15 @@ fun TinyScriptParser.BlockContext.analyse(scope: Scope): Expression {
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
 	ObjectExpression(objectStatement().map { it.analyse(scope) })
 
-fun analyseReferenceExpression(
+fun analyseFunctionCallExpression(
 	scope: Scope,
-	callSignatureExpression: Signature // TODO CallSignatureExpression
+	lhsExpression: Expression?,
+	name: String,
+	argumentsObjectExpression: ObjectExpression
 ): Expression {
-	val valueResult = scope.findValue(callSignatureExpression)
-		?: throw SignatureNotFoundException(callSignatureExpression)
+	val signature = FunctionSignature(lhsExpression?.type, name, argumentsObjectExpression.type)
+	val result = scope.findFunction(signature)
+		?: throw SignatureNotFoundException(signature)
 
-	return ReferenceExpression(
-		callSignatureExpression,
-		valueResult
-	)
+	return FunctionCallExpression(lhsExpression, name, argumentsObjectExpression, result)
 }

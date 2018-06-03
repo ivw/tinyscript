@@ -2,23 +2,14 @@ package tinyscript.compiler.ast
 
 import tinyscript.compiler.scope.AtomicType
 
-sealed class Statement {
+sealed class Declaration {
 	abstract fun finalize()
 }
 
-class ImperativeStatement(
-	val name: String?,
-	val expression: Expression
-) : Statement() {
-	override fun finalize() {
-		// TODO
-	}
-}
-
-class FunctionDefinition(
+class ValueDefinition(
 	val signatureExpression: SignatureExpression,
 	val expression: Expression
-) : Statement() {
+) : Declaration() {
 	override fun finalize() {
 		// TODO
 	}
@@ -27,7 +18,7 @@ class FunctionDefinition(
 class NativeDeclaration(
 	val signatureExpression: SignatureExpression,
 	val typeExpression: TypeExpression
-) : Statement() {
+) : Declaration() {
 	override fun finalize() {
 		// TODO
 	}
@@ -36,12 +27,12 @@ class NativeDeclaration(
 class TypeAliasDefinition(
 	val name: String,
 	val typeExpression: TypeExpression
-) : Statement() {
+) : Declaration() {
 	override fun finalize() {
 		// TODO
 	}
 }
 
-class NativeTypeDeclaration(val name: String, val atomicType: AtomicType) : Statement() {
+class NativeTypeDeclaration(val name: String, val atomicType: AtomicType) : Declaration() {
 	override fun finalize() = Unit
 }

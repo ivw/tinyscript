@@ -41,7 +41,6 @@ class ObjectType(
 }
 
 class FunctionType(
-	val isImpure: Boolean,
 	val params: ObjectType?,
 	val returnType: Type
 ) : Type() {

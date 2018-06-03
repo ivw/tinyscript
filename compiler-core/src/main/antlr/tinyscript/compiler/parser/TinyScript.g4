@@ -1,9 +1,9 @@
 grammar TinyScript;
 
-file: NL* (fileDeclaration ((',' | NL+) fileDeclaration)*)? NL* EOF;
+file: NL* (declaration ((',' | NL+) declaration)*)? NL* EOF;
 
-fileDeclaration
-	:	signature '=' expression												# FunctionDefinition
+declaration
+	:	signature '=' expression												# ValueDefinition
 	|	Native signature ':' typeExpression										# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDefinition
 	|	Native 'type' Name														# NativeTypeDeclaration
@@ -11,9 +11,9 @@ fileDeclaration
 	;
 
 signature
-	:	Name Mutable?													# FieldSignature
-	|	(typeExpression '.')? Name objectType							# FunctionSignature
-	|	(lhs=typeExpression)? OperatorSymbol rhs=typeExpression			# OperatorSignature
+	:	Name																	# FieldSignature
+	|	(typeExpression '.')? Name objectType									# FunctionSignature
+	|	(lhs=typeExpression)? OperatorSymbol rhs=typeExpression					# OperatorSignature
 	;
 
 expression
@@ -22,16 +22,17 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name Mutable?														# FieldRefExpression
-	|	Name object														# FunctionCallExpression
-	|	expression NL* '.' Name object									# DotFunctionCallExpression
-	|	OperatorSymbol NL* rhs=expression								# PrefixOperatorCallExpression
-	|	lhs=expression NL* OperatorSymbol NL* rhs=expression			# InfixOperatorCallExpression
-	|	expression NL* '.' Name											# ObjectFieldRefExpression
+	|	Name																	# FieldRefExpression
+	|	expression NL* '.' Name													# ObjectFieldRefExpression
+	|	Name object																# FunctionCallExpression
+	|	expression NL* '.' Name object											# DotFunctionCallExpression
+	|	OperatorSymbol NL* rhs=expression										# PrefixOperatorCallExpression
+	|	expression NL* '.' object?												# AnonymousFunctionCallExpression
+	|	lhs=expression NL* OperatorSymbol NL* rhs=expression					# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	objectType? '->' NL* expression									# AnonymousFunctionExpression
+	|	objectType? '->' NL* expression											# AnonymousFunctionExpression
 	;
 
 block: '(' NL* ((blockStatement (',' | NL+))* expression NL*)? ')';
@@ -47,7 +48,7 @@ objectStatement
 
 typeExpression
 	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
-	|	objectType? '->' typeExpression									# FunctionTypeExpression
+	|	objectType? '->' typeExpression											# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
 	|	Name																	# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
@@ -64,7 +65,6 @@ objectTypeStatement
 
 Private: 'private';
 Native: 'native';
-Mutable: '!';
 
 IntegerLiteral: [0-9]+;
 

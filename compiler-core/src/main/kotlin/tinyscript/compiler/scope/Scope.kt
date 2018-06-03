@@ -3,8 +3,11 @@ package tinyscript.compiler.scope
 abstract class Scope(val parentScope: Scope?) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
-	open fun findValue(signature: Signature): ValueResult? =
-		parentScope?.findValue(signature)
+	open fun findField(name: String): ValueResult? =
+		parentScope?.findField(name)
+
+	open fun findFunction(signature: Signature): ValueResult? =
+		parentScope?.findFunction(signature)
 
 	open fun findType(name: String): TypeResult? =
 		parentScope?.findType(name)
@@ -16,25 +19,22 @@ class SimpleScope(
 	val functionMap: SignatureMap<(Signature) -> Type> = SignatureMap(),
 	val typeMap: MutableMap<String, Type> = HashMap()
 ) : Scope(parentScope) {
-	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is FieldSignature) {
-			fieldMap[signature.name]?.let { fieldType ->
-				return LocalFieldValueResult(this, fieldType)
-			}
-		}
+	override fun findField(name: String): ValueResult? =
+		fieldMap[name]?.let { LocalFieldValueResult(this, it) }
+			?: super.findField(name)
 
-		return functionMap.get(signature)?.let {
+	override fun findFunction(signature: Signature): ValueResult? =
+		functionMap.get(signature)?.let {
 			FunctionValueResult(
 				this,
 				it.value(signature),
 				it.signature,
 				it.index
 			)
-		} ?: super.findValue(signature)
-	}
+		} ?: super.findFunction(signature)
 
 	override fun findType(name: String): TypeResult? =
-		typeMap[name]?.let { type -> TypeResult(this, type) }
+		typeMap[name]?.let { TypeResult(this, it) }
 			?: super.findType(name)
 }
 
@@ -44,56 +44,45 @@ class LazyScope(
 	val lazyFunctionMap: SignatureMap<() -> Type> = SignatureMap(),
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
-	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is FieldSignature) {
-			lazyFieldMap[signature.name]?.let { lazyFieldType ->
-				return LocalFieldValueResult(this, lazyFieldType())
-			}
-		}
+	override fun findField(name: String): ValueResult? =
+		lazyFieldMap[name]?.let { LocalFieldValueResult(this, it()) }
+			?: super.findField(name)
 
-		return lazyFunctionMap.get(signature)?.let {
+	override fun findFunction(signature: Signature): ValueResult? =
+		lazyFunctionMap.get(signature)?.let {
 			FunctionValueResult(
 				this,
 				it.value(),
 				it.signature,
 				it.index
 			)
-		} ?: super.findValue(signature)
-	}
+		} ?: super.findFunction(signature)
 
 	override fun findType(name: String): TypeResult? =
-		lazyTypeMap[name]?.let { lazyType -> TypeResult(this, lazyType()) }
+		lazyTypeMap[name]?.let { TypeResult(this, it()) }
 			?: super.findType(name)
 }
 
 class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
-	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is FieldSignature) {
-			if (thisType is ObjectType) {
-				thisType.fieldMap[signature.name]?.let { fieldType ->
-					return ThisFieldValueResult(this, fieldType)
-				}
-			}
-
-			if (signature.name == "this") {
-				return ThisValueResult(this, thisType)
+	override fun findField(name: String): ValueResult? {
+		if (thisType is ObjectType) {
+			thisType.fieldMap[name]?.let { fieldType ->
+				return ThisFieldValueResult(this, fieldType)
 			}
 		}
 
-		return super.findValue(signature)
+		if (name == "this") {
+			return ThisValueResult(this, thisType)
+		}
+
+		return super.findField(name)
 	}
 }
 
 class FunctionParamsScope(parentScope: Scope?, val paramsObjectType: ObjectType) : Scope(parentScope) {
-	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is FieldSignature) {
-			paramsObjectType.fieldMap[signature.name]?.let { fieldType ->
-				return ParameterValueResult(this, fieldType)
-			}
-		}
-
-		return super.findValue(signature)
-	}
+	override fun findField(name: String): ValueResult? =
+		paramsObjectType.fieldMap[name]?.let { ParameterValueResult(this, it) }
+			?: super.findField(name)
 }
 
 class OperatorFunctionScope(
@@ -101,17 +90,15 @@ class OperatorFunctionScope(
 	val lhsType: Type?,
 	val rhsType: Type
 ) : Scope(parentScope) {
-	override fun findValue(signature: Signature): ValueResult? {
-		if (signature is FieldSignature) {
-			if (signature.name == "left" && lhsType != null) {
-				return OperatorLhsValueResult(this, lhsType)
-			}
-
-			if (signature.name == "right") {
-				return OperatorRhsValueResult(this, rhsType)
-			}
+	override fun findField(name: String): ValueResult? {
+		if (name == "left" && lhsType != null) {
+			return OperatorLhsValueResult(this, lhsType)
 		}
 
-		return super.findValue(signature)
+		if (name == "right") {
+			return OperatorRhsValueResult(this, rhsType)
+		}
+
+		return super.findField(name)
 	}
 }
