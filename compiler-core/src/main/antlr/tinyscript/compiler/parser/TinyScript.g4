@@ -11,9 +11,8 @@ declaration
 	;
 
 signature
-	:	Name																	# FieldSignature
-	|	(typeExpression '.')? Name objectType									# FunctionSignature
-	|	(lhs=typeExpression)? OperatorSymbol rhs=typeExpression					# OperatorSignature
+	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
+	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
 	;
 
 expression
@@ -22,17 +21,15 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name																	# FieldRefExpression
-	|	expression NL* '.' Name													# ObjectFieldRefExpression
-	|	Name object																# FunctionCallExpression
-	|	expression NL* '.' Name object											# DotFunctionCallExpression
-	|	OperatorSymbol NL* rhs=expression										# PrefixOperatorCallExpression
-	|	expression NL* '.' object?												# AnonymousFunctionCallExpression
-	|	lhs=expression NL* OperatorSymbol NL* rhs=expression					# InfixOperatorCallExpression
+	|	Name Impure? object?													# NameReferenceExpression
+	|	expression NL* '.' Name Impure? object?								# DotNameReferenceExpression
+	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
+	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
+	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	objectType? '->' NL* expression											# AnonymousFunctionExpression
+	|	Impure? objectType? '->' NL* expression									# AnonymousFunctionExpression
 	;
 
 block: '(' NL* ((blockStatement (',' | NL+))* expression NL*)? ')';
@@ -48,7 +45,7 @@ objectStatement
 
 typeExpression
 	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
-	|	objectType? '->' typeExpression											# FunctionTypeExpression
+	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
 	|	Name																	# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
@@ -65,6 +62,7 @@ objectTypeStatement
 
 Private: 'private';
 Native: 'native';
+Impure: '!';
 
 IntegerLiteral: [0-9]+;
 

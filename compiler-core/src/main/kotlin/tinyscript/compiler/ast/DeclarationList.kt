@@ -76,14 +76,15 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				val signature = signatureExpression.signature
 
 				val lazyFunctionDefinition = SafeLazy {
-					val thisScope = if (signature is FunctionSignature && signature.lhsType != null)
+					val thisScope = if (signature is NameSignature && signature.lhsType != null)
 						ThisScope(scope, signature.lhsType) else scope
 
 					val functionScope: Scope = when (signature) {
-						is FunctionSignature -> FunctionParamsScope(
-							thisScope,
-							signature.paramsObjectType
-						)
+						is NameSignature -> {
+							if (signature.paramsObjectType != null)
+								FunctionParamsScope(thisScope, signature.paramsObjectType)
+							else thisScope
+						}
 						is OperatorSignature -> OperatorFunctionScope(
 							thisScope,
 							signature.lhsType,

@@ -1,22 +1,19 @@
 package tinyscript.compiler.scope
 
 sealed class Signature {
+	abstract val isImpure: Boolean
+
 	abstract fun accepts(signature: Signature): Boolean
 }
 
-class FieldSignature(val name: String) : Signature() {
-	override fun accepts(signature: Signature): Boolean =
-		signature is FieldSignature &&
-			name == signature.name
-}
-
-class FunctionSignature(
+class NameSignature(
 	val lhsType: Type?,
 	val name: String,
-	val paramsObjectType: ObjectType
+	override val isImpure: Boolean,
+	val paramsObjectType: ObjectType?
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
-		signature is FunctionSignature &&
+		signature is NameSignature &&
 			if (lhsType != null) {
 				signature.lhsType != null
 					&& lhsType.accepts(signature.lhsType)
@@ -24,12 +21,19 @@ class FunctionSignature(
 				signature.lhsType == null
 			} &&
 			name == signature.name &&
-			paramsObjectType.accepts(signature.paramsObjectType)
+			isImpure == signature.isImpure &&
+			if (paramsObjectType != null) {
+				signature.paramsObjectType != null
+					&& paramsObjectType.accepts(signature.paramsObjectType)
+			} else {
+				signature.paramsObjectType == null
+			}
 }
 
 class OperatorSignature(
 	val lhsType: Type?,
 	val operatorSymbol: String,
+	override val isImpure: Boolean,
 	val rhsType: Type
 ) : Signature() {
 	override fun accepts(signature: Signature): Boolean =
@@ -41,5 +45,6 @@ class OperatorSignature(
 				signature.lhsType == null
 			} &&
 			operatorSymbol == signature.operatorSymbol &&
+			isImpure == signature.isImpure &&
 			rhsType.accepts(signature.rhsType)
 }

@@ -7,32 +7,30 @@ sealed class SignatureExpression {
 	abstract val signature: Signature
 }
 
-class FieldSignatureExpression(
-	val name: String,
-) : SignatureExpression() {
-	override val signature = FieldSignature(name)
-}
-
-class FunctionSignatureExpression(
+class NameSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val name: String,
-	val paramsObjectTypeExpression: ObjectTypeExpression
+	val isImpure: Boolean,
+	val paramsObjectTypeExpression: ObjectTypeExpression?
 ) : SignatureExpression() {
-	override val signature = FunctionSignature(
+	override val signature = NameSignature(
 		lhsTypeExpression?.type,
 		name,
-		paramsObjectTypeExpression.type
+		isImpure,
+		paramsObjectTypeExpression?.type
 	)
 }
 
 class OperatorSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val operatorSymbol: String,
+	val isImpure: Boolean,
 	val rhsTypeExpression: TypeExpression
 ) : SignatureExpression() {
 	override val signature = OperatorSignature(
 		lhsTypeExpression?.type,
 		operatorSymbol,
+		isImpure,
 		rhsTypeExpression.type
 	)
 }
