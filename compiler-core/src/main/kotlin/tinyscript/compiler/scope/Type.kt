@@ -24,7 +24,7 @@ class AtomicType(override val hasMutableState: Boolean) : Type() {
 class ObjectType(
 	val fieldMap: Map<String, Type>
 ) : Type() {
-	override val hasMutableState: Boolean = TODO() // TODO true if any field is mutable
+	override val hasMutableState: Boolean = fieldMap.values.any { it.hasMutableState }
 
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false

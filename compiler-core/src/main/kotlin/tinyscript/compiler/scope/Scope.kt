@@ -6,6 +6,9 @@ abstract class Scope(val parentScope: Scope?) {
 	open fun findField(name: String): ValueResult? =
 		parentScope?.findField(name)
 
+	open fun findLhsParamlessFunction(lhsType: Type, name: String): ValueResult? =
+		parentScope?.findLhsParamlessFunction(lhsType, name)
+
 	open fun findFunction(signature: Signature): ValueResult? =
 		parentScope?.findFunction(signature)
 
@@ -16,12 +19,17 @@ abstract class Scope(val parentScope: Scope?) {
 class SimpleScope(
 	parentScope: Scope?,
 	val fieldMap: MutableMap<String, Type> = HashMap(),
+	val lhsParamlessFunctionsMap: SignatureMap<LhsParamlessFunctionSignature, Type> = SignatureMap(),
 	val functionMap: SignatureMap<(Signature) -> Type> = SignatureMap(),
 	val typeMap: MutableMap<String, Type> = HashMap()
 ) : Scope(parentScope) {
 	override fun findField(name: String): ValueResult? =
 		fieldMap[name]?.let { LocalFieldValueResult(this, it) }
 			?: super.findField(name)
+
+	override fun findLhsParamlessFunction(lhsType: Type, name: String): ValueResult? =
+		lhsParamlessFunctionsMap.get { it.lhsType.accepts(lhsType) && it.name == name }
+			?: super.findLhsParamlessFunction(lhsType, name)
 
 	override fun findFunction(signature: Signature): ValueResult? =
 		functionMap.get(signature)?.let {

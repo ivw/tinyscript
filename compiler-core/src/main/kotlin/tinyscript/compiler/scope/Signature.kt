@@ -3,48 +3,56 @@ package tinyscript.compiler.scope
 sealed class Signature {
 	abstract val isImpure: Boolean
 
-	abstract fun accepts(signature: Signature): Boolean
+	abstract val hasMutableInput: Boolean
 }
 
-class NameSignature(
-	val lhsType: Type?,
+class ParamlessFunctionSignature(
+	val name: String,
+	override val isImpure: Boolean
+) : Signature() {
+	override val hasMutableInput: Boolean = false
+}
+
+class LhsParamlessFunctionSignature(
+	val lhsType: Type,
+	val name: String,
+	override val isImpure: Boolean
+) : Signature() {
+	override val hasMutableInput: Boolean = lhsType.hasMutableState
+}
+
+class ParamFunctionSignature(
 	val name: String,
 	override val isImpure: Boolean,
-	val paramsObjectType: ObjectType?
+	val paramsObjectType: ObjectType
 ) : Signature() {
-	override fun accepts(signature: Signature): Boolean =
-		signature is NameSignature &&
-			if (lhsType != null) {
-				signature.lhsType != null
-					&& lhsType.accepts(signature.lhsType)
-			} else {
-				signature.lhsType == null
-			} &&
-			name == signature.name &&
-			isImpure == signature.isImpure &&
-			if (paramsObjectType != null) {
-				signature.paramsObjectType != null
-					&& paramsObjectType.accepts(signature.paramsObjectType)
-			} else {
-				signature.paramsObjectType == null
-			}
+	override val hasMutableInput: Boolean = paramsObjectType.hasMutableState
 }
 
-class OperatorSignature(
-	val lhsType: Type?,
+class LhsParamFunctionSignature(
+	val lhsType: Type,
+	val name: String,
+	override val isImpure: Boolean,
+	val paramsObjectType: ObjectType
+) : Signature() {
+	override val hasMutableInput: Boolean =
+		lhsType.hasMutableState || paramsObjectType.hasMutableState
+}
+
+class PrefixOperatorSignature(
 	val operatorSymbol: String,
 	override val isImpure: Boolean,
 	val rhsType: Type
 ) : Signature() {
-	override fun accepts(signature: Signature): Boolean =
-		signature is OperatorSignature &&
-			if (lhsType != null) {
-				signature.lhsType != null
-					&& lhsType.accepts(signature.lhsType)
-			} else {
-				signature.lhsType == null
-			} &&
-			operatorSymbol == signature.operatorSymbol &&
-			isImpure == signature.isImpure &&
-			rhsType.accepts(signature.rhsType)
+	override val hasMutableInput: Boolean = rhsType.hasMutableState
+}
+
+class InfixOperatorSignature(
+	val lhsType: Type,
+	val operatorSymbol: String,
+	override val isImpure: Boolean,
+	val rhsType: Type
+) : Signature() {
+	override val hasMutableInput: Boolean =
+		lhsType.hasMutableState || rhsType.hasMutableState
 }
