@@ -34,8 +34,9 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 			}
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
 				val name = declarationCtx.Name().text
+				val isMutable = declarationCtx.Mutable() != null
 
-				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(false /* TODO */))
+				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(isMutable))
 					.also { orderedDeclarations.add(it) }
 				scope.lazyTypeMap[name] = { nativeTypeDeclaration.atomicType }
 			}

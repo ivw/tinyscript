@@ -29,7 +29,12 @@ class LazyScope(
 	val lazyOperatorSignatureMap: SignatureMap<OperatorSignature, () -> Type> = SignatureMap(),
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
-	override fun findNameFunction(lhsType: Type?, name: String, isImpure: Boolean, paramsObjectType: ObjectType?): ValueResult? =
+	override fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? =
 		lazyNameSignatureMap.get { signature ->
 			if (signature.lhsType != null) {
 				lhsType != null && signature.lhsType.accepts(lhsType)
@@ -46,7 +51,12 @@ class LazyScope(
 		}?.let { FunctionValueResult(this, it.value(), it.signature, it.index) }
 			?: super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
 
-	override fun findOperator(lhsType: Type?, operatorSymbol: String, isImpure: Boolean, rhsType: Type): ValueResult? =
+	override fun findOperator(
+		lhsType: Type?,
+		operatorSymbol: String,
+		isImpure: Boolean,
+		rhsType: Type
+	): ValueResult? =
 		lazyOperatorSignatureMap.get { signature ->
 			if (signature.lhsType != null) {
 				lhsType != null && signature.lhsType.accepts(lhsType)
@@ -81,7 +91,7 @@ class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
 
 		if (lhsType == null) {
 			super.findNameFunction(thisType, name, isImpure, paramsObjectType)?.let {
-				return it
+				return it // TODO needs special kind of ThisScope ValueResult?
 			}
 		}
 
