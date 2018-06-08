@@ -6,45 +6,24 @@ val floatType = FloatType(Double.MIN_VALUE, Double.MAX_VALUE)
 
 val stringType = AtomicType(false)
 
-val intBoxType = AtomicType(true)
+val intrinsicsScope: Scope = object : Scope(null) {
+	private val typeMap = mapOf(
+		"Int" to intType,
+		"Float" to floatType,
+		"String" to stringType
+	)
 
-val intBoxFunctionSignature = FunctionSignature(
-	null,
-	"intBox",
-	ObjectType(mapOf("value" to intType))
-)
+	override fun findType(name: String): TypeResult? = typeMap[name]?.let { TypeResult(this, it) }
 
-val intBoxSetFunctionSignature = FunctionSignature(
-	intBoxType,
-	"set",
-	ObjectType(mapOf("value" to intType))
-)
+	override fun findOperator(lhsType: Type?, operatorSymbol: String, isImpure: Boolean, rhsType: Type): ValueResult? {
+		if (lhsType is IntType && operatorSymbol == "*" && isImpure == false && rhsType is IntType) {
+			val returnType = IntType(
+				lhsType.minValue + rhsType.minValue,
+				lhsType.maxValue + rhsType.maxValue
+			)
+			return IntrinsicsValueResult(this, returnType, "*")
+		}
 
-val intBoxGetFunctionSignature = FunctionSignature(
-	intBoxType,
-	"get",
-	ObjectType(emptyMap())
-)
-
-val intTimesIntSignature = OperatorSignature(intType, "*", intType)
-
-val intrinsicsScope: Scope = SimpleScope(null)
-	.apply {
-		typeMap["Int"] = intType
-		typeMap["Float"] = floatType
-		typeMap["String"] = stringType
-		typeMap["IntBox"] = intBoxType
-
-		functionMap.add(intTimesIntSignature, { signature ->
-			if (signature is OperatorSignature && signature.lhsType is IntType && signature.rhsType is IntType) {
-				IntType(
-					signature.lhsType.minValue + signature.rhsType.minValue,
-					signature.lhsType.maxValue + signature.rhsType.maxValue
-				)
-			} else throw IllegalStateException()
-		})
-
-		functionMap.add(intBoxFunctionSignature, { intBoxType })
-		functionMap.add(intBoxSetFunctionSignature, { AnyType })
-		functionMap.add(intBoxGetFunctionSignature, { intType })
+		return null
 	}
+}

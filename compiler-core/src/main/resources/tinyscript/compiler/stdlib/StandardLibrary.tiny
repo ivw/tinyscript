@@ -1,8 +1,19 @@
-native type System
+native mutable type System
 
 native System.println!: ()
 
 native System.println![m: ()]: ()
+
+
+
+native mutable type IntBox
+
+native intBox![initialValue: Int]: IntBox
+
+native IntBox.get!: Int
+
+native IntBox.set![value: Int]: ()
+
 
 
 type Point = [ x: Int, y: Int ]

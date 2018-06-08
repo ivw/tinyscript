@@ -23,5 +23,7 @@ class OperatorLhsValueResult(scope: Scope, type: Type) : ValueResult(scope, type
 
 class OperatorRhsValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
 
+class IntrinsicsValueResult(scope: Scope, type: Type, val operatorSymbol: String) : ValueResult(scope, type)
+
 
 class TypeResult(scope: Scope, val type: Type) : ScopeResult(scope)

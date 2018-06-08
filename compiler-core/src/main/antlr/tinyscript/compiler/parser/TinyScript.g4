@@ -6,7 +6,7 @@ declaration
 	:	signature '=' expression												# ValueDefinition
 	|	Native signature ':' typeExpression										# NativeDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDefinition
-	|	Native 'type' Name														# NativeTypeDeclaration
+	|	Native Mutable? 'type' Name														# NativeTypeDeclaration
 	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDefinition
 	;
 
@@ -63,6 +63,7 @@ objectTypeStatement
 Private: 'private';
 Native: 'native';
 Impure: '!';
+Mutable: 'mutable';
 
 IntegerLiteral: [0-9]+;
 

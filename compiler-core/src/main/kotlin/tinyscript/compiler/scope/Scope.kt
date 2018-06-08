@@ -3,68 +3,61 @@ package tinyscript.compiler.scope
 abstract class Scope(val parentScope: Scope?) {
 	val depth: Int = if (parentScope == null) 0 else parentScope.depth + 1
 
-	open fun findField(name: String): ValueResult? =
-		parentScope?.findField(name)
+	open fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? =
+		parentScope?.findNameFunction(lhsType, name, isImpure, paramsObjectType)
 
-	open fun findLhsParamlessFunction(lhsType: Type, name: String): ValueResult? =
-		parentScope?.findLhsParamlessFunction(lhsType, name)
-
-	open fun findFunction(signature: Signature): ValueResult? =
-		parentScope?.findFunction(signature)
+	open fun findOperator(
+		lhsType: Type?,
+		operatorSymbol: String,
+		isImpure: Boolean,
+		rhsType: Type
+	): ValueResult? =
+		parentScope?.findOperator(lhsType, operatorSymbol, isImpure, rhsType)
 
 	open fun findType(name: String): TypeResult? =
 		parentScope?.findType(name)
 }
 
-class SimpleScope(
-	parentScope: Scope?,
-	val fieldMap: MutableMap<String, Type> = HashMap(),
-	val lhsParamlessFunctionsMap: SignatureMap<LhsParamlessFunctionSignature, Type> = SignatureMap(),
-	val functionMap: SignatureMap<(Signature) -> Type> = SignatureMap(),
-	val typeMap: MutableMap<String, Type> = HashMap()
-) : Scope(parentScope) {
-	override fun findField(name: String): ValueResult? =
-		fieldMap[name]?.let { LocalFieldValueResult(this, it) }
-			?: super.findField(name)
-
-	override fun findLhsParamlessFunction(lhsType: Type, name: String): ValueResult? =
-		lhsParamlessFunctionsMap.get { it.lhsType.accepts(lhsType) && it.name == name }
-			?: super.findLhsParamlessFunction(lhsType, name)
-
-	override fun findFunction(signature: Signature): ValueResult? =
-		functionMap.get(signature)?.let {
-			FunctionValueResult(
-				this,
-				it.value(signature),
-				it.signature,
-				it.index
-			)
-		} ?: super.findFunction(signature)
-
-	override fun findType(name: String): TypeResult? =
-		typeMap[name]?.let { TypeResult(this, it) }
-			?: super.findType(name)
-}
-
 class LazyScope(
 	parentScope: Scope?,
-	val lazyFieldMap: MutableMap<String, () -> Type> = HashMap(),
-	val lazyFunctionMap: SignatureMap<() -> Type> = SignatureMap(),
+	val lazyNameSignatureMap: SignatureMap<NameSignature, () -> Type> = SignatureMap(),
+	val lazyOperatorSignatureMap: SignatureMap<OperatorSignature, () -> Type> = SignatureMap(),
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
-	override fun findField(name: String): ValueResult? =
-		lazyFieldMap[name]?.let { LocalFieldValueResult(this, it()) }
-			?: super.findField(name)
+	override fun findNameFunction(lhsType: Type?, name: String, isImpure: Boolean, paramsObjectType: ObjectType?): ValueResult? =
+		lazyNameSignatureMap.get { signature ->
+			if (signature.lhsType != null) {
+				lhsType != null && signature.lhsType.accepts(lhsType)
+			} else {
+				lhsType == null
+			} &&
+				signature.name == name &&
+				signature.isImpure == isImpure &&
+				if (signature.paramsObjectType != null) {
+					paramsObjectType != null && signature.paramsObjectType.accepts(paramsObjectType)
+				} else {
+					paramsObjectType == null
+				}
+		}?.let { FunctionValueResult(this, it.value(), it.signature, it.index) }
+			?: super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
 
-	override fun findFunction(signature: Signature): ValueResult? =
-		lazyFunctionMap.get(signature)?.let {
-			FunctionValueResult(
-				this,
-				it.value(),
-				it.signature,
-				it.index
-			)
-		} ?: super.findFunction(signature)
+	override fun findOperator(lhsType: Type?, operatorSymbol: String, isImpure: Boolean, rhsType: Type): ValueResult? =
+		lazyOperatorSignatureMap.get { signature ->
+			if (signature.lhsType != null) {
+				lhsType != null && signature.lhsType.accepts(lhsType)
+			} else {
+				lhsType == null
+			} &&
+				signature.operatorSymbol == operatorSymbol &&
+				signature.isImpure == isImpure &&
+				signature.rhsType.accepts(rhsType)
+		}?.let { FunctionValueResult(this, it.value(), it.signature, it.index) }
+			?: super.findOperator(lhsType, operatorSymbol, isImpure, rhsType)
 
 	override fun findType(name: String): TypeResult? =
 		lazyTypeMap[name]?.let { TypeResult(this, it()) }
@@ -72,41 +65,66 @@ class LazyScope(
 }
 
 class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
-	override fun findField(name: String): ValueResult? {
-		if (thisType is ObjectType) {
-			thisType.fieldMap[name]?.let { fieldType ->
-				return ThisFieldValueResult(this, fieldType)
+	override fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? {
+		if (lhsType == null && !isImpure && paramsObjectType == null) {
+			if (name == "this") {
+				return ThisValueResult(this, thisType)
+			}
+
+			// TODO maybe also have to check if thisType is an object type
+		}
+
+		if (lhsType == null) {
+			super.findNameFunction(thisType, name, isImpure, paramsObjectType)?.let {
+				return it
 			}
 		}
 
-		if (name == "this") {
-			return ThisValueResult(this, thisType)
-		}
-
-		return super.findField(name)
+		return super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
 	}
 }
 
-class FunctionParamsScope(parentScope: Scope?, val paramsObjectType: ObjectType) : Scope(parentScope) {
-	override fun findField(name: String): ValueResult? =
-		paramsObjectType.fieldMap[name]?.let { ParameterValueResult(this, it) }
-			?: super.findField(name)
+class FunctionParamsScope(parentScope: Scope?, val scopeParams: ObjectType) : Scope(parentScope) {
+	override fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? {
+		if (lhsType == null && !isImpure && paramsObjectType == null) {
+			scopeParams.fieldMap[name]?.let { return ParameterValueResult(this, it) }
+		}
+
+		return super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
+	}
 }
 
 class OperatorFunctionScope(
 	parentScope: Scope?,
-	val lhsType: Type?,
-	val rhsType: Type
+	val scopeLhsType: Type?,
+	val scopeRhsType: Type
 ) : Scope(parentScope) {
-	override fun findField(name: String): ValueResult? {
-		if (name == "left" && lhsType != null) {
-			return OperatorLhsValueResult(this, lhsType)
+	override fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? {
+		if (lhsType == null && !isImpure && paramsObjectType == null) {
+			if (name == "left" && scopeLhsType != null) {
+				return OperatorLhsValueResult(this, scopeLhsType)
+			}
+
+			if (name == "right") {
+				return OperatorRhsValueResult(this, scopeRhsType)
+			}
 		}
 
-		if (name == "right") {
-			return OperatorRhsValueResult(this, rhsType)
-		}
-
-		return super.findField(name)
+		return super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
 	}
 }
