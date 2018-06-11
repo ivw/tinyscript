@@ -16,7 +16,7 @@ val intrinsicsScope: Scope = object : Scope(null) {
 	override fun findType(name: String): TypeResult? = typeMap[name]?.let { TypeResult(this, it) }
 
 	override fun findOperator(lhsType: Type?, operatorSymbol: String, isImpure: Boolean, rhsType: Type): ValueResult? {
-		if (lhsType is IntType && operatorSymbol == "*" && isImpure == false && rhsType is IntType) {
+		if (lhsType is IntType && operatorSymbol == "*" && !isImpure && rhsType is IntType) {
 			val returnType = IntType(
 				lhsType.minValue + rhsType.minValue,
 				lhsType.maxValue + rhsType.maxValue

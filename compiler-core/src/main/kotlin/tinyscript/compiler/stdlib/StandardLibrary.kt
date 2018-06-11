@@ -1,7 +1,7 @@
 package tinyscript.compiler.stdlib
 
 import org.antlr.v4.runtime.CharStreams
-import tinyscript.compiler.ast.analysePure
+import tinyscript.compiler.ast.analyse
 import tinyscript.compiler.parser.parseFile
 import tinyscript.compiler.scope.Scope
 import tinyscript.compiler.scope.intrinsicsScope
@@ -16,7 +16,7 @@ object StandardLibrary {
 			parseFile(CharStreams.fromStream(it))
 		}
 
-		val statementList = fileCtx.statementList().statement().analysePure(intrinsicsScope)
+		val statementList = fileCtx.declaration().analyse(intrinsicsScope)
 
 		statementList.scope
 	}
