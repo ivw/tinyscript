@@ -33,7 +33,7 @@ class StringExpression(val value: String) : Expression() {
 class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression() {
 	override val type = ObjectType(objectStatements.fold(mutableMapOf(), { mutableFieldMap, objectStatement ->
 		when (objectStatement) {
-			is ObjectFieldDeclaration -> {
+			is ObjectFieldDefinition -> {
 				mutableFieldMap[objectStatement.name] = objectStatement.expression.type
 			}
 			is ObjectInheritStatement -> {

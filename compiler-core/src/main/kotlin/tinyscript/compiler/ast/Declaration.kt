@@ -6,7 +6,7 @@ sealed class Declaration {
 	abstract fun finalize()
 }
 
-class ValueDefinition(
+class FunctionDefinition(
 	val signatureExpression: SignatureExpression,
 	val expression: Expression
 ) : Declaration() {
@@ -15,7 +15,7 @@ class ValueDefinition(
 	}
 }
 
-class NativeDeclaration(
+class NativeFunctionDeclaration(
 	val signatureExpression: SignatureExpression,
 	val typeExpression: TypeExpression
 ) : Declaration() {

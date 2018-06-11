@@ -72,7 +72,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				}
 				lazyDeclarationList.add(lazyImperativeStatement)
 			}
-			is TinyScriptParser.ValueDefinitionContext -> {
+			is TinyScriptParser.FunctionDefinitionContext -> {
 				val signatureExpression = declarationCtx.signature().analyse(scope)
 				val signature = signatureExpression.signature
 
@@ -95,7 +95,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 
 					val expression = declarationCtx.expression().analyse(functionScope)
 
-					ValueDefinition(signatureExpression, expression)
+					FunctionDefinition(signatureExpression, expression)
 						.also { orderedDeclarations.add(it) }
 				}
 				scope.lazyFunctionMap.add(signatureExpression.signature, {
@@ -103,19 +103,19 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				})
 				lazyDeclarationList.add(lazyFunctionDefinition)
 			}
-			is TinyScriptParser.NativeDeclarationContext -> {
+			is TinyScriptParser.NativeFunctionDeclarationContext -> {
 				val signatureExpression = declarationCtx.signature().analyse(scope)
 
-				val lazyNativeDeclaration = SafeLazy {
+				val lazyNativeFunctionDeclaration = SafeLazy {
 					val typeExpression = declarationCtx.typeExpression().analyse(scope)
 
-					NativeDeclaration(signatureExpression, typeExpression)
+					NativeFunctionDeclaration(signatureExpression, typeExpression)
 						.also { orderedDeclarations.add(it) }
 				}
 				scope.lazyFunctionMap.add(signatureExpression.signature, {
-					lazyNativeDeclaration.get().typeExpression.type
+					lazyNativeFunctionDeclaration.get().typeExpression.type
 				})
-				lazyDeclarationList.add(lazyNativeDeclaration)
+				lazyDeclarationList.add(lazyNativeFunctionDeclaration)
 			}
 		}
 	}

@@ -7,7 +7,7 @@ sealed class ObjectStatement {
 	abstract val isImpure: Boolean
 }
 
-class ObjectFieldDeclaration(
+class ObjectFieldDefinition(
 	val name: String,
 	val expression: Expression
 ) : ObjectStatement() {
@@ -22,8 +22,8 @@ class ObjectInheritStatement(
 
 fun TinyScriptParser.ObjectStatementContext.analyse(scope: Scope): ObjectStatement =
 	when (this) {
-		is TinyScriptParser.ObjectFieldDeclarationContext ->
-			ObjectFieldDeclaration(
+		is TinyScriptParser.ObjectFieldDefinitionContext ->
+			ObjectFieldDefinition(
 				Name().text,
 				expression().analyse(scope)
 			)
