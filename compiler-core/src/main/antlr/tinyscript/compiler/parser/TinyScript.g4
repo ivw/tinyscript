@@ -5,14 +5,14 @@ file: NL* (declaration ((',' | NL+) declaration)*)? NL* EOF;
 declaration
 	:	signature '=' expression												# ValueDefinition
 	|	Native signature ':' typeExpression										# NativeDeclaration
-	|	'type' Name '=' typeExpression											# TypeAliasDefinition
-	|	Native Mutable? 'type' Name														# NativeTypeDeclaration
+	|	'type' Name Mutable? '=' typeExpression									# TypeAliasDefinition
+	|	Native 'type' Name Mutable?												# NativeTypeDeclaration
 	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDefinition
 	;
 
 signature
-	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
-	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
+	:	(typeExpression '.')? Name Mutable? objectType?							# NameSignature
+	|	(lhs=typeExpression)? OperatorSymbol Mutable? rhs=typeExpression		# OperatorSignature
 	;
 
 expression
@@ -21,15 +21,15 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name Impure? object?													# NameReferenceExpression
-	|	expression NL* '.' Name Impure? object?									# DotNameReferenceExpression
-	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
-	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
-	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
+	|	Name Mutable? object?													# NameReferenceExpression
+	|	expression NL* '.' Name Mutable? object?								# DotNameReferenceExpression
+	|	expression NL* '.' Mutable? object?										# AnonymousFunctionCallExpression
+	|	OperatorSymbol Mutable? expression										# PrefixOperatorCallExpression
+	|	lhs=expression NL* OperatorSymbol Mutable? NL* rhs=expression			# InfixOperatorCallExpression
 	|	'if' NL* (block expression NL*)+ 'else' expression						# ConditionalExpression
 	|	expression 'if' NL* (block expression NL*)+ 'else' expression			# ExprConditionalExpression // not sure yet.
 	|	expression 'then' NL* expression										# SingleConditionalExpression
-	|	Impure? objectType? '->' NL* expression									# AnonymousFunctionExpression
+	|	Mutable? objectType? '->' NL* expression								# AnonymousFunctionExpression
 	;
 
 block: '(' NL* ((blockStatement (',' | NL+))* expression NL*)? ')';
@@ -45,9 +45,9 @@ objectStatement
 
 typeExpression
 	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
-	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
+	|	Mutable? objectType? '->' typeExpression								# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
-	|	Name																	# TypeReferenceExpression
+	|	Name Mutable?															# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
 	;
 
@@ -62,8 +62,7 @@ objectTypeStatement
 
 Private: 'private';
 Native: 'native';
-Impure: '!';
-Mutable: 'mutable';
+Mutable: '!';
 
 IntegerLiteral: [0-9]+;
 
@@ -74,7 +73,7 @@ StringLiteral: '"' StringCharacter* '"';
 fragment
 StringCharacter: ~["\\];
 
-OperatorSymbol: '+' | '-' | '*' | '/' | '^' | '%' | '==' | '!=';
+OperatorSymbol: '+' | '-' | '*' | '/' | '^' | '%' | '==' | '!=' | '<' | '>' | '&&' | '||';
 
 Name: [a-zA-Z$_] [a-zA-Z$_0-9]*;
 

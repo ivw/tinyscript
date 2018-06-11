@@ -1,18 +1,18 @@
-native mutable type System
+native type System!
 
-native System.println!: ()
+native System!.println!: ()
 
-native System.println![m: ()]: ()
+native System!.println![m: ()]: ()
 
 
 
-native mutable type IntBox
+native type IntBox!
 
 native intBox![initialValue: Int]: IntBox
 
-native IntBox.get!: Int
+native IntBox!.get!: Int
 
-native IntBox.set![value: Int]: ()
+native IntBox!.set![value: Int]: ()
 
 
 
@@ -22,4 +22,7 @@ Point.area = x * y
 
 pointZero = [ x = 0, y = 0 ]
 
-Point < Point = left.x < right.x && left.y < right.y
+Point + Point = [
+	x = left.x + right.x
+	y = left.y + right.y
+]
