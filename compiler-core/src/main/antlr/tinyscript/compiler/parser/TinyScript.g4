@@ -3,8 +3,8 @@ grammar TinyScript;
 file: NL* (declaration ((',' | NL+) declaration)*)? NL* EOF;
 
 declaration
-	:	signature '=' expression												# ValueDefinition
-	|	Native signature ':' typeExpression										# NativeDeclaration
+	:	signature '=' expression												# FunctionDefinition
+	|	Native signature ':' typeExpression										# NativeFunctionDeclaration
 	|	'type' Name '=' typeExpression											# TypeAliasDefinition
 	|	Native Mutable? 'type' Name														# NativeTypeDeclaration
 	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDefinition
@@ -21,8 +21,8 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name Impure? object?													# NameReferenceExpression
-	|	expression NL* '.' Name Impure? object?									# DotNameReferenceExpression
+	|	Name Impure? object?													# NameCallExpression
+	|	expression NL* '.' Name Impure? object?									# DotNameCallExpression
 	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
 	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
@@ -39,7 +39,7 @@ blockStatement: (Name '=')? expression;
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
 objectStatement
-	:	Name '=' expression														# ObjectFieldDeclaration
+	:	Name '=' expression														# ObjectFieldDefinition
 	|	'&' expression															# ObjectInheritStatement
 	;
 
