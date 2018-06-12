@@ -31,18 +31,17 @@ class FunctionTypeExpression(
 }
 
 class ObjectTypeExpression(val objectTypeStatements: List<ObjectTypeStatement>) : TypeExpression() {
-	override val type = ObjectType(mutableMapOf<String, Type>().also { mutableFieldMap ->
-		objectTypeStatements.forEach { objectTypeStatement ->
-			when (objectTypeStatement) {
-				is ObjectTypeFieldDeclaration -> {
-					mutableFieldMap[objectTypeStatement.name] = objectTypeStatement.typeExpression.type
-				}
-				is ObjectTypeInheritStatement -> {
-					TODO()
-				}
+	override val type = ObjectType(objectTypeStatements.fold(mutableMapOf(), { mutableFieldMap, objectTypeStatement ->
+		when (objectTypeStatement) {
+			is ObjectTypeFieldDeclaration -> {
+				mutableFieldMap[objectTypeStatement.name] = objectTypeStatement.typeExpression.type
+			}
+			is ObjectTypeInheritStatement -> {
+				TODO()
 			}
 		}
-	})
+		mutableFieldMap
+	}))
 }
 
 class TypeAliasNotFoundException(val name: String) : RuntimeException(

@@ -3,22 +3,16 @@ package tinyscript.compiler.ast
 import tinyscript.compiler.parser.TinyScriptParser
 import tinyscript.compiler.scope.Scope
 
-sealed class ObjectStatement {
-	abstract val isImpure: Boolean
-}
+sealed class ObjectStatement
 
 class ObjectFieldDefinition(
 	val name: String,
 	val expression: Expression
-) : ObjectStatement() {
-	override val isImpure: Boolean get() = expression.isImpure
-}
+) : ObjectStatement()
 
 class ObjectInheritStatement(
 	val expression: Expression
-) : ObjectStatement() {
-	override val isImpure: Boolean get() = expression.isImpure
-}
+) : ObjectStatement()
 
 fun TinyScriptParser.ObjectStatementContext.analyse(scope: Scope): ObjectStatement =
 	when (this) {

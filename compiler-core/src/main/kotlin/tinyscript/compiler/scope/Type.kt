@@ -43,11 +43,12 @@ class ObjectType(
 }
 
 class FunctionType(
+	val isImpure: Boolean,
 	val params: ObjectType?,
 	val returnType: Type
 ) : Type() {
 	// if a function expression uses a mutable field in block scope, then its type is mutable
-	override val hasMutableState: Boolean = true
+	override val hasMutableState: Boolean get() = isImpure
 
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
