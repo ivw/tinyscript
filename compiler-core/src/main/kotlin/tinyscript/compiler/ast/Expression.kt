@@ -12,7 +12,7 @@ class AnyExpression : Expression() {
 }
 
 class BlockExpression(
-	val statementList: StatementList,
+	val blockStatementList: List<BlockStatement>,
 	val expression: Expression
 ) : Expression() {
 	override val type get() = expression.type
