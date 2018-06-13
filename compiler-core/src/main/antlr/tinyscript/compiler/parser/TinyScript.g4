@@ -7,7 +7,7 @@ declaration
 	|	Native signature ':' typeExpression										# NativeFunctionDeclaration
 	|	'type' Name Impure? '=' typeExpression									# TypeAliasDefinition
 	|	Native 'type' Name Impure?												# NativeTypeDeclaration
-	|	'enum' Name '=' Name (NL* '|' Name)+									# EnumTypeDefinition
+	|	'enum' Name Impure? '=' Name (NL* '|' Name)+							# EnumTypeDefinition
 	;
 
 signature
@@ -55,7 +55,7 @@ objectType: '[' NL* (objectTypeStatement ((',' | NL+) objectTypeStatement)* NL*)
 
 objectTypeStatement
 	:	Name ':' typeExpression													# ObjectTypeFieldDeclaration
-	|	'&' Name																# ObjectTypeInheritStatement
+	|	'&' Name Impure?														# ObjectTypeInheritStatement
 	;
 
 // LEXER TOKENS
