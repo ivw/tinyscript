@@ -5,13 +5,13 @@ file: NL* (declaration ((',' | NL+) declaration)*)? NL* EOF;
 declaration
 	:	signature '=' expression												# FunctionDefinition
 	|	Native signature ':' typeExpression										# NativeFunctionDeclaration
-	|	'type' Name Impure? '=' typeExpression									# TypeAliasDefinition
-	|	Native 'type' Name Impure?												# NativeTypeDeclaration
-	|	'enum' Name Impure? '=' Name (NL* '|' Name)+							# EnumTypeDefinition
+	|	'type' TypeName Impure? '=' typeExpression									# TypeAliasDefinition
+	|	Native 'type' TypeName Impure?												# NativeTypeDeclaration
+	|	'enum' TypeName Impure? '=' ValueName (NL* '|' ValueName)+							# EnumTypeDefinition
 	;
 
 signature
-	:	(typeExpression '.')? Name Impure? objectType?							# NameSignature
+	:	(typeExpression '.')? ValueName Impure? objectType?							# NameSignature
 	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
 	;
 
@@ -21,8 +21,8 @@ expression
 	|	FloatLiteral															# FloatLiteralExpression
 	|	StringLiteral															# StringLiteralExpression
 	|	object																	# ObjectExpression
-	|	Name Impure? object?													# NameCallExpression
-	|	expression NL* '.' Name Impure? object?									# DotNameCallExpression
+	|	ValueName Impure? object?													# NameCallExpression
+	|	expression NL* '.' ValueName Impure? object?									# DotNameCallExpression
 	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
 	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression
@@ -34,12 +34,12 @@ expression
 
 block: '(' NL* ((blockStatement (',' | NL+))* expression NL*)? ')';
 
-blockStatement: (Name '=')? expression;
+blockStatement: (ValueName '=')? expression;
 
 object: '[' NL* (objectStatement ((',' | NL+) objectStatement)*)? NL* ']';
 
 objectStatement
-	:	Name '=' expression														# ObjectFieldDefinition
+	:	ValueName '=' expression														# ObjectFieldDefinition
 	|	'&' expression															# ObjectInheritStatement
 	;
 
@@ -47,15 +47,15 @@ typeExpression
 	:	'(' NL* (typeExpression NL*)? ')'										# ParenTypeExpression
 	|	Impure? objectType? '->' typeExpression									# FunctionTypeExpression
 	|	objectType																# ObjectTypeExpression
-	|	Name Impure?															# TypeReferenceExpression
+	|	TypeName Impure?															# TypeReferenceExpression
 	|	typeExpression block													# DependentTypeExpression
 	;
 
 objectType: '[' NL* (objectTypeStatement ((',' | NL+) objectTypeStatement)* NL*)? ']';
 
 objectTypeStatement
-	:	Name ':' typeExpression													# ObjectTypeFieldDeclaration
-	|	'&' Name Impure?														# ObjectTypeInheritStatement
+	:	ValueName ':' typeExpression													# ObjectTypeFieldDeclaration
+	|	'&' TypeName Impure?														# ObjectTypeInheritStatement
 	;
 
 // LEXER TOKENS
@@ -75,7 +75,9 @@ StringCharacter: ~["\\];
 
 OperatorSymbol: '+' | '-' | '*' | '/' | '^' | '%' | '==' | '!=' | '<' | '>' | '&&' | '||';
 
-Name: [a-zA-Z$_] [a-zA-Z$_0-9]*;
+ValueName: [a-z] [a-zA-Z0-9]*;
+
+TypeName: [A-Z] [a-zA-Z0-9]*;
 
 NL: [\r\n]+;
 
