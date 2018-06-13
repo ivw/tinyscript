@@ -9,8 +9,8 @@ class DeclarationList(
 	val orderedDeclarations: List<Declaration>
 )
 
-class PureFieldWithMutableTypeException : RuntimeException(
-	"field signature must be impure if its type is mutable"
+class TypeMutableException(val name: String) : RuntimeException(
+	"type must have `!` iff it is mutable"
 )
 
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationList {
@@ -23,9 +23,13 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 		when (declarationCtx) {
 			is TinyScriptParser.TypeAliasDefinitionContext -> {
 				val name = declarationCtx.Name().text
+				val isMutable = declarationCtx.Impure() != null
 
 				val lazyTypeAliasDefinition = SafeLazy {
 					val typeExpression = declarationCtx.typeExpression().analyse(scope)
+					if (typeExpression.type.isMutable != isMutable)
+						throw TypeMutableException(name)
+
 					TypeAliasDefinition(name, typeExpression)
 						.also { orderedDeclarations.add(it) }
 				}

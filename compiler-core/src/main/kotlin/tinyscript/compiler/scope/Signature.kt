@@ -13,8 +13,8 @@ class NameSignature(
 	val paramsObjectType: ObjectType?
 ) : Signature() {
 	override val hasMutableInput: Boolean =
-		(lhsType != null && lhsType.hasMutableState)
-			|| (paramsObjectType != null && paramsObjectType.hasMutableState)
+		(lhsType != null && lhsType.isMutable)
+			|| (paramsObjectType != null && paramsObjectType.isMutable)
 }
 
 class OperatorSignature(
@@ -24,5 +24,5 @@ class OperatorSignature(
 	val rhsType: Type
 ) : Signature() {
 	override val hasMutableInput: Boolean =
-		(lhsType != null && lhsType.hasMutableState) || rhsType.hasMutableState
+		(lhsType != null && lhsType.isMutable) || rhsType.isMutable
 }

@@ -1,7 +1,7 @@
 package tinyscript.compiler.scope
 
 sealed class Type {
-	open val hasMutableState: Boolean = false
+	open val isMutable: Boolean = false
 
 	/**
 	 * @return true if `type` is equal to this, or if it is a subtype of this
@@ -17,14 +17,14 @@ object AnyType : Type() {
 	override fun toString(): String = "AnyType"
 }
 
-class AtomicType(override val hasMutableState: Boolean) : Type() {
+class AtomicType(override val isMutable: Boolean) : Type() {
 	override fun accepts(type: Type): Boolean = type === this
 }
 
 class ObjectType(
 	val fieldMap: Map<String, Type>
 ) : Type() {
-	override val hasMutableState: Boolean = fieldMap.values.any { it.hasMutableState }
+	override val isMutable: Boolean = fieldMap.values.any { it.isMutable }
 
 	override fun accepts(type: Type): Boolean {
 		if (type !is ObjectType) return false
@@ -48,7 +48,7 @@ class FunctionType(
 	val returnType: Type
 ) : Type() {
 	// if a function expression uses a mutable field in block scope, then its type is mutable
-	override val hasMutableState: Boolean get() = isImpure
+	override val isMutable: Boolean get() = isImpure
 
 	override fun accepts(type: Type): Boolean {
 		if (type !is FunctionType) return false
