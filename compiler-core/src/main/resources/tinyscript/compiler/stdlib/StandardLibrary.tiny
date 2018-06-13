@@ -8,7 +8,7 @@ native System!.println![m: ()]: ()
 
 native type IntBox!
 
-native intBox![initialValue: Int]: IntBox
+native intBox![initialValue: Int]: IntBox!
 
 native IntBox!.get!: Int
 

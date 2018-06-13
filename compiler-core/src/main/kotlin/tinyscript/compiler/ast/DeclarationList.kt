@@ -34,7 +34,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 			}
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
 				val name = declarationCtx.Name().text
-				val isMutable = declarationCtx.Mutable() != null
+				val isMutable = declarationCtx.Impure() != null
 
 				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(isMutable))
 					.also { orderedDeclarations.add(it) }
@@ -46,32 +46,6 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	// now add all the values to scope (signatures might need the types)
 	forEach { declarationCtx ->
 		when (declarationCtx) {
-			is TinyScriptParser.ImperativeStatementContext -> {
-				val name: String? = declarationCtx.Name()?.text
-
-				val lazyImperativeStatement = SafeLazy { isRoot ->
-					val expression = declarationCtx.expression().analyse(scope)
-					if (expression.isImpure) {
-						if (!isRoot)
-							throw ImpureForwardReferenceException(name!!)
-
-						hasImpureImperativeStatement = true
-					}
-					if (name != null) {
-						val isImpure = declarationCtx.Impure() != null
-						if (expression.type.hasMutableState && !isImpure)
-							throw PureFieldWithMutableTypeException()
-					}
-
-					ImperativeStatement(name, expression)
-						.also { orderedDeclarations.add(it) }
-				}
-
-				if (name != null) {
-					scope.lazyFieldMap[name] = { lazyImperativeStatement.get().expression.type }
-				}
-				lazyDeclarationList.add(lazyImperativeStatement)
-			}
 			is TinyScriptParser.FunctionDefinitionContext -> {
 				val signatureExpression = declarationCtx.signature().analyse(scope)
 				val signature = signatureExpression.signature
@@ -98,7 +72,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					FunctionDefinition(signatureExpression, expression)
 						.also { orderedDeclarations.add(it) }
 				}
-				scope.lazyFunctionMap.add(signatureExpression.signature, {
+				scope.addFunction(signatureExpression.signature, {
 					lazyFunctionDefinition.get().expression.type
 				})
 				lazyDeclarationList.add(lazyFunctionDefinition)
@@ -112,7 +86,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					NativeFunctionDeclaration(signatureExpression, typeExpression)
 						.also { orderedDeclarations.add(it) }
 				}
-				scope.lazyFunctionMap.add(signatureExpression.signature, {
+				scope.addFunction(signatureExpression.signature, {
 					lazyNativeFunctionDeclaration.get().typeExpression.type
 				})
 				lazyDeclarationList.add(lazyNativeFunctionDeclaration)

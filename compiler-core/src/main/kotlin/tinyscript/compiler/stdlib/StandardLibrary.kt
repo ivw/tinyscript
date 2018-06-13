@@ -16,8 +16,8 @@ object StandardLibrary {
 			parseFile(CharStreams.fromStream(it))
 		}
 
-		val statementList = fileCtx.declaration().analyse(intrinsicsScope)
+		val declarationList = fileCtx.declaration().analyse(intrinsicsScope)
 
-		statementList.scope
+		declarationList.scope
 	}
 }

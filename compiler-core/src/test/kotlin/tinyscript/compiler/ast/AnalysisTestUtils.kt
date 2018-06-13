@@ -6,21 +6,15 @@ import tinyscript.compiler.stdlib.StandardLibrary
 import kotlin.reflect.KClass
 import kotlin.test.assertFailsWith
 
-fun assertAnalysis(codeString: String, allowImpure: Boolean = false) {
+fun assertAnalysis(codeString: String) {
 	val fileCtx = parseFile(CharStreams.fromString(codeString))
 
-	val statements = fileCtx.statementList().statement()
-	if (allowImpure) {
-		statements.analyse(StandardLibrary.scope)
-	} else {
-		statements.analysePure(StandardLibrary.scope)
-	}
+	fileCtx.declaration().analyse(StandardLibrary.scope)
 }
 
 fun assertAnalysisFails(
 	exceptionClass: KClass<out Throwable>,
-	codeString: String,
-	allowImpure: Boolean = false
+	codeString: String
 ) {
-	assertFailsWith(exceptionClass) { assertAnalysis(codeString, allowImpure) }
+	assertFailsWith(exceptionClass) { assertAnalysis(codeString) }
 }

@@ -44,7 +44,7 @@ class ObjectExpression(val objectStatements: List<ObjectStatement>) : Expression
 	}))
 }
 
-class NameReferenceExpression(
+class NameCallExpression(
 	val expression: Expression?,
 	val name: String,
 	val signatureIsImpure: Boolean,
@@ -111,7 +111,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.StringLiteralExpressionContext ->
 		StringExpression(text)
 	is TinyScriptParser.NameCallExpressionContext ->
-		analyseNameReferenceExpression(
+		analyseNameCallExpression(
 			scope,
 			null,
 			Name().text,
@@ -119,7 +119,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			`object`()?.analyse(scope)
 		)
 	is TinyScriptParser.DotNameCallExpressionContext ->
-		analyseNameReferenceExpression(
+		analyseNameCallExpression(
 			scope,
 			expression().analyse(scope),
 			Name().text,
@@ -182,8 +182,10 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		} else scope
 
 		val returnExpression = expression().analyse(functionScope)
-		if (!isImpure && returnExpression.isImpure)
-			throw PureFunctionWithImpureExpressionException()
+
+		// TODO if `!isImpure`, then there should be a PureScope,
+		// and input must be immutable
+		// and output must be immutable
 
 		AnonymousFunctionExpression(
 			isImpure,
@@ -198,20 +200,30 @@ fun TinyScriptParser.BlockContext.analyse(scope: Scope): Expression {
 	val expressionCtx = expression()
 		?: return AnyExpression()
 
-	val statementListCtx = statementList()
+	val blockStatementListCtx = blockStatement()
 		?: return expressionCtx.analyse(scope)
 
-	val statementCollection = statementListCtx.analyse(scope)
+	val fieldMap: MutableMap<String, Type> = mutableMapOf()
+	val blockScope = BlockScope(scope, fieldMap)
+	val blockStatementList = blockStatementListCtx.map {
+		it.analyse(blockScope)
+			.apply {
+				if (name != null) {
+					fieldMap[name] = expression.type
+				}
+			}
+	}
+
 	return BlockExpression(
-		statementCollection,
-		expressionCtx.analyse(statementCollection.scope)
+		blockStatementList,
+		expressionCtx.analyse(blockScope)
 	)
 }
 
 fun TinyScriptParser.ObjectContext.analyse(scope: Scope): ObjectExpression =
 	ObjectExpression(objectStatement().map { it.analyse(scope) })
 
-fun analyseNameReferenceExpression(
+fun analyseNameCallExpression(
 	scope: Scope,
 	lhsExpression: Expression?,
 	name: String,
@@ -236,7 +248,7 @@ fun analyseNameReferenceExpression(
 	)
 		?: throw NameSignatureNotFoundException(name)
 
-	return NameReferenceExpression(
+	return NameCallExpression(
 		lhsExpression,
 		name,
 		signatureIsImpure,

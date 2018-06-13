@@ -3,20 +3,10 @@ package tinyscript.compiler.javascript
 import tinyscript.compiler.ast.*
 import tinyscript.compiler.util.IndentedWriter
 
-fun StatementList.writeJS(out: IndentedWriter) =
-	orderedStatements.forEach { it.writeJS(out) }
+fun DeclarationList.writeJS(out: IndentedWriter) =
+	orderedDeclarations.forEach { it.writeJS(out) }
 
-fun Statement.writeJS(out: IndentedWriter): Unit = when (this) {
-	is ImperativeStatement -> {
-		if (name != null) {
-			out.write("var ")
-			out.write(name)
-			out.write(" = ")
-		}
-		expression.writeJS(out)
-		out.write(";")
-		out.newLine()
-	}
+fun Declaration.writeJS(out: IndentedWriter): Unit = when (this) {
 	is TypeAliasDefinition -> {
 	}
 	else -> TODO()
@@ -27,7 +17,7 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 		out.write("(function () {")
 		out.indent++
 		out.newLine()
-		statementList.orderedStatements.forEach { it.writeJS(out) }
+//		blockStatementList.forEach { it.writeJS(out) }
 		out.write("return ")
 		expression.writeJS(out)
 		out.write(";")
@@ -45,7 +35,7 @@ fun Expression.writeJS(out: IndentedWriter): Unit = when (this) {
 		out.write("[]")
 		// TODO
 	}
-	is NameReferenceExpression -> {
+	is NameCallExpression -> {
 		out.write(name)
 	}
 	else -> TODO()

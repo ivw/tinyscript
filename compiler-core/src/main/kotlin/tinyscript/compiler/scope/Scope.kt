@@ -29,6 +29,13 @@ class LazyScope(
 	val lazyOperatorSignatureMap: SignatureMap<OperatorSignature, () -> Type> = SignatureMap(),
 	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
 ) : Scope(parentScope) {
+	fun addFunction(signature: Signature, lazyType: () -> Type) {
+		when (signature) {
+			is NameSignature -> lazyNameSignatureMap.add(signature, lazyType)
+			is OperatorSignature -> lazyOperatorSignatureMap.add(signature, lazyType)
+		}
+	}
+
 	override fun findNameFunction(
 		lhsType: Type?,
 		name: String,
@@ -133,6 +140,21 @@ class OperatorFunctionScope(
 			if (name == "right") {
 				return OperatorRhsValueResult(this, scopeRhsType)
 			}
+		}
+
+		return super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
+	}
+}
+
+class BlockScope(parentScope: Scope?, val fieldMap: Map<String, Type>) : Scope(parentScope) {
+	override fun findNameFunction(
+		lhsType: Type?,
+		name: String,
+		isImpure: Boolean,
+		paramsObjectType: ObjectType?
+	): ValueResult? {
+		if (lhsType == null && !isImpure && paramsObjectType == null) {
+			fieldMap[name]?.let { return BlockFieldValueResult(this, it) }
 		}
 
 		return super.findNameFunction(lhsType, name, isImpure, paramsObjectType)

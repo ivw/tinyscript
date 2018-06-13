@@ -4,7 +4,7 @@ sealed class ScopeResult(val scope: Scope)
 
 sealed class ValueResult(scope: Scope, val type: Type) : ScopeResult(scope)
 
-class LocalFieldValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
+class BlockFieldValueResult(scope: Scope, type: Type) : ValueResult(scope, type)
 
 class FunctionValueResult(
 	scope: Scope,

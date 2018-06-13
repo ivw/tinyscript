@@ -1,7 +1,7 @@
 package tinyscript.compiler.javascript
 
 import org.antlr.v4.runtime.CharStreams
-import tinyscript.compiler.ast.analysePure
+import tinyscript.compiler.ast.analyse
 import tinyscript.compiler.parser.parseFile
 import tinyscript.compiler.stdlib.StandardLibrary
 import tinyscript.compiler.util.IndentedWriter
@@ -16,12 +16,12 @@ fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
 	println("Parsing done\n")
 
 	println("Starting analysis")
-	val statementList = fileCtx.statementList().statement().analysePure(StandardLibrary.scope)
+	val declarationList = fileCtx.declaration().analyse(StandardLibrary.scope)
 	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
 		val indentedWriter = IndentedWriter(writer)
-		statementList.writeJS(indentedWriter)
+		declarationList.writeJS(indentedWriter)
 		println("Written to file '${writePath.fileName}'\n")
 	}
 }

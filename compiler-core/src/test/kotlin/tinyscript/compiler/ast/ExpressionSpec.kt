@@ -133,7 +133,7 @@ object ExpressionSpec : Spek({
 		}
 	}
 
-	describe("NameReferenceExpression") {
+	describe("NameCallExpression") {
 		it("can refer to a field") {
 			assertAnalysis("""
 				a = 1
@@ -274,7 +274,7 @@ object ExpressionSpec : Spek({
 		}
 	}
 
-	describe("DotNameReferenceExpression") {
+	describe("DotNameCallExpression") {
 		it("can refer to object fields") {
 			assertAnalysis("""
 				animal = [name = "Foo"]
