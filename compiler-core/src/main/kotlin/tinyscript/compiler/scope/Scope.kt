@@ -19,8 +19,8 @@ abstract class Scope(val parentScope: Scope?) {
 	): ValueResult? =
 		parentScope?.findOperator(lhsType, operatorSymbol, isImpure, rhsType)
 
-	open fun findType(name: String): TypeResult? =
-		parentScope?.findType(name)
+	open fun findType(name: String, isMutable: Boolean): TypeResult? =
+		parentScope?.findType(name, isMutable)
 }
 
 class LazyScope(

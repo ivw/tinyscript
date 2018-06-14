@@ -9,4 +9,4 @@ class BlockStatement(
 )
 
 fun TinyScriptParser.BlockStatementContext.analyse(scope: Scope): BlockStatement =
-	BlockStatement(Name()?.text, expression().analyse(scope))
+	BlockStatement(ValueName()?.text, expression().analyse(scope))

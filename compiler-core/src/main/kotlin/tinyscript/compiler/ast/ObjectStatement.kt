@@ -18,7 +18,7 @@ fun TinyScriptParser.ObjectStatementContext.analyse(scope: Scope): ObjectStateme
 	when (this) {
 		is TinyScriptParser.ObjectFieldDefinitionContext ->
 			ObjectFieldDefinition(
-				Name().text,
+				ValueName().text,
 				expression().analyse(scope)
 			)
 		is TinyScriptParser.ObjectInheritStatementContext -> TODO()

@@ -38,7 +38,7 @@ class OperatorSignatureExpression(
 fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression = when (this) {
 	is TinyScriptParser.NameSignatureContext -> NameSignatureExpression(
 		typeExpression()?.analyse(scope),
-		Name().text,
+		ValueName().text,
 		Impure() != null,
 		objectType()?.analyse(scope)
 	)

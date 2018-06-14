@@ -114,7 +114,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		analyseNameCallExpression(
 			scope,
 			null,
-			Name().text,
+			ValueName().text,
 			Impure() != null,
 			`object`()?.analyse(scope)
 		)
@@ -122,7 +122,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		analyseNameCallExpression(
 			scope,
 			expression().analyse(scope),
-			Name().text,
+			ValueName().text,
 			Impure() != null,
 			`object`()?.analyse(scope)
 		)

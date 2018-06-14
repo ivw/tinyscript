@@ -22,7 +22,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 	forEach { declarationCtx ->
 		when (declarationCtx) {
 			is TinyScriptParser.TypeAliasDefinitionContext -> {
-				val name = declarationCtx.Name().text
+				val name = declarationCtx.TypeName().text
 				val isMutable = declarationCtx.Impure() != null
 
 				val lazyTypeAliasDefinition = SafeLazy {
@@ -37,7 +37,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 				lazyDeclarationList.add(lazyTypeAliasDefinition)
 			}
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
-				val name = declarationCtx.Name().text
+				val name = declarationCtx.TypeName().text
 				val isMutable = declarationCtx.Impure() != null
 
 				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(isMutable))
