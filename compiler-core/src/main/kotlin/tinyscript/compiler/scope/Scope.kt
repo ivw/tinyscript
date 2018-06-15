@@ -25,15 +25,19 @@ abstract class Scope(val parentScope: Scope?) {
 
 class LazyScope(
 	parentScope: Scope?,
-	val lazyNameSignatureMap: SignatureMap<NameSignature, () -> Type> = SignatureMap(),
-	val lazyOperatorSignatureMap: SignatureMap<OperatorSignature, () -> Type> = SignatureMap(),
-	val lazyTypeMap: MutableMap<String, () -> Type> = HashMap()
+	private val lazyNameSignatureMap: SignatureMap<NameSignature, () -> Type> = SignatureMap(),
+	private val lazyOperatorSignatureMap: SignatureMap<OperatorSignature, () -> Type> = SignatureMap(),
+	private val lazyTypeMap: TypeSignatureMap<() -> Type> = TypeSignatureMap()
 ) : Scope(parentScope) {
 	fun addFunction(signature: Signature, lazyType: () -> Type) {
 		when (signature) {
 			is NameSignature -> lazyNameSignatureMap.add(signature, lazyType)
 			is OperatorSignature -> lazyOperatorSignatureMap.add(signature, lazyType)
 		}
+	}
+
+	fun addType(name: String, isMutable: Boolean, value: () -> Type) {
+		lazyTypeMap.add(name, isMutable, value)
 	}
 
 	override fun findNameFunction(
@@ -76,9 +80,9 @@ class LazyScope(
 		}?.let { FunctionValueResult(this, it.value(), it.signature, it.index) }
 			?: super.findOperator(lhsType, operatorSymbol, isImpure, rhsType)
 
-	override fun findType(name: String): TypeResult? =
-		lazyTypeMap[name]?.let { TypeResult(this, it()) }
-			?: super.findType(name)
+	override fun findType(name: String, isMutable: Boolean): TypeResult? =
+		lazyTypeMap.get(name, isMutable)?.let { TypeResult(this, it()) }
+			?: super.findType(name, isMutable)
 }
 
 class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {

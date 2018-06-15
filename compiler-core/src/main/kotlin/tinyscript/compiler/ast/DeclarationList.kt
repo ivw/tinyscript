@@ -33,7 +33,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					TypeAliasDefinition(name, typeExpression)
 						.also { orderedDeclarations.add(it) }
 				}
-				scope.lazyTypeMap[name] = { lazyTypeAliasDefinition.get().typeExpression.type }
+				scope.addType(name, isMutable, { lazyTypeAliasDefinition.get().typeExpression.type })
 				lazyDeclarationList.add(lazyTypeAliasDefinition)
 			}
 			is TinyScriptParser.NativeTypeDeclarationContext -> {
@@ -42,7 +42,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 
 				val nativeTypeDeclaration = NativeTypeDeclaration(name, AtomicType(isMutable))
 					.also { orderedDeclarations.add(it) }
-				scope.lazyTypeMap[name] = { nativeTypeDeclaration.atomicType }
+				scope.addType(name, isMutable, { nativeTypeDeclaration.atomicType })
 			}
 		}
 	}
