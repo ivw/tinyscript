@@ -89,10 +89,6 @@ class AnonymousFunctionExpression(
 	)
 }
 
-class ObjectFieldNotFoundException(val name: String) : RuntimeException(
-	"unresolved reference '$name'"
-)
-
 class NameSignatureNotFoundException(val name: String) : RuntimeException(
 	"unresolved reference '$name'"
 )
