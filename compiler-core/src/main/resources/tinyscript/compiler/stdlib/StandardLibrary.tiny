@@ -22,7 +22,7 @@ Point.area = x * y
 
 pointZero = [ x = 0, y = 0 ]
 
-Point + Point = [
-	x = left.x + right.x
-	y = left.y + right.y
+Point * Point = [
+	x = left.x * right.x
+	y = left.y * right.y
 ]

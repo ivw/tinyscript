@@ -241,7 +241,7 @@ fun analyseNameCallExpression(
 		if (type is ObjectType) {
 			val fieldType = type.fieldMap[name]
 			if (fieldType != null) {
-				return ObjectFieldRefExpression(lhsExpression, name, type)
+				return ObjectFieldRefExpression(lhsExpression, name, fieldType)
 			}
 		}
 	}
