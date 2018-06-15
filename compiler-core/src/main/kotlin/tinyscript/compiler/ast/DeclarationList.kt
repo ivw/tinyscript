@@ -76,8 +76,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					}
 
 					val expression = declarationCtx.expression().analyse(functionScope)
-					val isImpure = signature.hasMutableInput || expression.type.isMutable;
-					if (isImpure != signature.isImpure)
+					if (signature.isImpure != signature.hasMutableInput || expression.type.isMutable)
 						throw FunctionImpureException()
 
 					FunctionDefinition(signatureExpression, expression)

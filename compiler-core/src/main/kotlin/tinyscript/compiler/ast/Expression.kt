@@ -82,7 +82,11 @@ class AnonymousFunctionExpression(
 	val paramsObjectTypeExpression: ObjectTypeExpression?,
 	val returnExpression: Expression
 ) : Expression() {
-	override val type: Type = FunctionType(isFunctionImpure, paramsObjectTypeExpression?.type, returnExpression.type)
+	override val type: Type = FunctionType(
+		isFunctionImpure,
+		paramsObjectTypeExpression?.type,
+		returnExpression.type
+	)
 }
 
 class ObjectFieldNotFoundException(val name: String) : RuntimeException(
@@ -99,6 +103,10 @@ class OperatorSignatureNotFoundException(val operatorSymbol: String) : RuntimeEx
 
 class InvalidAnonymousFunctionCallException : RuntimeException(
 	"invalid anonymous function call"
+)
+
+class AnonymousFunctionImpureException : RuntimeException(
+	"anonymous function must have `!` iff it is impure (has mutable input or mutable output)"
 )
 
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
@@ -177,15 +185,17 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 	is TinyScriptParser.AnonymousFunctionExpressionContext -> {
 		val isImpure = Impure() != null
 		val paramsObjectTypeExpression = objectType()?.analyse(scope)
+
 		val functionScope = if (paramsObjectTypeExpression != null) {
 			FunctionParamsScope(scope, paramsObjectTypeExpression.type)
 		} else scope
-
+		// TODO if `!isImpure`, then there should be a PureScope,
 		val returnExpression = expression().analyse(functionScope)
 
-		// TODO if `!isImpure`, then there should be a PureScope,
-		// and input must be immutable
-		// and output must be immutable
+		val hasMutableInput = if (paramsObjectTypeExpression != null)
+			paramsObjectTypeExpression.type.isMutable else false
+		if (isImpure != hasMutableInput || returnExpression.type.isMutable)
+			throw AnonymousFunctionImpureException()
 
 		AnonymousFunctionExpression(
 			isImpure,
