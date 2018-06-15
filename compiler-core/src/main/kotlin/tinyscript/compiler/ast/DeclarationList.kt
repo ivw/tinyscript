@@ -13,6 +13,10 @@ class TypeMutableException(val name: String) : RuntimeException(
 	"type must have `!` iff it is mutable"
 )
 
+class FunctionImpureException : RuntimeException(
+	"function must have `!` iff it is impure (has mutable input or mutable output)"
+)
+
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationList {
 	val scope = LazyScope(parentScope)
 	val orderedDeclarations: MutableList<Declaration> = ArrayList()
@@ -72,11 +76,14 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					}
 
 					val expression = declarationCtx.expression().analyse(functionScope)
+					val isImpure = signature.hasMutableInput || expression.type.isMutable;
+					if (isImpure != signature.isImpure)
+						throw FunctionImpureException()
 
 					FunctionDefinition(signatureExpression, expression)
 						.also { orderedDeclarations.add(it) }
 				}
-				scope.addFunction(signatureExpression.signature, {
+				scope.addFunction(signature, {
 					lazyFunctionDefinition.get().expression.type
 				})
 				lazyDeclarationList.add(lazyFunctionDefinition)

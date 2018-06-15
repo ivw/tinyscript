@@ -63,8 +63,6 @@ fun TinyScriptParser.TypeExpressionContext.analyse(scope: Scope): TypeExpression
 		val typeResult: TypeResult = scope.findType(name, isMutable)
 			?: throw TypeAliasNotFoundException(name)
 
-		// TODO if (typeResult.type.isMutable != isMutable)
-
 		TypeReferenceExpression(name, typeResult)
 	}
 	else -> TODO()
