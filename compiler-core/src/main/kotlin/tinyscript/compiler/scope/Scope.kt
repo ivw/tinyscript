@@ -97,7 +97,12 @@ class ThisScope(parentScope: Scope?, val thisType: Type) : Scope(parentScope) {
 				return ThisValueResult(this, thisType)
 			}
 
-			// TODO maybe also have to check if thisType is an object type
+			if (thisType is ObjectType) {
+				val fieldType = thisType.fieldMap[name]
+				if (fieldType != null) {
+					return ThisFieldValueResult(this, fieldType)
+				}
+			}
 		}
 
 		if (lhsType == null) {
