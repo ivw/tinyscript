@@ -51,10 +51,10 @@ object DeclarationListSpec : Spek({
 				createIntBox! = intBox![initialValue = 0]
 			""")
 			assertAnalysis("""
-				createIntBox![initialValue: Int] = intBox![initialValue = 0]
+				createIntBox![initialValue: Int] = intBox!
 			""")
 			assertAnalysis("""
-				[] +! [] = intBox![initialValue = 0]
+				[] +! [] = intBox!
 			""")
 		}
 		it("can not define a pure function with mutable output") {
@@ -62,10 +62,10 @@ object DeclarationListSpec : Spek({
 				createIntBox = intBox![initialValue = 0]
 			""")
 			assertAnalysisFails(FunctionImpureException::class, """
-				createIntBox[initialValue: Int] = intBox![initialValue = 0]
+				createIntBox[initialValue: Int] = intBox!
 			""")
 			assertAnalysisFails(FunctionImpureException::class, """
-				[] + [] = intBox![initialValue = 0]
+				[] + [] = intBox!
 			""")
 		}
 		it("can not be recursive") {

@@ -10,9 +10,13 @@ native type IntBox!
 
 native intBox![initialValue: Int]: IntBox!
 
+intBox! = intBox![initialValue = 0]
+
 native IntBox!.get!: Int
 
 native IntBox!.set![value: Int]: ()
+
+IntBox! *! Int = left.set![value = left.get! * right]
 
 
 
