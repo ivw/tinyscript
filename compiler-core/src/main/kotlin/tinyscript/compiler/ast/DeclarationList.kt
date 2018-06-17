@@ -10,11 +10,11 @@ class DeclarationList(
 )
 
 class TypeMutableException(val name: String) : RuntimeException(
-	"type must have `!` iff it is mutable"
+	"type must have `!` if it is mutable"
 )
 
 class FunctionImpureException : RuntimeException(
-	"function must have `!` iff it is impure (has mutable input or mutable output)"
+	"function must have `!` if it is impure (has mutable input or mutable output)"
 )
 
 fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): DeclarationList {
@@ -31,7 +31,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 
 				val lazyTypeAliasDefinition = SafeLazy {
 					val typeExpression = declarationCtx.typeExpression().analyse(scope)
-					if (typeExpression.type.isMutable != isMutable)
+					if (typeExpression.type.isMutable && !isMutable)
 						throw TypeMutableException(name)
 
 					TypeAliasDefinition(name, typeExpression)
@@ -76,7 +76,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					}
 
 					val expression = declarationCtx.expression().analyse(functionScope)
-					if (signature.isImpure != (signature.hasMutableInput || expression.type.isMutable))
+					if ((signature.hasMutableInput || expression.type.isMutable) && !signature.isImpure)
 						throw FunctionImpureException()
 
 					FunctionDefinition(signatureExpression, expression)

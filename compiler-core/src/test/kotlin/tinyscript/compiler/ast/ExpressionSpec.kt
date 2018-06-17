@@ -291,32 +291,34 @@ object ExpressionSpec : Spek({
 		}
 	}
 
-//	describe("AnonymousFunctionExpression") {
-//		it("can express a pure anonymous function without parameters") {
-//			assertAnalysis("""
-//				returnOne = -> 1
-//			""")
-//			assertAnalysisFails(PureFunctionWithImpureExpressionException::class, """
-//				returnOne = -> println![m = 1]
-//			""")
-//		}
-//		it("can express an impure anonymous function without parameters") {
-//			assertAnalysis("""
-//				printTwo = ! -> println![m = 2]
-//			""")
-//		}
-//		it("can express a pure anonymous function with parameters") {
-//			assertAnalysis("""
-//				multiplyByTwo = [n: Int] -> n * 2
-//			""")
-//			assertAnalysisFails(PureFunctionWithImpureExpressionException::class, """
-//				multiplyByTwo = [n: Int] -> println![m = n]
-//			""")
-//		}
-//		it("can express an impure anonymous function with parameters") {
-//			assertAnalysis("""
-//				printDouble = ![n: Int] -> println![m = n * 2]
-//			""")
-//		}
-//	}
+	describe("AnonymousFunctionExpression") {
+		it("must have ! if it has mutable input or output") {
+			assertAnalysis("""
+				foo[] = -> 1
+			""")
+			assertAnalysis("""
+				foo![] = ! -> 1
+			""")
+			assertAnalysis("""
+				foo![] = ! -> intBox!
+			""")
+			assertAnalysisFails(AnonymousFunctionImpureException::class, """
+				foo[] = -> intBox!
+			""")
+			assertAnalysis("""
+				foo! = ![system: System!] -> 1
+			""")
+			assertAnalysisFails(AnonymousFunctionImpureException::class, """
+				foo! = [system: System!] -> 1
+			""")
+		}
+		it("is mutable if it is impure") {
+			assertAnalysis("""
+				returnOne![] = ! -> 1
+			""")
+			assertAnalysisFails(FunctionImpureException::class, """
+				returnOne[] = ! -> 1
+			""")
+		}
+	}
 })

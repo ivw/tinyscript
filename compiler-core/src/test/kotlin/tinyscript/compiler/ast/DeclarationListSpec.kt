@@ -7,9 +7,12 @@ import tinyscript.compiler.util.SafeLazy
 
 object DeclarationListSpec : Spek({
 	describe("FunctionDefinition") {
-		it("can define a pure function with a pure expression") {
+		it("can define a pure function with immutable input and output") {
 			assertAnalysis("""
 				getOne = 1
+			""")
+			assertAnalysis("""
+				getOne! = 1
 			""")
 			assertAnalysis("""
 				double[n: Int] = n * 2

@@ -102,7 +102,7 @@ class InvalidAnonymousFunctionCallException : RuntimeException(
 )
 
 class AnonymousFunctionImpureException : RuntimeException(
-	"anonymous function must have `!` iff it is impure (has mutable input or mutable output)"
+	"anonymous function must have `!` if it is impure (has mutable input or mutable output)"
 )
 
 fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when (this) {
@@ -190,7 +190,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 
 		val hasMutableInput = if (paramsObjectTypeExpression != null)
 			paramsObjectTypeExpression.type.isMutable else false
-		if (isImpure != (hasMutableInput || returnExpression.type.isMutable))
+		if ((hasMutableInput || returnExpression.type.isMutable) && !isImpure)
 			throw AnonymousFunctionImpureException()
 
 		AnonymousFunctionExpression(
