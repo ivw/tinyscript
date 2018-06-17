@@ -3,6 +3,7 @@ package tinyscript.compiler.ast
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import tinyscript.compiler.scope.PureScopeException
 
 object ExpressionSpec : Spek({
 	describe("BlockExpression") {
@@ -294,16 +295,19 @@ object ExpressionSpec : Spek({
 	describe("AnonymousFunctionExpression") {
 		it("must have ! if it has mutable input or output") {
 			assertAnalysis("""
-				foo[] = -> 1
+				foo = -> 1
 			""")
 			assertAnalysis("""
-				foo![] = ! -> 1
+				foo = [] -> 1
 			""")
 			assertAnalysis("""
-				foo![] = ! -> intBox!
+				foo! = ! -> 1
 			""")
-			assertAnalysisFails(AnonymousFunctionImpureException::class, """
-				foo[] = -> intBox!
+			assertAnalysis("""
+				foo! = ! -> intBox!
+			""")
+			assertAnalysisFails(PureScopeException::class, """
+				foo = -> intBox!
 			""")
 			assertAnalysis("""
 				foo! = ![system: System!] -> 1
@@ -314,10 +318,26 @@ object ExpressionSpec : Spek({
 		}
 		it("is mutable if it is impure") {
 			assertAnalysis("""
-				returnOne![] = ! -> 1
+				returnOne! = ! -> 1
 			""")
 			assertAnalysisFails(FunctionImpureException::class, """
-				returnOne[] = ! -> 1
+				returnOne = ! -> 1
+			""")
+		}
+		it("can only use outside mutable values if it has !") {
+			assertAnalysis("""
+				System!.main! = (
+					doPrintln = ! -> println!
+					doPrintln.!
+					doPrintln.!
+				)
+			""")
+			assertAnalysisFails(PureScopeException::class, """
+				System!.main! = (
+					doPrintln = -> println!
+					doPrintln.
+					doPrintln.
+				)
 			""")
 		}
 	}

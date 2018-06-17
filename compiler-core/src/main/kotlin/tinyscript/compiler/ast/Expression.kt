@@ -182,10 +182,12 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val isImpure = Impure() != null
 		val paramsObjectTypeExpression = objectType()?.analyse(scope)
 
+		val pureScope = if (!isImpure) PureScope(scope) else scope
+
 		val functionScope = if (paramsObjectTypeExpression != null) {
-			FunctionParamsScope(scope, paramsObjectTypeExpression.type)
-		} else scope
-		// TODO if `!isImpure`, then there should be a PureScope,
+			FunctionParamsScope(pureScope, paramsObjectTypeExpression.type)
+		} else pureScope
+
 		val returnExpression = expression().analyse(functionScope)
 
 		val hasMutableInput = if (paramsObjectTypeExpression != null)
