@@ -237,99 +237,60 @@ object ExpressionSpec : Spek({
 		}
 	}
 
-//	describe("AnonymousFunctionCallExpression") {
-//		it("can call a pure anonymous function without parameters") {
-//			assertAnalysis("""
-//				returnOne = -> 1
-//				returnOne. * 2
-//			""")
-//			assertAnalysisFails(OperatorSignatureNotFoundException::class, """
-//				returnOne = -> 1
-//				returnOne * 2
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				returnOne = -> 1
-//				3.
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				returnOne = -> 1
-//				returnOne.!
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				returnOne = -> 1
-//				returnOne.[]
-//			""")
-//			assertAnalysisFails(DisallowedImpureStatementException::class, """
-//				printSomethingAndReturnPureAnonymousFunc! => (
-//					println!
-//					-> 1
-//				)
-//				(printSomethingAndReturnPureAnonymousFunc!).
-//			""")
-//		}
-//		it("can call an impure anonymous function without parameters") {
-//			assertAnalysis("""
-//				printOne = ! -> println![m = 1]
-//				printOne.!
-//			""", true)
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				printOne = ! -> println![m = 1]
-//				printOne.
-//			""", true)
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				printOne = ! -> println![m = 1]
-//				printOne.![]
-//			""", true)
-//		}
-//		it("can call a pure anonymous function with parameters") {
-//			assertAnalysis("""
-//				multiplyByTwo = [n: Int] -> n * 2
-//				(multiplyByTwo.[n = 3]) * 2
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				multiplyByTwo = [n: Int] -> n * 2
-//				multiplyByTwo.![n = 3]
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				multiplyByTwo = [n: Int] -> n * 2
-//				multiplyByTwo.[]
-//			""")
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				multiplyByTwo = [n: Int] -> n * 2
-//				multiplyByTwo.
-//			""")
-//			assertAnalysisFails(DisallowedImpureStatementException::class, """
-//				printSomethingAndReturnPureAnonymousFunc! => (
-//					println!
-//					[] -> 1
-//				)
-//				(printSomethingAndReturnPureAnonymousFunc!).[]
-//			""")
-//			assertAnalysisFails(DisallowedImpureStatementException::class, """
-//				foo = [n: ()] -> 123
-//				foo.[n = println!]
-//			""")
-//		}
-//		it("can call an impure anonymous function with parameters") {
-//			assertAnalysis("""
-//				printDouble = ![n: Int] -> println![m = n * 2]
-//				printDouble.![n = 2]
-//			""", true)
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				printDouble = ![n: Int] -> println![m = n * 2]
-//				printDouble.[n = 2]
-//			""", true)
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				printDouble = ![n: Int] -> println![m = n * 2]
-//				printDouble.![]
-//			""", true)
-//			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-//				printDouble = ![n: Int] -> println![m = n * 2]
-//				printDouble.!
-//			""", true)
-//		}
-//	}
-//
+	describe("AnonymousFunctionCallExpression") {
+		it("can call a pure anonymous function without parameters") {
+			assertAnalysis("""
+				returnOne = -> 1
+				main = returnOne. * 2
+			""")
+			assertAnalysisFails(OperatorSignatureNotFoundException::class, """
+				returnOne = -> 1
+				main = returnOne * 2
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				returnOne = -> 1
+				main = 3.
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				returnOne = -> 1
+				main = returnOne.!
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				returnOne = -> 1
+				main = returnOne.[]
+			""")
+		}
+		it("can call an impure anonymous function without parameters") {
+			assertAnalysis("""
+				main! = (! -> intBox!).!
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				main! = (! -> intBox!).
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				main! = (! -> intBox!).![]
+			""")
+		}
+		it("can call a pure anonymous function with parameters") {
+			assertAnalysis("""
+				multiplyByTwo = [n: Int] -> n * 2
+				main = (multiplyByTwo.[n = 3]) * 2
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				multiplyByTwo = [n: Int] -> n * 2
+				main = multiplyByTwo.![n = 3]
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				multiplyByTwo = [n: Int] -> n * 2
+				main = multiplyByTwo.[]
+			""")
+			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
+				multiplyByTwo = [n: Int] -> n * 2
+				main = multiplyByTwo.
+			""")
+		}
+	}
+
 //	describe("AnonymousFunctionExpression") {
 //		it("can express a pure anonymous function without parameters") {
 //			assertAnalysis("""

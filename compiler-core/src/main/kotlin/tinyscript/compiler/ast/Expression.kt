@@ -190,7 +190,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 
 		val hasMutableInput = if (paramsObjectTypeExpression != null)
 			paramsObjectTypeExpression.type.isMutable else false
-		if (isImpure != hasMutableInput || returnExpression.type.isMutable)
+		if (isImpure != (hasMutableInput || returnExpression.type.isMutable))
 			throw AnonymousFunctionImpureException()
 
 		AnonymousFunctionExpression(
