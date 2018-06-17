@@ -19,6 +19,8 @@ native IntBox!.set![value: Int]: ()
 IntBox! *! Int = left.set![value = left.get! * right]
 
 
+pi = 3.14159265358979323846
+
 
 type Point = [ x: Int, y: Int ]
 

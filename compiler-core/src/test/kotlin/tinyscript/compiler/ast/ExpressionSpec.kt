@@ -119,248 +119,124 @@ object ExpressionSpec : Spek({
 		}
 	}
 
-//	describe("NameCallExpression") {
-//		it("can refer to a field") {
-//			assertAnalysis("""
-//				a = 1
-//				a
-//			""")
-//			assertAnalysis("""
-//				a
-//				a = 1
-//			""")
-//			assertAnalysis("""
-//				a = 1
-//				(
-//					b = 1
-//					a
-//					a
-//				)
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a = 1
-//				b
-//			""")
-//		}
-//		it("can refer to a pure function without parameters") {
-//			assertAnalysis("""
-//				a => 1
-//				a
-//			""")
-//			assertAnalysis("""
-//				a
-//				a => 1
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a => 1
-//				b
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a! => 1
-//				a
-//			""")
-//		}
-//		it("can refer to an impure function without parameters") {
-//			assertAnalysis("""
-//				a! => 1
-//				a!
-//			""", true)
-//			assertAnalysis("""
-//				a!
-//				a! => 1
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a! => 1
-//				b!
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a => 1
-//				a!
-//			""", true)
-//		}
-//		it("can refer to a pure function with parameters") {
-//			assertAnalysis("""
-//				a[] => 1
-//				a[]
-//			""")
-//			assertAnalysis("""
-//				a[]
-//				a[] => 1
-//			""")
-//			assertAnalysis("""
-//				a[x: Int] => 1
-//				a[x = 1]
-//			""")
-//			assertAnalysis("""
-//				a[x: Int] => 1
-//				a[x = 1, y = 2]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a[x: Int] => 1
-//				a[]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a[x: Int] => 1
-//				a[x = ()]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a[] => 1
-//				b[]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a![] => 1
-//				a[]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a => 1
-//				a[]
-//			""")
-//			assertAnalysisFails(DisallowedImpureStatementException::class, """
-//				a[x: ()] => 1
-//				a[x = println!]
-//			""")
-//		}
-//		it("can refer to an impure function with parameters") {
-//			assertAnalysis("""
-//				a![] => 1
-//				a![]
-//			""", true)
-//			assertAnalysis("""
-//				a![]
-//				a![] => 1
-//			""", true)
-//			assertAnalysis("""
-//				a![x: Int] => 1
-//				a![x = 1]
-//			""", true)
-//			assertAnalysis("""
-//				a![x: Int] => 1
-//				a![x = 1, y = 2]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a![x: Int] => 1
-//				a![]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a![x: Int] => 1
-//				a![x = ()]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a![] => 1
-//				b![]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a[] => 1
-//				a![]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				a! => 1
-//				a![]
-//			""")
-//		}
-//	}
-//
-//	describe("DotNameCallExpression") {
-//		it("can refer to object fields") {
-//			assertAnalysis("""
-//				animal = [name = "Foo"]
-//				animal.name
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				animal = [name = "Foo"]
-//				animal.age
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				animal = [name = "Foo"]
-//				animal.name!
-//			""")
-//		}
-//		it("can refer to a pure function without parameters") {
-//			assertAnalysis("""
-//				Int.square => this * this
-//				2.square
-//			""")
-//			assertAnalysis("""
-//				Int.a => 1
-//				(
-//					a = ()
-//
-//					3.a * 2
-//				)
-//			""")
-//			assertAnalysis("""
-//				[foo: Int].a => foo
-//				[foo = 123].a
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				[foo: Int].a => bar
-//				[foo = 123].a
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.square => this * this
-//				().square
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.square => this * this
-//				2.square!
-//			""")
-//		}
-//		it("can refer to an impure function without parameters") {
-//			assertAnalysis("""
-//				Int.print! => println!
-//				2.print!
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.print! => println!
-//				().print!
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.print! => println!
-//				2.print
-//			""", true)
-//		}
-//		it("can refer to a pure function with parameters") {
-//			assertAnalysis("""
-//				Int.times[n: Int] => this * n
-//				2.times[n = 3]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.times[n: Int] => this * n
-//				().times[n = 3]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.times[n: Int] => this * n
-//				2.times![n = 3]
-//			""")
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.times[n: Int] => this * n
-//				2.times[n = ()]
-//			""")
-//			assertAnalysisFails(DisallowedImpureStatementException::class, """
-//				Int.a[x: ()] => 1
-//				3.a[x = println!]
-//			""")
-//		}
-//		it("can refer to an impure function with parameters") {
-//			assertAnalysis("""
-//				Int.printTimes![n: Int] => println![m = this * n]
-//				2.printTimes![n = 3]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.printTimes![n: Int] => println![m = this * n]
-//				().printTimes![n = 3]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.printTimes![n: Int] => println![m = this * n]
-//				2.printTimes[n = 3]
-//			""", true)
-//			assertAnalysisFails(NameSignatureNotFoundException::class, """
-//				Int.printTimes![n: Int] => println![m = this * n]
-//				2.printTimes![n = ()]
-//			""", true)
-//		}
-//	}
-//
+	describe("(Dot)NameCallExpression") {
+		it("can refer to a function") {
+			assertAnalysis("""
+				a = 1
+				main = a
+			""")
+			assertAnalysis("""
+				main = a
+				a = 1
+			""")
+			assertAnalysis("""
+				a = 1
+				main = (
+					b = 1
+					a
+					a
+				)
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				a = 1
+				main = b
+			""")
+			assertAnalysis("""
+				Int.a[i: Int] = 1
+				main = 3.a[i = 1]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				Int.a[i: Int] = 1
+				main = 3.b[i = 1]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				Int.a[i: Int] = 1
+				main = 3.a[]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				Int.a[i: Int] = 1
+				main = ().a[i = 1]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				Int.a[i: Int] = 1
+				main = 3.a![i = 1]
+			""")
+		}
+		it("can refer to a block field") {
+			assertAnalysis("""
+				main = (
+					a = 1
+					a
+				)
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				main = (
+					a
+					a = 1
+					a
+				)
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				main = (
+					a = 1
+					b
+				)
+			""")
+		}
+		it("can refer to an object field") {
+			assertAnalysis("""
+				obj = [ a = 1 ]
+				main = obj.a
+			""")
+			assertAnalysis("""
+				main = [ a = 1 ].a
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				obj = [ a = 1 ]
+				main = obj.b
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				obj = [ a = 1 ]
+				main = obj.a!
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				main = [ a = 1 ].b
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				main = ().a
+			""")
+		}
+		it("can refer to a parameter") {
+			assertAnalysis("""
+				foo[a: Int] = a * 2
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				foo[a: Int] = b * 2
+			""")
+		}
+		it("can refer to `this`") {
+			assertAnalysis("""
+				Int.a = this * 2
+			""")
+		}
+		it("can refer to a `this` function") {
+			assertAnalysis("""
+				System!.main! = println![m = "Hello"]
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				System!.main! = println[m = "Hello"]
+			""")
+		}
+		it("can refer to a `this` object field") {
+			assertAnalysis("""
+				[a: Int].foo = a * 2
+			""")
+			assertAnalysisFails(NameSignatureNotFoundException::class, """
+				[a: Int].foo = b * 2
+			""")
+		}
+	}
+
 //	describe("AnonymousFunctionCallExpression") {
 //		it("can call a pure anonymous function without parameters") {
 //			assertAnalysis("""
