@@ -171,20 +171,20 @@ class BlockScope(parentScope: Scope?, val fieldMap: Map<String, Type>) : Scope(p
 }
 
 class PureScopeException : RuntimeException(
-	"function must have `!` to use mutable values outside scope"
+	"function must have `!` to use mutable values outside function scope"
 )
 
 class PureScope(parentScope: Scope?) : Scope(parentScope) {
 	override fun findNameFunction(lhsType: Type?, name: String, isImpure: Boolean, paramsObjectType: ObjectType?): ValueResult? {
 		val result = super.findNameFunction(lhsType, name, isImpure, paramsObjectType)
-		if (result != null && isImpure)
+		if (result != null && result.type.isMutable && !isImpure)
 			throw PureScopeException()
 		return result
 	}
 
 	override fun findOperator(lhsType: Type?, operatorSymbol: String, isImpure: Boolean, rhsType: Type): ValueResult? {
 		val result = super.findOperator(lhsType, operatorSymbol, isImpure, rhsType)
-		if (result != null && isImpure)
+		if (result != null && result.type.isMutable && !isImpure)
 			throw PureScopeException()
 		return result
 	}

@@ -41,7 +41,7 @@ object ExpressionSpec : Spek({
 				assertAnalysisFails(OperatorSignatureNotFoundException::class, """
 					foo = (()) * 2
 				""")
-				assertAnalysisFails(FunctionImpureException::class, """
+				assertAnalysisFails(FunctionMutableOutputException::class, """
 					foo = (intBox!)
 				""")
 			}
@@ -114,7 +114,7 @@ object ExpressionSpec : Spek({
 			assertAnalysis("""
 				foo! = [ a = intBox!, b = 2 ]
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
+			assertAnalysisFails(FunctionMutableOutputException::class, """
 				foo = [ a = intBox!, b = 2 ]
 			""")
 		}
@@ -298,6 +298,13 @@ object ExpressionSpec : Spek({
 				foo = -> 1
 			""")
 			assertAnalysis("""
+				foo = -> (
+					i = intBox!
+					i.set![value = 1]
+					i.get!
+				)
+			""")
+			assertAnalysis("""
 				foo = [] -> 1
 			""")
 			assertAnalysis("""
@@ -306,13 +313,13 @@ object ExpressionSpec : Spek({
 			assertAnalysis("""
 				foo! = ! -> intBox!
 			""")
-			assertAnalysisFails(PureScopeException::class, """
+			assertAnalysisFails(AnonymousFunctionMutableOutputException::class, """
 				foo = -> intBox!
 			""")
 			assertAnalysis("""
-				foo! = ![system: System!] -> 1
+				foo! = ![system: System!] -> system.println!
 			""")
-			assertAnalysisFails(AnonymousFunctionImpureException::class, """
+			assertAnalysisFails(PureScopeException::class, """
 				foo! = [system: System!] -> 1
 			""")
 		}
@@ -320,11 +327,11 @@ object ExpressionSpec : Spek({
 			assertAnalysis("""
 				returnOne! = ! -> 1
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
+			assertAnalysisFails(FunctionMutableOutputException::class, """
 				returnOne = ! -> 1
 			""")
 		}
-		it("can only use outside mutable values if it has !") {
+		it("can only use outside mutable values if it doesn't have `!`") {
 			assertAnalysis("""
 				System!.main! = (
 					doPrintln = ! -> println!

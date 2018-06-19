@@ -3,6 +3,7 @@ package tinyscript.compiler.ast
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import tinyscript.compiler.scope.PureScopeException
 import tinyscript.compiler.util.SafeLazy
 
 object DeclarationListSpec : Spek({
@@ -10,6 +11,13 @@ object DeclarationListSpec : Spek({
 		it("can define a pure function with immutable input and output") {
 			assertAnalysis("""
 				getOne = 1
+			""")
+			assertAnalysis("""
+				getOne = (
+					i = intBox!
+					i.set![value = 1]
+					i.get!
+				)
 			""")
 			assertAnalysis("""
 				getOne! = 1
@@ -38,15 +46,15 @@ object DeclarationListSpec : Spek({
 				System! +! [] = left.println![m = left]
 			""")
 		}
-		it("can not define a pure function with mutable input") {
-			assertAnalysisFails(FunctionImpureException::class, """
-				System!.foo = 1
+		it("can not define a pure function that uses outside mutable values") {
+			assertAnalysisFails(PureScopeException::class, """
+				System!.foo = println!
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
-				foo[s: System!] = 1
+			assertAnalysisFails(PureScopeException::class, """
+				foo[s: System!] = s.println!
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
-				System! + [] = 1
+			assertAnalysisFails(PureScopeException::class, """
+				System! + [] = left.println!
 			""")
 		}
 		it("can define an impure function with mutable output") {
@@ -61,13 +69,13 @@ object DeclarationListSpec : Spek({
 			""")
 		}
 		it("can not define a pure function with mutable output") {
-			assertAnalysisFails(FunctionImpureException::class, """
+			assertAnalysisFails(FunctionMutableOutputException::class, """
 				createIntBox = intBox![initialValue = 0]
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
+			assertAnalysisFails(FunctionMutableOutputException::class, """
 				createIntBox[initialValue: Int] = intBox!
 			""")
-			assertAnalysisFails(FunctionImpureException::class, """
+			assertAnalysisFails(FunctionMutableOutputException::class, """
 				[] + [] = intBox!
 			""")
 		}
