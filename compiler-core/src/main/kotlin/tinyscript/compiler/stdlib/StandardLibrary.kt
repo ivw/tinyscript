@@ -8,11 +8,9 @@ import tinyscript.compiler.scope.intrinsicsScope
 
 object StandardLibrary {
 	val scope: Scope = run {
-		val resource = StandardLibrary::class.java.getResource(
+		val fileCtx = StandardLibrary::class.java.getResourceAsStream(
 			"/tinyscript/compiler/stdlib/StandardLibrary.tiny"
-		)
-
-		val fileCtx = resource.openStream().use {
+		).use {
 			parseFile(CharStreams.fromStream(it))
 		}
 
