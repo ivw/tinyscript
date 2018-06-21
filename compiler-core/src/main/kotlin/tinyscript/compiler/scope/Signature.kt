@@ -1,9 +1,10 @@
 package tinyscript.compiler.scope
 
 sealed class Signature {
-	open val isImpure: Boolean = false
+	// canHaveMutableInput
+	abstract val isImpure: Boolean
 
-	open val isConstructor: Boolean = false
+	abstract val canHaveMutableOutput: Boolean
 }
 
 class NameSignature(
@@ -11,13 +12,16 @@ class NameSignature(
 	val name: String,
 	override val isImpure: Boolean,
 	val paramsObjectType: ObjectType?
-) : Signature()
+) : Signature() {
+	override val canHaveMutableOutput: Boolean get() = isImpure
+}
 
 class ConstructorSignature(
 	val name: String,
 	val paramsObjectType: ObjectType?
 ) : Signature() {
-	override val isConstructor: Boolean get() = true
+	override val isImpure: Boolean get() = false
+	override val canHaveMutableOutput: Boolean get() = true
 }
 
 class OperatorSignature(
@@ -25,4 +29,6 @@ class OperatorSignature(
 	val operatorSymbol: String,
 	override val isImpure: Boolean,
 	val rhsType: Type
-) : Signature()
+) : Signature() {
+	override val canHaveMutableOutput: Boolean get() = isImpure
+}
