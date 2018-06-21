@@ -96,14 +96,17 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 			}
 			is TinyScriptParser.NativeFunctionDeclarationContext -> {
 				val signatureExpression = declarationCtx.signature().analyse(scope)
+				val signature = signatureExpression.signature
 
 				val lazyNativeFunctionDeclaration = SafeLazy {
 					val typeExpression = declarationCtx.typeExpression().analyse(scope)
+					if (typeExpression.type.isMutable && !signature.isImpure && !signature.isConstructor)
+						throw FunctionMutableOutputException()
 
 					NativeFunctionDeclaration(signatureExpression, typeExpression)
 						.also { orderedDeclarations.add(it) }
 				}
-				scope.addFunction(signatureExpression.signature, {
+				scope.addFunction(signature, {
 					lazyNativeFunctionDeclaration.get().typeExpression.type
 				})
 				lazyDeclarationList.add(lazyNativeFunctionDeclaration)
