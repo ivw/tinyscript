@@ -21,6 +21,16 @@ class NameSignatureExpression(
 	)
 }
 
+class ConstructorSignatureExpression(
+	val name: String,
+	val paramsObjectTypeExpression: ObjectTypeExpression?
+) : SignatureExpression() {
+	override val signature = ConstructorSignature(
+		name,
+		paramsObjectTypeExpression?.type
+	)
+}
+
 class OperatorSignatureExpression(
 	val lhsTypeExpression: TypeExpression?,
 	val operatorSymbol: String,
@@ -40,6 +50,10 @@ fun TinyScriptParser.SignatureContext.analyse(scope: Scope): SignatureExpression
 		typeExpression()?.analyse(scope),
 		ValueName().text,
 		Impure() != null,
+		objectType()?.analyse(scope)
+	)
+	is TinyScriptParser.ConstructorSignatureContext -> ConstructorSignatureExpression(
+		ValueName().text,
 		objectType()?.analyse(scope)
 	)
 	is TinyScriptParser.OperatorSignatureContext -> OperatorSignatureExpression(

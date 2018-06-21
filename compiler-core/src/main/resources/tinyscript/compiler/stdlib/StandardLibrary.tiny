@@ -8,9 +8,9 @@ native System!.println![m: ()]: ()
 
 native type IntBox!
 
-native intBox![initialValue: Int]: IntBox!
+native new intBox[initialValue: Int]: IntBox!
 
-intBox! = intBox![initialValue = 0]
+new intBox = new intBox[initialValue = 0]
 
 native IntBox!.get!: Int
 
@@ -24,7 +24,7 @@ pi = 3.14159265358979323846
 
 type Point = [ x: Int, y: Int ]
 
-Point.area = x * y
+Point.area = this.x * this.y
 
 pointZero = [ x = 0, y = 0 ]
 

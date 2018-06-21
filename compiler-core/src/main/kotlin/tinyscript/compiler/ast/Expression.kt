@@ -60,6 +60,14 @@ class ObjectFieldRefExpression(
 	override val type: Type
 ) : Expression()
 
+class ConstructorCallExpression(
+	val name: String,
+	val argumentsObjectExpression: ObjectExpression?,
+	val valueResult: ValueResult
+) : Expression() {
+	override val type: Type = valueResult.type
+}
+
 class AnonymousFunctionCallExpression(
 	val expression: Expression,
 	val signatureIsImpure: Boolean,
@@ -130,6 +138,19 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 			Impure() != null,
 			`object`()?.analyse(scope)
 		)
+	is TinyScriptParser.ConstructorCallExpressionContext -> {
+		val name = ValueName().text
+		val argumentsObjectExpression = `object`()?.analyse(scope)
+
+		val valueResult = scope.findConstructor(name, argumentsObjectExpression?.type)
+			?: throw NameSignatureNotFoundException(name)
+
+		ConstructorCallExpression(
+			name,
+			argumentsObjectExpression,
+			valueResult
+		)
+	}
 	is TinyScriptParser.AnonymousFunctionCallExpressionContext -> {
 		val expression = expression().analyse(scope)
 		val signatureIsImpure = Impure() != null

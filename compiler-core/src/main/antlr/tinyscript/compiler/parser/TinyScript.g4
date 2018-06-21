@@ -12,6 +12,7 @@ declaration
 
 signature
 	:	(typeExpression '.')? ValueName Impure? objectType?						# NameSignature
+	|	'new' ValueName objectType?												# ConstructorSignature
 	|	(lhs=typeExpression)? OperatorSymbol Impure? rhs=typeExpression			# OperatorSignature
 	;
 
@@ -23,6 +24,7 @@ expression
 	|	object																	# ObjectExpression
 	|	ValueName Impure? object?												# NameCallExpression
 	|	expression NL* '.' ValueName Impure? object?							# DotNameCallExpression
+	|	'new' ValueName object?													# ConstructorCallExpression
 	|	expression NL* '.' Impure? object?										# AnonymousFunctionCallExpression
 	|	OperatorSymbol Impure? expression										# PrefixOperatorCallExpression
 	|	lhs=expression NL* OperatorSymbol Impure? NL* rhs=expression			# InfixOperatorCallExpression

@@ -3,7 +3,7 @@ package tinyscript.compiler.ast
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
-import tinyscript.compiler.scope.PureScopeException
+import tinyscript.compiler.scope.OutsideMutableStateException
 
 object ExpressionSpec : Spek({
 	describe("BlockExpression") {
@@ -42,7 +42,7 @@ object ExpressionSpec : Spek({
 					foo = (()) * 2
 				""")
 				assertAnalysisFails(FunctionMutableOutputException::class, """
-					foo = (intBox!)
+					foo = (new intBox)
 				""")
 			}
 			it("can be nested") {
@@ -56,7 +56,7 @@ object ExpressionSpec : Spek({
 			it("returns the final expression type") {
 				assertAnalysis("""
 					total = (
-						n = intBox!
+						n = new intBox
 						n *! 2
 						n.get!
 					) * 2
@@ -112,10 +112,10 @@ object ExpressionSpec : Spek({
 		}
 		it("is mutable if one of the fields is mutable") {
 			assertAnalysis("""
-				foo! = [ a = intBox!, b = 2 ]
+				foo! = [ a = new intBox, b = 2 ]
 			""")
 			assertAnalysisFails(FunctionMutableOutputException::class, """
-				foo = [ a = intBox!, b = 2 ]
+				foo = [ a = new intBox, b = 2 ]
 			""")
 		}
 	}
@@ -222,18 +222,18 @@ object ExpressionSpec : Spek({
 		}
 		it("can refer to a `this` function") {
 			assertAnalysis("""
-				System!.main! = println![m = "Hello"]
+				System!.main! = this.println![m = "Hello"]
 			""")
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
-				System!.main! = println[m = "Hello"]
+				System!.main! = this.println[m = "Hello"]
 			""")
 		}
 		it("can refer to a `this` object field") {
 			assertAnalysis("""
-				[a: Int].foo = a * 2
+				[a: Int].foo = this.a * 2
 			""")
 			assertAnalysisFails(NameSignatureNotFoundException::class, """
-				[a: Int].foo = b * 2
+				[a: Int].foo = this.b * 2
 			""")
 		}
 	}
@@ -263,13 +263,13 @@ object ExpressionSpec : Spek({
 		}
 		it("can call an impure anonymous function without parameters") {
 			assertAnalysis("""
-				main! = (! -> intBox!).!
+				main! = (! -> new intBox).!
 			""")
 			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-				main! = (! -> intBox!).
+				main! = (! -> new intBox).
 			""")
 			assertAnalysisFails(InvalidAnonymousFunctionCallException::class, """
-				main! = (! -> intBox!).![]
+				main! = (! -> new intBox).![]
 			""")
 		}
 		it("can call a pure anonymous function with parameters") {
@@ -299,7 +299,7 @@ object ExpressionSpec : Spek({
 			""")
 			assertAnalysis("""
 				foo = -> (
-					i = intBox!
+					i = new intBox
 					i.set![value = 1]
 					i.get!
 				)
@@ -311,16 +311,13 @@ object ExpressionSpec : Spek({
 				foo! = ! -> 1
 			""")
 			assertAnalysis("""
-				foo! = ! -> intBox!
+				foo! = ! -> new intBox
 			""")
 			assertAnalysisFails(AnonymousFunctionMutableOutputException::class, """
-				foo = -> intBox!
+				foo = -> new intBox
 			""")
 			assertAnalysis("""
 				foo! = ![system: System!] -> system.println!
-			""")
-			assertAnalysisFails(PureScopeException::class, """
-				foo! = [system: System!] -> 1
 			""")
 		}
 		it("is mutable if it is impure") {
@@ -334,14 +331,14 @@ object ExpressionSpec : Spek({
 		it("can only use outside mutable values if it doesn't have `!`") {
 			assertAnalysis("""
 				System!.main! = (
-					doPrintln = ! -> println!
+					doPrintln = ! -> this.println!
 					doPrintln.!
 					doPrintln.!
 				)
 			""")
-			assertAnalysisFails(PureScopeException::class, """
+			assertAnalysisFails(OutsideMutableStateException::class, """
 				System!.main! = (
-					doPrintln = -> println!
+					doPrintln = -> this.println!
 					doPrintln.
 					doPrintln.
 				)

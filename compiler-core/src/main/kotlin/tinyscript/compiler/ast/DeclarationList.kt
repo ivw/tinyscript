@@ -68,6 +68,11 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 								FunctionParamsScope(thisScope, signature.paramsObjectType)
 							else thisScope
 						}
+						is ConstructorSignature -> {
+							if (signature.paramsObjectType != null)
+								FunctionParamsScope(thisScope, signature.paramsObjectType)
+							else thisScope
+						}
 						is OperatorSignature -> OperatorFunctionScope(
 							thisScope,
 							signature.lhsType,
@@ -78,7 +83,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					val pureScope = if (!signature.isImpure) PureScope(functionScope) else functionScope
 
 					val expression = declarationCtx.expression().analyse(pureScope)
-					if (expression.type.isMutable && !signature.isImpure)
+					if (expression.type.isMutable && !signature.isImpure && !signature.isConstructor)
 						throw FunctionMutableOutputException()
 
 					FunctionDefinition(signatureExpression, expression)

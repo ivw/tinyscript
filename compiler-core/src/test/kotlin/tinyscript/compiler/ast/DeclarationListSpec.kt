@@ -3,7 +3,7 @@ package tinyscript.compiler.ast
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
-import tinyscript.compiler.scope.PureScopeException
+import tinyscript.compiler.scope.OutsideMutableStateException
 import tinyscript.compiler.util.SafeLazy
 
 object DeclarationListSpec : Spek({
@@ -14,7 +14,7 @@ object DeclarationListSpec : Spek({
 			""")
 			assertAnalysis("""
 				getOne = (
-					i = intBox!
+					i = new intBox
 					i.set![value = 1]
 					i.get!
 				)
@@ -37,46 +37,46 @@ object DeclarationListSpec : Spek({
 		}
 		it("can define an impure function with mutable input") {
 			assertAnalysis("""
-				System!.printEmptyLine! = println!
+				System!.printEmptyLine! = this.println!
 			""")
 			assertAnalysis("""
-				System!.printDouble![n: Int] = println![m = n * 2]
+				System!.printDouble![n: Int] = this.println![m = n * 2]
 			""")
 			assertAnalysis("""
 				System! +! [] = left.println![m = left]
 			""")
 		}
 		it("can not define a pure function that uses outside mutable values") {
-			assertAnalysisFails(PureScopeException::class, """
-				System!.foo = println!
+			assertAnalysisFails(OutsideMutableStateException::class, """
+				System!.foo = this.println!
 			""")
-			assertAnalysisFails(PureScopeException::class, """
+			assertAnalysisFails(OutsideMutableStateException::class, """
 				foo[s: System!] = s.println!
 			""")
-			assertAnalysisFails(PureScopeException::class, """
+			assertAnalysisFails(OutsideMutableStateException::class, """
 				System! + [] = left.println!
 			""")
 		}
 		it("can define an impure function with mutable output") {
 			assertAnalysis("""
-				createIntBox! = intBox![initialValue = 0]
+				createIntBox! = new intBox
 			""")
 			assertAnalysis("""
-				createIntBox![initialValue: Int] = intBox!
+				createIntBox![initialValue: Int] = new intBox
 			""")
 			assertAnalysis("""
-				[] +! [] = intBox!
+				[] +! [] = new intBox
 			""")
 		}
 		it("can not define a pure function with mutable output") {
 			assertAnalysisFails(FunctionMutableOutputException::class, """
-				createIntBox = intBox![initialValue = 0]
+				createIntBox = new intBox
 			""")
 			assertAnalysisFails(FunctionMutableOutputException::class, """
-				createIntBox[initialValue: Int] = intBox!
+				createIntBox[initialValue: Int] = new intBox
 			""")
 			assertAnalysisFails(FunctionMutableOutputException::class, """
-				[] + [] = intBox!
+				[] + [] = new intBox
 			""")
 		}
 		it("can not be recursive") {
