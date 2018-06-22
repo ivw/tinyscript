@@ -1,15 +1,13 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="tinyscript.compiler.javascript.MainKt" type="JetRunConfigurationType" factoryName="Kotlin" nameIsGenerated="true">
-    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+    <module name="compiler-core_main" />
     <option name="VM_PARAMETERS" value="" />
     <option name="PROGRAM_PARAMETERS" value="example/Example.tiny" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
     <option name="MAIN_CLASS_NAME" value="tinyscript.compiler.javascript.MainKt" />
-    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/compiler-core" />
-    <module name="compiler-core_main" />
-    <envs />
+    <option name="WORKING_DIRECTORY" value="file://%MODULE_WORKING_DIR%" />
     <method />
   </configuration>
 </component>

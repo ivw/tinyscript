@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Specs in tinyscript.compiler" type="org.spekframework.spek-jvm" factoryName="Spek - JVM" nameIsGenerated="true">
+    <module name="compiler-core_test" />
+    <option name="target" value="package" />
+    <option name="package" value="tinyscript.compiler" />
+    <option name="vm-parameters" value="" />
+    <option name="program-parameters" value="" />
+    <option name="working-directory" value="%MODULE_WORKING_DIR%" />
+    <option name="alternative-jre-path" value="" />
+    <option name="pass-parent-envs" value="true" />
+    <method />
+  </configuration>
+</component>
