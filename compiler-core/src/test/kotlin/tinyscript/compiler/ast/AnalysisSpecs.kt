@@ -27,7 +27,6 @@ class AnalysisSpec(
 fun AnalysisSpec.analyse(): Exception? {
 	return try {
 		val fileCtx = parseFile(CharStreams.fromString(content))
-
 		fileCtx.declaration().analyse(StandardLibrary.scope)
 		null
 	} catch (e: Exception) {
@@ -71,12 +70,10 @@ object AnalysisSpecs : Spek({
 			describe(file.fileName.toString()) {
 				readFile(file).forEachIndexed { index, spec ->
 					describe("$index ${spec.title}") {
-						val analysisError: Exception? = spec.analyse()
+						val analysisError = spec.analyse()
 						if (spec.expectedError != null) {
 							it("returns an \"${spec.expectedError}\" error") {
-								if (analysisError == null)
-									throw AssertionError("no error thrown")
-								assertEquals(analysisError.javaClass.simpleName, spec.expectedError)
+								assertEquals(analysisError?.let { it.javaClass.simpleName }, spec.expectedError)
 							}
 						} else {
 							it("returns no error") {
