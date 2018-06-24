@@ -101,6 +101,10 @@ class NameSignatureNotFoundException(val name: String) : RuntimeException(
 	"unresolved reference '$name'"
 )
 
+class ConstructorSignatureNotFoundException(val name: String) : RuntimeException(
+	"unresolved reference '$name'"
+)
+
 class OperatorSignatureNotFoundException(val operatorSymbol: String) : RuntimeException(
 	"unresolved reference '$operatorSymbol'"
 )
@@ -143,7 +147,7 @@ fun TinyScriptParser.ExpressionContext.analyse(scope: Scope): Expression = when 
 		val argumentsObjectExpression = `object`()?.analyse(scope)
 
 		val valueResult = scope.findConstructor(name, argumentsObjectExpression?.type)
-			?: throw NameSignatureNotFoundException(name)
+			?: throw ConstructorSignatureNotFoundException(name)
 
 		ConstructorCallExpression(
 			name,

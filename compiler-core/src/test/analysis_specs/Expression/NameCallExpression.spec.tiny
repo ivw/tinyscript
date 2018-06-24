@@ -1,0 +1,140 @@
+//// referring to a function
+
+a = 1
+main = a
+
+////
+
+main = a
+a = 1
+
+////
+
+a = 1
+main = (
+	b = 1
+	a
+	a
+)
+
+////
+// error = NameSignatureNotFoundException
+
+a = 1
+main = b
+
+////
+// error = ConstructorSignatureNotFoundException
+
+a = 1
+main = new a
+
+////
+
+Int.a[i: Int] = 1
+main = 3.a[i = 1]
+
+////
+// error = NameSignatureNotFoundException
+
+Int.a[i: Int] = 1
+main = 3.b[i = 1]
+
+////
+// error = NameSignatureNotFoundException
+
+Int.a[i: Int] = 1
+main = 3.a[]
+
+////
+// error = NameSignatureNotFoundException
+
+Int.a[i: Int] = 1
+main = ().a[i = 1]
+
+////
+// error = NameSignatureNotFoundException
+
+Int.a[i: Int] = 1
+main = 3.a![i = 1]
+
+//// referring to a block field
+
+main = (
+	a = 1
+	a
+)
+
+////
+// error = NameSignatureNotFoundException
+
+main = (
+	a
+	a = 1
+	a
+)
+
+////
+// error = NameSignatureNotFoundException
+
+main = (
+	a = 1
+	b
+)
+
+//// referring to an object field
+
+obj = [ a = 1 ]
+main = obj.a
+
+////
+
+main = [ a = 1 ].a
+
+////
+// error = NameSignatureNotFoundException
+
+obj = [ a = 1 ]
+main = obj.b
+
+////
+// error = NameSignatureNotFoundException
+
+obj = [ a = 1 ]
+main = obj.a!
+
+////
+// error = NameSignatureNotFoundException
+
+main = [ a = 1 ].b
+
+////
+// error = NameSignatureNotFoundException
+
+main = ().a
+
+//// referring to a parameter
+
+foo[a: Int] = a * 2
+
+////
+// error = NameSignatureNotFoundException
+
+foo[a: Int] = b * 2
+
+//// referring to `this`
+
+Int.a = this * 2
+
+////
+// error = OperatorSignatureNotFoundException
+
+().a = this * 2
+
+////
+
+System!.main! = this.println![m = "Hello"]
+
+////
+
+[a: Int].foo = this.a * 2

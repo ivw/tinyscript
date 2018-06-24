@@ -1,0 +1,11 @@
+//// IntegerLiteralExpression
+
+a = 1
+
+//// FloatLiteralExpression
+
+a = 1.0
+
+//// StringLiteralExpression
+
+foo = "bar"

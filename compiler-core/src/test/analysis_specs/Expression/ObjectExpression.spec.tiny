@@ -1,0 +1,28 @@
+//// ObjectExpression
+
+foo = []
+
+////
+
+foo = [ a = 1, b = 2 ]
+
+////
+
+foo = [
+	a = 1
+	b = 2
+]
+
+////
+// error = NameSignatureNotFoundException
+
+foo = [ a = 1, b = a ]
+
+////
+
+foo! = [ a = new intBox, b = 2 ]
+
+////
+// error = FunctionMutableOutputException
+
+foo = [ a = new intBox, b = 2 ]
