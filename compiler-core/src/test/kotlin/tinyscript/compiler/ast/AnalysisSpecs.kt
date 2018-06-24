@@ -52,16 +52,15 @@ fun readSpec(spec: String): AnalysisSpec {
 	return AnalysisSpec(title, expectedError, content)
 }
 
-fun readFile(file: Path): List<AnalysisSpec> {
-	val list: MutableList<AnalysisSpec> = ArrayList()
-	Scanner(file).use { scanner ->
-		scanner.useDelimiter(specDelimiter)
-		while (scanner.hasNext()) {
-			list.add(readSpec(scanner.next()))
+fun readFile(file: Path): List<AnalysisSpec> =
+	ArrayList<AnalysisSpec>().also { list ->
+		Scanner(file).use { scanner ->
+			scanner.useDelimiter(specDelimiter)
+			while (scanner.hasNext()) {
+				list.add(readSpec(scanner.next()))
+			}
 		}
 	}
-	return list
-}
 
 object AnalysisSpecs : Spek({
 	Files.walk(Paths.get("src/test/analysis_specs"))
@@ -73,7 +72,7 @@ object AnalysisSpecs : Spek({
 						val analysisError = spec.analyse()
 						if (spec.expectedError != null) {
 							it("returns an \"${spec.expectedError}\" error") {
-								assertEquals(analysisError?.let { it.javaClass.simpleName }, spec.expectedError)
+								assertEquals(spec.expectedError, analysisError?.let { it.javaClass.simpleName })
 							}
 						} else {
 							it("returns no error") {

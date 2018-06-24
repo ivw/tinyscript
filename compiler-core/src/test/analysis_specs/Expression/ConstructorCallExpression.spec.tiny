@@ -1,0 +1,17 @@
+////
+
+main! = new intBox
+
+////
+
+main! = new intBox[initialValue = 3]
+
+////
+// error = ConstructorSignatureNotFoundException
+
+main! = new intBox[initialValue = ()]
+
+////
+// error = FunctionMutableOutputException
+
+main = new intBox
