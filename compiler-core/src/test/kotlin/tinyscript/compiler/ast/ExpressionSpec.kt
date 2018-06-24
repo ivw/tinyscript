@@ -6,34 +6,6 @@ import org.jetbrains.spek.api.dsl.it
 import tinyscript.compiler.scope.OutsideMutableStateException
 
 object ExpressionSpec : Spek({
-	describe("ObjectExpression") {
-		it("works") {
-			assertAnalysis("""
-				foo = []
-			""")
-			assertAnalysis("""
-				foo = [ a = 1, b = 2 ]
-			""")
-			assertAnalysis("""
-				foo = [
-					a = 1
-					b = 2
-				]
-			""")
-			assertAnalysisFails(NameSignatureNotFoundException::class, """
-				foo = [ a = 1, b = a ]
-			""")
-		}
-		it("is mutable if one of the fields is mutable") {
-			assertAnalysis("""
-				foo! = [ a = new intBox, b = 2 ]
-			""")
-			assertAnalysisFails(FunctionMutableOutputException::class, """
-				foo = [ a = new intBox, b = 2 ]
-			""")
-		}
-	}
-
 	describe("(Dot)NameCallExpression") {
 		it("can refer to a function") {
 			assertAnalysis("""
