@@ -17,10 +17,14 @@ class NameSignature(
 ) : Signature() {
 	override val canHaveMutableOutput: Boolean get() = isImpure
 
-	override fun getFunctionScope(parentScope: Scope): Scope =
-		if (paramsObjectType != null)
-			FunctionParamsScope(parentScope, paramsObjectType)
-		else parentScope
+	override fun getFunctionScope(parentScope: Scope): Scope {
+		val thisScope = if (lhsType != null)
+			ThisScope(parentScope, lhsType) else parentScope
+
+		return if (paramsObjectType != null)
+			FunctionParamsScope(thisScope, paramsObjectType)
+		else thisScope
+	}
 }
 
 class ConstructorSignature(
