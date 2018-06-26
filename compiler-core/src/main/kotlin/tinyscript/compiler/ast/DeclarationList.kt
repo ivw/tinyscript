@@ -62,23 +62,7 @@ fun Iterable<TinyScriptParser.DeclarationContext>.analyse(parentScope: Scope?): 
 					val thisScope = if (signature is NameSignature && signature.lhsType != null)
 						ThisScope(scope, signature.lhsType) else scope
 
-					val functionScope: Scope = when (signature) {
-						is NameSignature -> {
-							if (signature.paramsObjectType != null)
-								FunctionParamsScope(thisScope, signature.paramsObjectType)
-							else thisScope
-						}
-						is ConstructorSignature -> {
-							if (signature.paramsObjectType != null)
-								FunctionParamsScope(thisScope, signature.paramsObjectType)
-							else thisScope
-						}
-						is OperatorSignature -> OperatorFunctionScope(
-							thisScope,
-							signature.lhsType,
-							signature.rhsType
-						)
-					}
+					val functionScope = signature.getFunctionScope(thisScope)
 
 					val pureScope = if (!signature.isImpure) PureScope(functionScope) else functionScope
 

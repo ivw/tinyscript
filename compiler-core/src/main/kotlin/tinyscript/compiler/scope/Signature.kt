@@ -5,6 +5,8 @@ sealed class Signature {
 	abstract val isImpure: Boolean
 
 	abstract val canHaveMutableOutput: Boolean
+
+	abstract fun getFunctionScope(parentScope: Scope): Scope
 }
 
 class NameSignature(
@@ -14,6 +16,11 @@ class NameSignature(
 	val paramsObjectType: ObjectType?
 ) : Signature() {
 	override val canHaveMutableOutput: Boolean get() = isImpure
+
+	override fun getFunctionScope(parentScope: Scope): Scope =
+		if (paramsObjectType != null)
+			FunctionParamsScope(parentScope, paramsObjectType)
+		else parentScope
 }
 
 class ConstructorSignature(
@@ -22,6 +29,11 @@ class ConstructorSignature(
 ) : Signature() {
 	override val isImpure: Boolean get() = false
 	override val canHaveMutableOutput: Boolean get() = true
+
+	override fun getFunctionScope(parentScope: Scope): Scope =
+		if (paramsObjectType != null)
+			FunctionParamsScope(parentScope, paramsObjectType)
+		else parentScope
 }
 
 class OperatorSignature(
@@ -31,4 +43,7 @@ class OperatorSignature(
 	val rhsType: Type
 ) : Signature() {
 	override val canHaveMutableOutput: Boolean get() = isImpure
+
+	override fun getFunctionScope(parentScope: Scope): Scope =
+		OperatorFunctionScope(parentScope, lhsType, rhsType)
 }
