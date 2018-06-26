@@ -1,0 +1,121 @@
+//// with NameSignature
+
+foo = 1
+
+////
+
+foo = new intBox.get!
+
+////
+
+foo = (
+	i = new intBox
+	i.set![value = 1]
+	i.get!
+)
+
+////
+
+foo = (
+	i = new intBox
+
+	bar = ! -> (
+		i.set![value = 1]
+	)
+
+	bar.!
+
+	i.get!
+)
+
+////
+
+foo! = 1
+
+////
+
+double[n: Int] = n * 2
+
+////
+
+Int.square = this * this
+
+////
+
+Int.times[n: Int] = this * n
+
+////
+
+System!.printEmptyLine! = this.println!
+
+////
+// error = OutsideMutableStateException
+
+System!.printEmptyLine = this.println!
+
+////
+
+printEmptyLine![system: System!] = system.println!
+
+////
+// error = OutsideMutableStateException
+
+printEmptyLine[system: System!] = system.println!
+
+////
+
+createIntBox! = new intBox
+
+////
+// error = FunctionMutableOutputException
+
+createIntBox = new intBox
+
+////
+// error = CycleException
+
+foo = foo
+
+//// with ConstructorSignature
+
+new foo = new intBox
+
+////
+
+new foo[n: Int] = new intBox
+
+////
+
+new foo = 1
+
+////
+// error = OutsideMutableStateException
+
+new foo[system: System!] = system.println!
+
+//// with OperatorSignature
+
+[] + [] = left
+
+////
+
+System! +! [] = left.println![m = left]
+
+////
+// error = OutsideMutableStateException
+
+System! + [] = left.println!
+
+////
+
+[] +! [] = new intBox
+
+////
+// error = FunctionMutableOutputException
+
+[] + [] = new intBox
+
+////
+// error = CycleException
+
+[] + [] = left + right

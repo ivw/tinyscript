@@ -15,3 +15,8 @@ main! = new intBox[initialValue = ()]
 // error = FunctionMutableOutputException
 
 main = new intBox
+
+////
+// error = NameSignatureNotFoundException
+
+main! = intBox

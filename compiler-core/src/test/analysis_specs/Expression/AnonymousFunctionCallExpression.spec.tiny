@@ -1,0 +1,70 @@
+//// it can call an anonymous function
+
+returnOne = -> 1
+main = returnOne. * 2
+
+////
+// error = OperatorSignatureNotFoundException
+
+returnOne = -> 1
+main = returnOne * 2
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+main = 3.
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+returnOne = -> 1
+main = returnOne.!
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+returnOne = -> 1
+main = returnOne.[]
+
+////
+
+multiplyByTwo = [n: Int] -> n * 2
+main = (multiplyByTwo.[n = 3]) * 2
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+multiplyByTwo = [n: Int] -> n * 2
+main = multiplyByTwo.![n = 3]
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+multiplyByTwo = [n: Int] -> n * 2
+main = multiplyByTwo.[]
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+multiplyByTwo = [n: Int] -> n * 2
+main = multiplyByTwo.[n = ()]
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+multiplyByTwo = [n: Int] -> n * 2
+main = multiplyByTwo.
+
+////
+
+main! = (! -> new intBox).!
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+main! = (! -> new intBox).
+
+////
+// error = InvalidAnonymousFunctionCallException
+
+main! = (! -> new intBox).![]

@@ -1,0 +1,67 @@
+//// it must have ! if it has mutable input or output
+
+foo = -> 1
+
+////
+
+foo = -> (
+	i = new intBox
+	i.set![value = 1]
+	i.get!
+)
+
+////
+
+foo = -> new intBox.get!
+
+////
+
+foo = [n: Int] -> n * 2
+
+////
+
+foo! = ! -> 1
+
+////
+
+foo! = ! -> new intBox
+
+////
+// error = AnonymousFunctionMutableOutputException
+
+foo = -> new intBox
+
+////
+// error = AnonymousFunctionMutableOutputException
+
+foo = -> ![system: System!] -> system.println!
+
+////
+
+foo! = ![system: System!] -> system.println!
+
+//// it is mutable if it is impure
+
+returnOne! = ! -> 1
+
+////
+// error = FunctionMutableOutputException
+
+returnOne = ! -> 1
+
+//// can only use outside mutable values if it doesn't have `!`
+
+System!.main! = (
+	doPrintln = ! -> this.println!
+	doPrintln.!
+	doPrintln.!
+)
+
+////
+// error = OutsideMutableStateException
+
+System!.main! = (
+	doPrintln = -> this.println!
+	doPrintln.
+	doPrintln.
+)
