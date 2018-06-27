@@ -20,3 +20,8 @@ main = new intBox
 // error = NameSignatureNotFoundException
 
 main! = intBox
+
+////
+// error = ParsingFailedException
+
+main! = new intBox!
