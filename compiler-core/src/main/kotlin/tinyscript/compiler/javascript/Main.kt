@@ -11,13 +11,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 fun compileTinyScriptToJavascript(readPath: Path, writePath: Path) {
-	println("Reading and parsing file '${readPath.fileName}'")
 	val fileCtx = parseFile(CharStreams.fromPath(readPath))
-	println("Parsing done\n")
 
-	println("Starting analysis")
 	val declarationList = fileCtx.declaration().analyse(StandardLibrary.scope)
-	println("Analysis done\n")
 
 	Files.newBufferedWriter(writePath, StandardCharsets.UTF_8).use { writer ->
 		val indentedWriter = IndentedWriter(writer)
