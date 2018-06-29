@@ -1,1 +1,1 @@
-System!.main! = this.println!
+System!.main! = this.println![m = "Hello"]
